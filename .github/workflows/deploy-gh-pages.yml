@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DIST_PATH: dist/sys/browser
+      DIST_PATH: dist/eventos-gdg-tarija/browser
 
     steps:
       - name: Checkout
