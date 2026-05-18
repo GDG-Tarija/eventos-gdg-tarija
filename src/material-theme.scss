@@ -1,0 +1,55 @@
+@use '@angular/material' as mat;
+
+// ============================================================
+// Angular Material — dark theme (default), light via [data-theme="light"]
+// Primary: neutral palette (gray tones, avoids confusion with error red)
+// ============================================================
+
+html {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+
+  // Dark theme (default)
+  @include mat.theme((color: (primary: mat.$azure-palette,
+        tertiary: mat.$cyan-palette,
+        theme-type: dark,
+      ),
+      typography: Roboto,
+      density: 0,
+    ));
+
+  // Light theme override — applied when data-theme="light"
+  &[data-theme='light'] {
+    @include mat.theme((color: (primary: mat.$azure-palette,
+          tertiary: mat.$cyan-palette,
+          theme-type: light,
+        ),
+      ));
+  }
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  // Dark by default; switch to light when data-theme="light" is set on <html>
+  color-scheme: dark;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  height: 100%;
+}
+
+html[data-theme='light'] body {
+  color-scheme: light;
+}
+
+// Custom global overrides
+.mat-mdc-dialog-surface {
+  border-radius: 0.5rem;
+}
+
+.cdk-overlay-popover .cdk-overlay-backdrop {
+  background-color: var(--color-modal-backgroud);
+}
+

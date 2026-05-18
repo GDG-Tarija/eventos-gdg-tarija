@@ -1,0 +1,62 @@
+<h2 mat-dialog-title class="modal-title">
+  <mat-icon class="modal-title-icon">handshake</mat-icon>
+  Detalle de Patrocinador
+</h2>
+
+<mat-dialog-content class="modal-content">
+  <div class="detail-grid print-area">
+
+    <div class="detail-header">
+      <div class="detail-name">{{ sponsor.name ?? '—' }}</div>
+      <span class="state-badge"
+        [class.state-active]="sponsor.state === 'ACTIVE'"
+        [class.state-inactive]="sponsor.state === 'INACTIVE'">
+        <mat-icon class="state-icon">{{ sponsor.state === 'ACTIVE' ? 'check_circle' : 'cancel' }}</mat-icon>
+        {{ sponsor.state === 'ACTIVE' ? 'Activo' : 'Inactivo' }}
+      </span>
+    </div>
+
+    <mat-divider />
+
+    @if (sponsor.score) {
+      <div class="detail-section">
+        <span class="detail-label">Calificación</span>
+        <span class="detail-value detail-score">{{ sponsor.score }}</span>
+      </div>
+    }
+
+    @if (sponsor.description) {
+      <div class="detail-section detail-section-full">
+        <span class="detail-label">Descripción</span>
+        <span class="detail-value">{{ sponsor.description }}</span>
+      </div>
+    }
+
+    <mat-divider />
+
+    <div class="detail-dates">
+      <div class="detail-section">
+        <span class="detail-label">Fecha de Registro</span>
+        <span class="detail-value">{{ sponsor.created_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+      <div class="detail-section">
+        <span class="detail-label">Última Actualización</span>
+        <span class="detail-value">{{ sponsor.updated_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <span class="detail-label">ID del Registro</span>
+      <span class="detail-value detail-id">{{ sponsor.id }}</span>
+    </div>
+
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="modal-actions" align="end">
+  <button mat-stroked-button (click)="onClose()">Cerrar</button>
+  <button mat-stroked-button (click)="onPrint()">
+    <mat-icon>print</mat-icon>
+    Imprimir
+  </button>
+</mat-dialog-actions>

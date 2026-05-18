@@ -1,0 +1,52 @@
+<app-dialog-frame
+  [title]="isEditMode ? 'Editar Patrocinador' : 'Nuevo Patrocinador'"
+  [icon]="isEditMode ? 'edit' : 'handshake'"
+  initialSize="sm">
+
+  <form [formGroup]="form" class="form-grid">
+
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Nombre del Patrocinador</mat-label>
+      <input matInput formControlName="name" placeholder="Ej. Google, Microsoft, AWS" />
+      @if (getFieldError('name')) {
+        <mat-error>{{ getFieldError('name') }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="field-half">
+      <mat-label>Calificación</mat-label>
+      <mat-select formControlName="score">
+        <mat-option [value]="null">Sin calificación</mat-option>
+        @for (s of scoreOptions; track s) {
+          <mat-option [value]="s">{{ s }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="field-full">
+      <mat-label>Descripción</mat-label>
+      <textarea matInput formControlName="description" rows="3"
+        placeholder="Ej. Empresa tecnológica especializada en servicios en la nube."></textarea>
+      @if (getFieldError('description')) {
+        <mat-error>{{ getFieldError('description') }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="field-half field-toggle">
+      <span class="toggle-label">Estado</span>
+      <mat-slide-toggle formControlName="active" color="primary">
+        {{ form.get('active')?.value ? 'Activo' : 'Inactivo' }}
+      </mat-slide-toggle>
+    </div>
+
+  </form>
+
+  <ng-container dialog-actions>
+    <button mat-stroked-button (click)="onCancel()">Cancelar</button>
+    <button mat-flat-button color="primary" (click)="onSave()">
+      <mat-icon>save</mat-icon>
+      {{ isEditMode ? 'Guardar cambios' : 'Registrar' }}
+    </button>
+  </ng-container>
+
+</app-dialog-frame>
