@@ -1,28 +1,30 @@
 import { Routes } from '@angular/router';
-import { Login } from './features/auth/login/login';
-import { Dashboard } from './features/dashboard/dashboard';
-import { AdminLayout } from './layouts/admin-layout/admin-layout';
-import { AuthLayout } from './layouts/auth-layout/auth-layout';
+import { authGuard } from './core/auth/guards/auth.guard';
 
 export const routes: Routes = [
   {
-    path: 'auth',
-    component: AuthLayout,
+    path: '',
+    loadComponent: () => import('./layouts/public-layout/public-layout').then(m => m.PublicLayout),
     children: [
-      { path: 'login', component: Login }
-    ]
+      { path: '', loadComponent: () => import('./features/public/home/home').then(m => m.Home) },
+      { path: 'auth/login', loadComponent: () => import('./features/auth/login/login').then(m => m.Login) },
+    ],
+  },
+  {
+    path: 'auth/callback',
+    loadComponent: () => import('./features/auth/callback/callback').then(m => m.Callback),
   },
   {
     path: 'dashboard',
-    component: AdminLayout,
-    //canActivate: [authGuard]
+    loadComponent: () => import('./layouts/admin-layout/admin-layout').then(m => m.AdminLayout),
+    canActivate: [authGuard],
     children: [
-      { path: '', component: Dashboard },
+      { path: '', loadComponent: () => import('./features/dashboard/dashboard').then(m => m.Dashboard) },
       {
         path: 'admin/sponsor',
         loadComponent: () => import('./features/admin/sponsor/sponsor-dashboard').then(m => m.SponsorDashboard),
       },
-    ]
+    ],
   },
-  { path: '**', redirectTo: 'auth/login' }
+  { path: '**', redirectTo: '' },
 ];

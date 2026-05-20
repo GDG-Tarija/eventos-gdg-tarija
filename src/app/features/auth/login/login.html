@@ -1,46 +1,24 @@
 <section class="form-login">
-
   <section class="logo-banner">
-    SISTEMA
+    GDG Tarija
   </section>
 
   <section class="text">
-    Ingresar
+    Iniciar sesión
   </section>
 
+  <p class="description">
+    Usa tu cuenta de Google para acceder a la plataforma de eventos.
+  </p>
 
-  <div class="input-container">
-    <mat-form-field>
-      <mat-label>Correo</mat-label>
-      <input
-        matInput
-        placeholder="user@email.com"
-        [formControl]="email"
-        (blur)="updateErrorMessage()"
-        required
-      />
-      @if (email.invalid) {
-        <mat-error>{{ errorMessage() }}</mat-error>
-      }
-    </mat-form-field>
-  </div>
-
-  <div class="input-container">
-    <mat-form-field>
-      <mat-label>Contraseña</mat-label>
-      <input matInput [type]="hide() ? 'password' : 'text'" />
-      <button
-        matIconButton
-        matSuffix
-        (click)="clickEvent($event)"
-        [attr.aria-label]="'Hide password'"
-        [attr.aria-pressed]="hide()"
-      >
-        <mat-icon>{{ hide() ? 'visibility_off' : 'visibility' }}</mat-icon>
-      </button>
-    </mat-form-field>
-  </div>
-
-  <button matButton="filled" class="login-button" (click)="login()">Ingresar</button>
+  <button matButton="filled" class="google-button" (click)="loginWithGoogle()">
+    <img
+      class="google-icon"
+      src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+      alt=""
+      width="20"
+      height="20"
+    />
+    Continuar con Google
+  </button>
 </section>
-

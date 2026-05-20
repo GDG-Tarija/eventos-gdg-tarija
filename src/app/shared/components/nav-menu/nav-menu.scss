@@ -66,6 +66,65 @@
   color: var(--mat-sys-on-secondary-container);
 }
 
+// User section at top of nav
+.nav-user-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.nav-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.nav-user-icon {
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.nav-user-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.nav-user-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-user-email {
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-footer {
+  padding: 0.5rem;
+
+  .logout-button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: flex-start;
+    color: var(--mat-sys-error);
+  }
+}
+
 // Theme toggle — fijado al fondo del nav
 .theme-toggle-section {
   margin-top: auto;

@@ -1,5 +1,20 @@
 <nav class="nav-menu">
 
+  @if (auth.user(); as currentUser) {
+    <div class="nav-user-section">
+      @if (currentUser.avatar_url) {
+        <img class="nav-user-avatar" [src]="currentUser.avatar_url" alt="Avatar" referrerpolicy="no-referrer" />
+      } @else {
+        <mat-icon class="nav-user-icon">account_circle</mat-icon>
+      }
+      <div class="nav-user-info">
+        <span class="nav-user-name">{{ currentUser.first_name }} {{ currentUser.last_name }}</span>
+        <span class="nav-user-email">{{ currentUser.email }}</span>
+      </div>
+    </div>
+    <mat-divider />
+  }
+
   <mat-nav-list class="nav-top-list">
     <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link" [routerLinkActiveOptions]="{ exact: true }">
       <mat-icon matListItemIcon>dashboard</mat-icon>
@@ -50,6 +65,15 @@
         <mat-icon>{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
       </button>
     </div>
+  </div>
+
+  <mat-divider />
+
+  <div class="nav-footer">
+    <button mat-button class="logout-button" (click)="auth.signOut()">
+      <mat-icon>logout</mat-icon>
+      <span>Cerrar sesión</span>
+    </button>
   </div>
 
 </nav>

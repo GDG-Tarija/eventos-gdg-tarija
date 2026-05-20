@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../../../core/services/theme';
+import { AuthService } from '../../../core/auth/services/auth.service';
 
 interface NavItem {
   label: string;
@@ -39,6 +40,7 @@ export class NavMenu {
   onClick = output();
 
   readonly themeService = inject(ThemeService);
+  readonly auth = inject(AuthService);
 
   readonly modules: NavModule[] = [
     {

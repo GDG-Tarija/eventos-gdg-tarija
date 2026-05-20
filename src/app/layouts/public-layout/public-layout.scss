@@ -1,0 +1,39 @@
+.public-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  gap: 0.5rem;
+
+  .brand {
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: inherit;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+}
+
+.spacer {
+  flex: 1;
+}
+
+.public-content {
+  min-height: calc(100vh - 64px);
+}
+
+.menu-user-info {
+  line-height: 1.4;
+  cursor: default;
+  opacity: 1 !important;
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}

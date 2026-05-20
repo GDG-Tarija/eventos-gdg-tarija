@@ -1,0 +1,41 @@
+<mat-toolbar class="public-toolbar">
+  <a class="brand" routerLink="/">GDG Tarija</a>
+
+  <span class="spacer"></span>
+
+  @if (auth.user(); as currentUser) {
+    <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menú de usuario">
+      @if (currentUser.avatar_url) {
+        <img
+          class="user-avatar"
+          [src]="currentUser.avatar_url"
+          [alt]="currentUser.first_name"
+          referrerpolicy="no-referrer"
+        />
+      } @else {
+        <mat-icon>account_circle</mat-icon>
+      }
+    </button>
+
+    <mat-menu #userMenu="matMenu">
+      <span class="menu-user-info" mat-menu-item disabled>
+        <strong>{{ currentUser.first_name }} {{ currentUser.last_name }}</strong>
+        <br />
+        <small>{{ currentUser.email }}</small>
+      </span>
+      <button mat-menu-item (click)="auth.signOut()">
+        <mat-icon>logout</mat-icon>
+        <span>Cerrar sesión</span>
+      </button>
+    </mat-menu>
+  } @else {
+    <button mat-stroked-button routerLink="/auth/login">
+      <mat-icon>login</mat-icon>
+      Iniciar sesión
+    </button>
+  }
+</mat-toolbar>
+
+<main class="public-content">
+  <router-outlet />
+</main>

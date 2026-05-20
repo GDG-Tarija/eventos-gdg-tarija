@@ -12,40 +12,40 @@
   box-sizing: border-box;
 }
 
-.logo {
-  margin-bottom: 1rem;
-  width: clamp(8rem, 40vw, 12.1875rem);
-  height: auto;
-}
-
 .logo-banner {
   font-size: clamp(1.25rem, 4vw, 1.8rem);
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
   font-weight: bold;
   text-align: center;
-
-  span {
-    color: var(--color-login-accent);
-  }
 }
 
 .text {
   text-align: left;
   width: 100%;
   margin-left: 0.4rem;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
-.input-container {
-  width: 100%;
-
-  mat-form-field {
-    width: 100%;
-  }
+.description {
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+  margin: 0;
+  font-size: 0.9rem;
 }
 
-.login-button {
+.google-button {
   width: 100%;
-  padding: 1.5rem;
+  padding: 1.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+}
+
+.google-icon {
+  flex-shrink: 0;
 }
 
 @media (max-width: 30rem) {
