@@ -81,57 +81,30 @@ export class AuthService {
       return;
     }
 
-    // Step 1: try SELECT (trigger should have created the row)
     try {
-      console.log('[AuthService] handleSession — trying SELECT users WHERE id =', partial.id);
+      console.log('[AuthService] handleSession — calling upsert_user_profile RPC for', partial.id);
       const { data, error } = await this.supabase
-        .from('users')
-        .select('*')
-        .eq('id', partial.id)
-        .single();
+        .rpc('upsert_user_profile', {
+          p_id: partial.id,
+          p_email: partial.email,
+          p_first_name: partial.first_name,
+          p_last_name: partial.last_name,
+          p_avatar_url: partial.avatar_url,
+        });
 
       if (error) {
-        console.log('[AuthService] SELECT error:', error.code, error.message, error.details);
-      }
-
-      if (!error && data) {
-        console.log('[AuthService] SELECT success — user found:', data.id);
-        this.user.set(data as unknown as Profile);
-        this.loading.set(false);
-        return;
-      }
-    } catch (err) {
-      console.log('[AuthService] SELECT threw:', err);
-    }
-
-    // Step 2: SELECT failed or no rows — try INSERT
-    try {
-      console.log('[AuthService] handleSession — trying INSERT');
-      const { data, error } = await this.supabase
-        .from('users')
-        .insert({
-          id: partial.id,
-          email: partial.email,
-          first_name: partial.first_name,
-          last_name: partial.last_name,
-          avatar_url: partial.avatar_url,
-        })
-        .select('*')
-        .single();
-
-      if (error) {
-        console.log('[AuthService] INSERT error:', error.code, error.message, error.details);
-      }
-
-      if (!error && data) {
-        console.log('[AuthService] INSERT success — user created:', data.id);
-        this.user.set(data as unknown as Profile);
+        console.log('[AuthService] RPC error:', error.code, error.message, error.details);
+        console.log('[AuthService] Falling back to partial profile');
+        this.user.set(partial);
+      } else if (data && data.length > 0) {
+        console.log('[AuthService] RPC success — user profile:', data[0].id);
+        this.user.set(data[0] as unknown as Profile);
       } else {
-        console.log('[AuthService] INSERT failed or no data — falling back to partial');
+        console.log('[AuthService] RPC returned no data — falling back to partial');
         this.user.set(partial);
       }
     } catch (err) {
-      console.log('[AuthService] INSERT threw:', err);
+      console.log('[AuthService] RPC threw:', err);
       console.log('[AuthService] Falling back to partial profile');
       this.user.set(partial);
     } finally {
