@@ -67,7 +67,7 @@
   }
 
   .gdg-btn-filled {
-    @apply gdg-btn bg-google-blue text-white shadow-sm px-8 py-3 hover:bg-blue-600 active:scale-[0.98];
+    @apply gdg-btn bg-google-blue text-white shadow-sm px-8 py-3 hover:bg-blue-600 active:scale-95;
   }
 
   .gdg-btn-outlined {
@@ -80,7 +80,7 @@
 
   /* Surfaces */
   .gdg-card {
-    @apply rounded-3xl bg-white border border-black/5 shadow-[0_4px_20px_rgba(0,0,0,0.08)];
+    @apply rounded-3xl bg-white border border-black/5 shadow-google-card;
   }
 
   .gdg-event-card {
@@ -106,7 +106,7 @@
   }
 
   .gdg-page {
-    @apply min-h-[calc(100vh-64px)] py-10;
+    @apply min-h-screen py-10;
   }
 
   /* Spinner (GDG) */

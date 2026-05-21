@@ -9,13 +9,8 @@ import { AuthService } from '../../../core/auth/services/auth.service';
   template: `
     <section class="gdg-page">
       <div class="gdg-container">
-        <div class="rounded-3xl border border-black/5 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden">
-          <div class="p-10 sm:p-14 relative">
-            <div class="absolute inset-0 opacity-20 pointer-events-none"
-                 style="background: radial-gradient(circle at 20% 20%, var(--gdg-google-blue-light), transparent 45%), radial-gradient(circle at 80% 30%, var(--gdg-google-green-light), transparent 45%), radial-gradient(circle at 60% 80%, var(--gdg-google-yellow-light), transparent 45%), radial-gradient(circle at 20% 80%, var(--gdg-google-red-light), transparent 45%);">
-            </div>
-
-            <div class="relative">
+        <div class="gdg-card overflow-hidden">
+          <div class="p-10 sm:p-14">
               <h1 class="gdg-h1 font-google">GDG Tarija</h1>
               <p class="gdg-body mt-4 max-w-2xl">
                 Eventos para la comunidad de desarrolladores. Charlas, talleres y networking con la vibra de Google I/O.
@@ -27,9 +22,9 @@ import { AuthService } from '../../../core/auth/services/auth.service';
                     Ir al dashboard
                   </a>
                 } @else {
-                  <a mat-flat-button color="primary" routerLink="/auth/login" class="gdg-btn-filled">
+                  <button mat-flat-button color="primary" type="button" class="gdg-btn-filled" (click)="auth.signInWithGoogle()">
                     Iniciar sesión
-                  </a>
+                  </button>
                 }
 
                 <a mat-stroked-button routerLink="/" class="gdg-btn-outlined">
@@ -60,7 +55,6 @@ import { AuthService } from '../../../core/auth/services/auth.service';
                   <p class="mt-2 text-text-secondary">Diseño vibrante, simple y rápido.</p>
                 </div>
               </div>
-            </div>
           </div>
         </div>
       </div>

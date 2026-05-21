@@ -26,6 +26,7 @@ Archivos:
 
 - Fuente principal: **Google Sans (local)**.
 - Fuente fallback: `system-ui, Segoe UI, Roboto, Arial, sans-serif`.
+- Fuente global: se aplica a nivel `html/body` (no hay que declarar `font-google` en cada componente).
 
 Fuentes locales:
 
@@ -124,3 +125,5 @@ Archivo:
 - No activar Tailwind preflight (`preflight: false`) para no romper Material.
 - Preferir clases Tailwind en templates nuevos. SCSS por componente solo para casos puntuales.
 - Accesibilidad: iconos sin texto con `aria-label`.
+- No usar degradados como background en contenedores, secciones o cards. Si se necesita, debe pedirse explicitamente.
+- Evitar valores arbitrarios de Tailwind tipo `w-[...]`, `min-h-[...]`, `shadow-[...]`, `scale-[...]`. Usar tokens/clases del DS o escalas standard de Tailwind, salvo que se pida explicitamente.
