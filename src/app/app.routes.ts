@@ -8,6 +8,7 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./features/public/home/home').then(m => m.Home) },
       { path: 'auth/login', loadComponent: () => import('./features/auth/login/login').then(m => m.Login) },
+      { path: 'e/:slug', loadComponent: () => import('./features/public/events/detail/event-detail').then(m => m.EventDetail) },
     ],
   },
   {

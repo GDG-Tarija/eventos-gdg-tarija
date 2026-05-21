@@ -2,16 +2,9 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  display: flex;
-  gap: 0.5rem;
+  height: 64px;
+  padding: 0;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
-
-  .brand {
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: inherit;
-  }
 
   .user-avatar {
     width: 32px;
@@ -19,10 +12,6 @@
     border-radius: 50%;
     object-fit: cover;
   }
-}
-
-.spacer {
-  flex: 1;
 }
 
 .public-content {

@@ -1,5 +1,42 @@
 # GDG Events Platform — UI Context (Design System)
 
+---
+
+## Landing pública (home `/`)
+
+La home pública reemplazó el hero anterior y ahora es una **landing de próximos eventos**.
+
+### Hero
+- Título: `Próximos Eventos` en `gdg-h1`.
+- Sin descripción larga ni CTA hero (la conversión ocurre en las cards).
+
+### Lista de eventos
+- Columna única, cards horizontales con `flex flex-col sm:flex-row`.
+- Cards blancas (`gdg-card`), `rounded-3xl`, `shadow-sm`.
+- Mientras `isEventLoading`: mostrar skeletons (misma estructura que la card).
+- Si no hay eventos: empty state simple.
+
+### Footer público
+- 4 iconos Material Symbols Rounded centrados.
+- Texto: `Plataforma hecha en casa por GDG Tarija`.
+
+### Event Card
+- Layout horizontal: `flex flex-col sm:flex-row` con imagen a la izquierda (sm:w-72).
+- Imagen `aspect-video` en mobile, altura completa en desktop.
+- Placeholder si no hay imagen: `event-image-placeholder` (bloques con acentos Google sin degradados).
+- Fecha en `text-google-blue` con icono `calendar_month`.
+- Título `text-2xl font-bold` con `leading-tight`.
+- Botón “Registrarse” `gdg-btn-filled`, alineado a la derecha en desktop.
+- Click en body (menos botón) navega a `/e/:slug`.
+
+### Skeleton
+- Usar componente `event-card-skeleton` con `animate-pulse`.
+- Misma estructura exacta que `event-card` para evitar layout shift.
+
+### Ruta de detalle
+- `/e/:slug` — componente placeholder por ahora.
+- Se completa cuando se integre el backend.
+
 Este documento define el **contexto completo de UI** para GDG Events Platform.
 
 ## Stack UI
@@ -111,7 +148,7 @@ Mobile-first en vistas publicas; desktop-first en `/dashboard`.
 ## Shadows
 
 - Evitar sombras negras duras.
-- Default card: `shadow-[0_4px_20px_rgba(0,0,0,0.08)]`.
+- Default card: `shadow-sm`.
 
 ## Motion
 

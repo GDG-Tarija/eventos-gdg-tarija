@@ -1,66 +1,50 @@
 import { Component, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { RouterLink } from '@angular/router';
-import { AuthService } from '../../../core/auth/services/auth.service';
+import { PublicEventsService } from '../events/data/public-events.service';
+import { EventCard } from '../events/components/event-card/event-card';
+import { EventCardSkeleton } from '../events/components/event-card-skeleton/event-card-skeleton';
 
 @Component({
   selector: 'app-home',
-  imports: [MatButtonModule, RouterLink],
+  imports: [EventCard, EventCardSkeleton],
   template: `
     <section class="gdg-page">
-      <div class="gdg-container">
-        <div class="gdg-card overflow-hidden">
-          <div class="p-10 sm:p-14">
-              <h1 class="gdg-h1 font-google">GDG Tarija</h1>
-              <p class="gdg-body mt-4 max-w-2xl">
-                Eventos para la comunidad de desarrolladores. Charlas, talleres y networking con la vibra de Google I/O.
-              </p>
+      <div class="gdg-container space-y-8">
+        <h1 class="gdg-h1">Próximos Eventos</h1>
 
-              <div class="mt-8 flex flex-wrap gap-3">
-                @if (auth.user()) {
-                  <a mat-flat-button color="primary" routerLink="/dashboard" class="gdg-btn-filled">
-                    Ir al dashboard
-                  </a>
-                } @else {
-                  <button mat-flat-button color="primary" type="button" class="gdg-btn-filled" (click)="auth.signInWithGoogle()">
-                    Iniciar sesión
-                  </button>
-                }
-
-                <a mat-stroked-button routerLink="/" class="gdg-btn-outlined">
-                  Ver próximos eventos
-                </a>
-              </div>
-
-              <div class="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="gdg-card p-5">
-                  <div class="flex items-center gap-2 text-google-blue font-semibold">
-                    <span class="material-symbols-rounded" aria-hidden="true">event</span>
-                    <span>Eventos</span>
-                  </div>
-                  <p class="mt-2 text-text-secondary">Calendario, cupos y registros.</p>
-                </div>
-                <div class="gdg-card p-5">
-                  <div class="flex items-center gap-2 text-google-green font-semibold">
-                    <span class="material-symbols-rounded" aria-hidden="true">groups</span>
-                    <span>Comunidad</span>
-                  </div>
-                  <p class="mt-2 text-text-secondary">Organizadores, speakers y asistentes.</p>
-                </div>
-                <div class="gdg-card p-5">
-                  <div class="flex items-center gap-2 text-google-red font-semibold">
-                    <span class="material-symbols-rounded" aria-hidden="true">rocket_launch</span>
-                    <span>Experiencia</span>
-                  </div>
-                  <p class="mt-2 text-text-secondary">Diseño vibrante, simple y rápido.</p>
-                </div>
-              </div>
+        @if (eventsService.isEventLoading()) {
+          <div class="space-y-6">
+            @for (_ of [1,2,3]; track $index) {
+              <app-event-card-skeleton />
+            }
           </div>
-        </div>
+        } @else if (eventsService.events().length === 0) {
+          <div class="text-center py-20">
+            <span class="material-symbols-rounded text-5xl text-text-muted" aria-hidden="true">event_busy</span>
+            <p class="mt-4 text-lg text-text-secondary">No hay eventos próximos por ahora.</p>
+          </div>
+        } @else {
+          <div class="space-y-6">
+            @for (event of eventsService.events(); track event.id) {
+              <app-event-card [event]="event" />
+            }
+          </div>
+        }
       </div>
+
+      <footer class="mt-20 py-10 border-t border-black/5">
+        <div class="flex justify-center gap-6 text-text-muted">
+          <span class="material-symbols-rounded text-2xl" aria-label="GitHub">globe</span>
+          <span class="material-symbols-rounded text-2xl" aria-label="YouTube">play_circle</span>
+          <span class="material-symbols-rounded text-2xl" aria-label="X">X</span>
+          <span class="material-symbols-rounded text-2xl" aria-label="Instagram">photo_camera</span>
+        </div>
+        <p class="mt-4 text-center text-sm text-text-muted">
+          Plataforma hecha en casa por GDG Tarija
+        </p>
+      </footer>
     </section>
   `,
 })
 export class Home {
-  readonly auth = inject(AuthService);
+  readonly eventsService = inject(PublicEventsService);
 }

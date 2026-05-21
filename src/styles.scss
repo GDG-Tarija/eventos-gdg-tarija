@@ -1,5 +1,6 @@
 @use './styles/variables';
 
+
 /* Local fonts (src/assets/fonts) */
 @font-face {
   font-family: 'Google Sans';
@@ -80,7 +81,7 @@
 
   /* Surfaces */
   .gdg-card {
-    @apply rounded-3xl bg-white border border-black/5 shadow-google-card;
+    @apply rounded-3xl bg-white border border-black/5 shadow-sm;
   }
 
   .gdg-event-card {

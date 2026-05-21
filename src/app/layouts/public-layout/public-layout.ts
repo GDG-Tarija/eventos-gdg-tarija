@@ -24,5 +24,6 @@ import { LOGOS } from '../../core/config/logos';
 })
 export class PublicLayout {
   readonly auth = inject(AuthService);
-  readonly logo = LOGOS.horizontal;
+  readonly logoHorizontal = LOGOS.horizontal;
+  readonly logoIcon = LOGOS.icon;
 }
