@@ -1,76 +1,115 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { SUPABASE } from '../../../../core/supabase/supabase.client';
+import { environment } from '../../../../../environments/environment';
 import { Event } from './event.model';
 
-const MOCK_EVENTS: Event[] = [
-  {
-    id: '1',
-    slug: 'cloud-study-jam-2026',
-    title: 'Cloud Study Jam 2026',
-    date: '15 de junio, 2026',
-    imageUrl: null,
-    location: 'Universidad Autónoma Juan Misael Saracho',
-    description: 'Taller práctico de Google Cloud para estudiantes y profesionales.',
-  },
-  {
-    id: '2',
-    slug: 'devfest-tarija-2026',
-    title: 'DevFest Tarija 2026',
-    date: '20 de julio, 2026',
-    imageUrl: null,
-    location: 'Centro de Convenciones Tarija',
-    description: 'El evento de tecnología más grande del sur de Bolivia.',
-  },
-  {
-    id: '3',
-    slug: 'flutter-workshop',
-    title: 'Flutter Workshop',
-    date: '10 de agosto, 2026',
-    imageUrl: null,
-    location: 'Coworking Tarija',
-    description: 'Introducción al desarrollo multiplataforma con Flutter.',
-  },
-  {
-    id: '4',
-    slug: 'build-with-ai',
-    title: 'Build with AI',
-    date: '5 de septiembre, 2026',
-    imageUrl: null,
-    location: 'UDABOL',
-    description: 'Construye aplicaciones inteligentes usando Google AI.',
-  },
-  {
-    id: '5',
-    slug: 'google-io-extended',
-    title: 'Google I/O Extended',
-    date: '18 de octubre, 2026',
-    imageUrl: null,
-    location: 'Virtual / Tarija',
-    description: 'Celebración local del Google I/O con streaming y networking.',
-  },
-  {
-    id: '6',
-    slug: 'firebase-codelab',
-    title: 'Firebase Codelab',
-    date: '12 de noviembre, 2026',
-    imageUrl: null,
-    location: 'Universidad Católica',
-    description: 'Crea un backend sin servidores con Firebase y Angular.',
-  },
-];
+type EventRow = Omit<Event, 'date_start' | 'date_end'> & {
+  date_start: string;
+  date_end: string | null;
+};
 
 @Injectable({ providedIn: 'root' })
 export class PublicEventsService {
+  private readonly supabase = inject<SupabaseClient>(SUPABASE);
+
   readonly events = signal<Event[]>([]);
   readonly isEventLoading = signal(true);
+  readonly error = signal<string | null>(null);
 
   constructor() {
-    this.loadMock();
+    void this.listPublished();
   }
 
-  private loadMock(): void {
-    setTimeout(() => {
-      this.events.set(MOCK_EVENTS);
+  async listPublished(): Promise<void> {
+    this.isEventLoading.set(true);
+    this.error.set(null);
+
+    const { data, error } = await this.supabase
+      .from('events')
+      .select(
+        [
+          'id',
+          'title',
+          'slug',
+          'event_type',
+          'capacity',
+          'date_start',
+          'date_end',
+          'is_published',
+          'description',
+          'image_url',
+          'logo_url',
+          'banner_url',
+          'location_type',
+          'location_name',
+          'address_link',
+          'category',
+        ].join(','),
+      )
+      .eq('is_published', true)
+      .order('date_start', { ascending: true });
+
+    if (error) {
+      if (!environment.production) {
+        // eslint-disable-next-line no-console
+        console.warn('[PublicEventsService] listPublished error', error);
+      }
+      this.error.set(error.message);
+      this.events.set([]);
       this.isEventLoading.set(false);
-    }, 800);
+      return;
+    }
+
+    const events = (data as unknown as EventRow[]).map((row) => ({
+      ...row,
+      date_start: new Date(row.date_start),
+      date_end: row.date_end ? new Date(row.date_end) : undefined,
+    }));
+
+    this.events.set(events);
+    this.isEventLoading.set(false);
+  }
+
+  async getBySlug(slug: string): Promise<Event | null> {
+    const { data, error } = await this.supabase
+      .from('events')
+      .select(
+        [
+          'id',
+          'title',
+          'slug',
+          'event_type',
+          'capacity',
+          'date_start',
+          'date_end',
+          'is_published',
+          'description',
+          'image_url',
+          'logo_url',
+          'banner_url',
+          'location_type',
+          'location_name',
+          'address_link',
+          'category',
+        ].join(','),
+      )
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (error || !data) {
+      if (error && !environment.production) {
+        // eslint-disable-next-line no-console
+        console.warn('[PublicEventsService] getBySlug error', error);
+      }
+      return null;
+    }
+
+    const row = data as unknown as EventRow;
+    return {
+      ...row,
+      date_start: new Date(row.date_start),
+      date_end: row.date_end ? new Date(row.date_end) : undefined,
+    };
   }
 }
