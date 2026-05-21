@@ -1,41 +1,45 @@
 <mat-toolbar class="public-toolbar">
-  <a class="brand" routerLink="/">GDG Tarija</a>
+  <div class="gdg-container flex items-center gap-4 w-full">
+    <a class="brand font-google" routerLink="/">GDG Tarija</a>
 
-  <span class="spacer"></span>
+    <span class="spacer"></span>
 
-  @if (auth.user(); as currentUser) {
-    <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menú de usuario">
-      @if (currentUser.avatar_url) {
-        <img
-          class="user-avatar"
-          [src]="currentUser.avatar_url"
-          [alt]="currentUser.first_name"
-          referrerpolicy="no-referrer"
-        />
-      } @else {
-        <mat-icon>account_circle</mat-icon>
-      }
-    </button>
-
-    <mat-menu #userMenu="matMenu">
-      <span class="menu-user-info" mat-menu-item disabled>
-        <strong>{{ currentUser.first_name }} {{ currentUser.last_name }}</strong>
-        <br />
-        <small>{{ currentUser.email }}</small>
-      </span>
-      <button mat-menu-item (click)="auth.signOut()">
-        <mat-icon>logout</mat-icon>
-        <span>Cerrar sesión</span>
+    @if (auth.loading()) {
+      <mat-progress-spinner mode="indeterminate" diameter="22" aria-label="Cargando sesión" />
+    } @else if (auth.user(); as currentUser) {
+      <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menú de usuario">
+        @if (currentUser.avatar_url) {
+          <img
+            class="user-avatar"
+            [src]="currentUser.avatar_url"
+            [alt]="currentUser.first_name"
+            referrerpolicy="no-referrer"
+          />
+        } @else {
+          <mat-icon>account_circle</mat-icon>
+        }
       </button>
-    </mat-menu>
-  } @else {
-    <button mat-stroked-button routerLink="/auth/login">
-      <mat-icon>login</mat-icon>
-      Iniciar sesión
-    </button>
-  }
+
+      <mat-menu #userMenu="matMenu">
+        <span class="menu-user-info" mat-menu-item disabled>
+          <strong>{{ currentUser.first_name }} {{ currentUser.last_name }}</strong>
+          <br />
+          <small>{{ currentUser.email }}</small>
+        </span>
+        <button mat-menu-item (click)="auth.signOut()">
+          <mat-icon>logout</mat-icon>
+          <span>Cerrar sesión</span>
+        </button>
+      </mat-menu>
+    } @else {
+      <a mat-button routerLink="/auth/login" class="gdg-btn-ghost">
+        <span class="material-symbols-rounded" aria-hidden="true">login</span>
+        <span class="ml-2">Iniciar sesión</span>
+      </a>
+    }
+  </div>
 </mat-toolbar>
 
-<main class="public-content">
+<main class="public-content bg-surface-main">
   <router-outlet />
 </main>

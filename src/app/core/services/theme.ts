@@ -3,7 +3,7 @@ import { Injectable, signal, computed, effect } from '@angular/core';
 export type Theme = 'dark' | 'light';
 
 const STORAGE_KEY = 'mecha-theme';
-const DEFAULT_THEME: Theme = 'dark';
+const DEFAULT_THEME: Theme = 'light';
 
 @Injectable({
   providedIn: 'root',
@@ -36,11 +36,9 @@ export class ThemeService {
 
   private _applyTheme(theme: Theme): void {
     const html = document.documentElement;
-    if (theme === 'dark') {
-      html.removeAttribute('data-theme');
-    } else {
-      html.setAttribute('data-theme', 'light');
-    }
+    // Light-first: default (no attribute) = light, attribute enables dark.
+    if (theme === 'dark') html.setAttribute('data-theme', 'dark');
+    else html.removeAttribute('data-theme');
     localStorage.setItem(STORAGE_KEY, theme);
   }
 }

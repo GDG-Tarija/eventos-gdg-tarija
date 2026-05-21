@@ -1,70 +1,19 @@
 // ============================================================
-// Color tokens — dark theme (default)
-// To enable light theme, add data-theme="light" to <html>
+// Color tokens — light theme (default)
+// To enable dark theme, add data-theme="dark" to <html>
 // ============================================================
 
-:root,
-[data-theme='dark'] {
-  // Text hierarchy
-  --color-text-primary: #e8e8e8;
-  --color-text-secondary: #c0c0c0;
-  --color-text-tertiary: #a0a0a0;
-  --color-text-muted: #808080;
-  --color-text-faint: #626262;
+:root {
+  // Brand (GDG)
+  --gdg-google-blue: #4285f4;
+  --gdg-google-red: #ea4335;
+  --gdg-google-yellow: #fbbc05;
+  --gdg-google-green: #34a853;
+  --gdg-google-blue-light: #d2e3fc;
+  --gdg-google-red-light: #fad2cf;
+  --gdg-google-yellow-light: #fde293;
+  --gdg-google-green-light: #ceead6;
 
-  // Borders
-  --color-border: #2e2e2e;
-
-  // Status — active / success
-  --color-status-active-bg: #1a3a1e;
-  --color-status-active-text: #81c784;
-
-  // Status — inactive / error (not danger — only for state badges)
-  --color-status-inactive-bg: #3c1212;
-  --color-status-inactive-text: #ef9a9a;
-
-  // Status — archived / neutral
-  --color-status-archived-bg: #242424;
-  --color-status-archived-text: #9e9e9e;
-
-  // Table row hover
-  --color-row-hover-bg: #242424;
-
-  // Code / batch badge
-  --color-badge-bg: #252d3b;
-  --color-badge-text: #94a3b8;
-
-  // Presentation badge (purple tones)
-  --color-badge-presentation-bg: #2a1635;
-  --color-badge-presentation-text: #ce93d8;
-
-  // Danger — used in delete modals and destructive actions
-  --color-danger: #ef5350;
-  --color-danger-strong: #e53935;
-
-  // Price / financial values
-  --color-price-default: #90a4ae;
-  --color-price-final: #81c784;
-  --color-stock-low: #ef5350;
-
-  // Login layout
-  --color-login-bg: #080114;
-  --color-login-gradient-1: #69ffc0;
-  --color-login-gradient-2: #357cfe;
-  --color-login-accent: #26a69a;
-
-  // Scrollbar
-  --color-scrollbar-thumb: rgba(255, 255, 255, 0.12);
-  --color-scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
-
-  // Modal
-  --color-modal-backgroud: rgba(255, 255, 255, 0.22);
-}
-
-// ============================================================
-// Light theme override
-// ============================================================
-[data-theme='light'] {
   // Text hierarchy
   --color-text-primary: #212121;
   --color-text-secondary: #424242;
@@ -79,7 +28,7 @@
   --color-status-active-bg: #e8f5e9;
   --color-status-active-text: #2e7d32;
 
-  // Status — inactive / error
+  // Status — inactive / error (not danger — only for state badges)
   --color-status-inactive-bg: #ffebee;
   --color-status-inactive-text: #c62828;
 
@@ -98,7 +47,7 @@
   --color-badge-presentation-bg: #f3e5f5;
   --color-badge-presentation-text: #6a1b9a;
 
-  // Danger
+  // Danger — used in delete modals and destructive actions
   --color-danger: #c62828;
   --color-danger-strong: #b71c1c;
 
@@ -119,4 +68,64 @@
 
   // Modal
   --color-modal-backgroud: rgba(0, 0, 0, 0.22);
+}
+
+// ============================================================
+// Dark theme override
+// ============================================================
+[data-theme='dark'] {
+  // Text hierarchy
+  --color-text-primary: #e8e8e8;
+  --color-text-secondary: #c0c0c0;
+  --color-text-tertiary: #a0a0a0;
+  --color-text-muted: #808080;
+  --color-text-faint: #626262;
+
+  // Borders
+  --color-border: #2e2e2e;
+
+  // Status — active / success
+  --color-status-active-bg: #1a3a1e;
+  --color-status-active-text: #81c784;
+
+  // Status — inactive / error
+  --color-status-inactive-bg: #3c1212;
+  --color-status-inactive-text: #ef9a9a;
+
+  // Status — archived / neutral
+  --color-status-archived-bg: #242424;
+  --color-status-archived-text: #9e9e9e;
+
+  // Table row hover
+  --color-row-hover-bg: #242424;
+
+  // Code / batch badge
+  --color-badge-bg: #252d3b;
+  --color-badge-text: #94a3b8;
+
+  // Presentation badge (purple tones)
+  --color-badge-presentation-bg: #2a1635;
+  --color-badge-presentation-text: #ce93d8;
+
+  // Danger
+  --color-danger: #ef5350;
+  --color-danger-strong: #e53935;
+
+  // Price / financial values
+  --color-price-default: #90a4ae;
+  --color-price-final: #81c784;
+  --color-stock-low: #ef5350;
+
+  // Login layout
+  --color-login-bg: #080114;
+  --color-login-gradient-1: #69ffc0;
+  --color-login-gradient-2: #357cfe;
+  --color-login-accent: #26a69a;
+
+  // Scrollbar
+  --color-scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --color-scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+
+  // Modal
+  --color-modal-backgroud: rgba(255, 255, 255, 0.22);
 }

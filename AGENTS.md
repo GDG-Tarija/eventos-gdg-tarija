@@ -63,7 +63,7 @@ supabase gen types typescript --local > src/app/core/models/database.types.ts
 18. **No mockear lo que no es de terceros.** Mockea Supabase, HTTP, router. No mockees tus propios services planos.
 
 ### UI / UX
-19. **Angular Material 3** como única librería de UI. No mezclar con Bootstrap, Tailwind, etc.
+19. **Angular Material 3** como librería de componentes de UI + **Tailwind CSS** para layout, utilities y diseño visual. No mezclar con Bootstrap u otros frameworks.
 20. **Mobile-first** en vistas públicas (`/e/:slug`, `/login`). **Desktop-first** en `/dashboard`.
 21. **Accesibilidad:** todos los iconos sin texto llevan `aria-label`. Navegable con teclado.
 
