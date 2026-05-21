@@ -1,5 +1,12 @@
 @use './styles/variables';
 
+/* Tailwind preflight is disabled; keep critical base rules. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 
 /* Local fonts (src/assets/fonts) */
 @font-face {
@@ -103,7 +110,7 @@
 
   /* Layout */
   .gdg-container {
-    @apply w-full max-w-6xl mx-auto px-6;
+    @apply w-full max-w-6xl mx-auto px-4 sm:px-6;
   }
 
   .gdg-page {

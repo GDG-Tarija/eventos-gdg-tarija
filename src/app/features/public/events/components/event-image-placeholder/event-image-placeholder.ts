@@ -5,8 +5,7 @@ import { Component, input } from '@angular/core';
   standalone: true,
   template: `
     <div
-      class="aspect-video rounded-2xl flex items-center justify-center overflow-hidden"
-      [class]="containerClass()"
+      [class]="'aspect-video rounded-2xl flex items-center justify-center overflow-hidden ' + containerClass()"
     >
       <div class="grid grid-cols-2 grid-rows-2 w-full h-full">
         <div class="bg-google-blue/20"></div>

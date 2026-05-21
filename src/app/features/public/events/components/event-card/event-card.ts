@@ -28,24 +28,24 @@ import { EventImagePlaceholder } from '../event-image-placeholder/event-image-pl
           </div>
 
           <div class="flex flex-col justify-between gap-3 flex-1 min-w-0">
-            <div class="space-y-2">
+          <div class="space-y-2 min-w-0">
               <div class="flex items-center gap-1.5 text-google-blue text-sm font-medium">
                 <span class="material-symbols-rounded text-base" aria-hidden="true">calendar_month</span>
                 <span>{{ event().date }}</span>
               </div>
 
-              <h3 class="text-2xl font-bold leading-tight text-text-primary">
-                {{ event().title }}
-              </h3>
+            <h3 class="text-2xl font-bold leading-tight text-text-primary break-words">
+              {{ event().title }}
+            </h3>
 
               <p class="text-sm text-text-secondary line-clamp-2">
                 {{ event().description }}
               </p>
 
-              <div class="flex items-center gap-1 text-xs text-text-secondary">
-                <span class="material-symbols-rounded text-sm" aria-hidden="true">location_on</span>
-                <span>{{ event().location }}</span>
-              </div>
+            <div class="flex items-center gap-1 text-xs text-text-secondary min-w-0">
+              <span class="material-symbols-rounded text-sm" aria-hidden="true">location_on</span>
+              <span class="min-w-0 break-words">{{ event().location }}</span>
+            </div>
             </div>
 
             <div class="sm:self-end sm:w-56 w-full">
