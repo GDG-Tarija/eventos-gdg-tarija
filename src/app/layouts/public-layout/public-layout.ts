@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/auth/services/auth.service';
+import { LOGOS } from '../../core/config/logos';
 
 @Component({
   selector: 'app-public-layout',
@@ -23,4 +24,5 @@ import { AuthService } from '../../core/auth/services/auth.service';
 })
 export class PublicLayout {
   readonly auth = inject(AuthService);
+  readonly logo = LOGOS.horizontal;
 }

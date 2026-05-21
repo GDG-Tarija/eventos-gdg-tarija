@@ -22,10 +22,9 @@ mat-sidenav {
 }
 
 .sidenav-logo {
-  color: var(--mat-sys-primary);
-  font-size: 28px;
   width: 28px;
   height: 28px;
+  object-fit: contain;
 }
 
 .sidenav-brand {

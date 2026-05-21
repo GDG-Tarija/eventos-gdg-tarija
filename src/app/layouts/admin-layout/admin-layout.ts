@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { RouterOutlet } from '@angular/router';
 import { NavMenu } from '../../shared/components/nav-menu/nav-menu';
+import { LOGOS } from '../../core/config/logos';
 
 @Component({
   selector: 'app-admin-layout',
@@ -14,5 +15,6 @@ import { NavMenu } from '../../shared/components/nav-menu/nav-menu';
   styleUrl: './admin-layout.scss',
 })
 export class AdminLayout {
+  readonly logo = LOGOS.icon;
   sidenavOpen = signal(false);
 }

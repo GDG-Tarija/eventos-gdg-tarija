@@ -47,6 +47,30 @@ Archivo:
 
 - `src/index.html`
 
+## Logos
+
+Los logos están servidos desde **Cloudinary** y referenciados en `src/app/core/config/logos.ts`:
+
+| Constante | Descripción | URL |
+|---|---|---|
+| `LOGOS.icon` | Solo icono GDG, sin texto | `logoGDG_Tarija_nox4y2` |
+| `LOGOS.horizontal` | Horizontal con icono + texto | `gdg_tarija_logo_t3xzpo` |
+| `LOGOS.square` | Cuadrado con icono + texto | `logoGDGTarija_lyzyzo` |
+
+Modo de uso:
+
+```ts
+import { LOGOS } from '../../core/config/logos';
+// LOGOS.icon, LOGOS.horizontal, LOGOS.square
+// Cada uno tiene: { src: string, alt: string }
+```
+
+Uso en template:
+
+```html
+<img [src]="logo.src" [alt]="logo.alt" class="h-8 w-auto" />
+```
+
 ## Color Tokens
 
 ### Tailwind colors
