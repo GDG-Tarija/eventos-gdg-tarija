@@ -92,6 +92,7 @@ export class PublicEventsService {
           'location_name',
           'address_link',
           'category',
+          'extra_info',
         ].join(','),
       )
       .eq('slug', slug)

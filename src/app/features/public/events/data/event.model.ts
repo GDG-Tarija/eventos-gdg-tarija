@@ -1,3 +1,5 @@
+import { FormField } from '../../../../models/field.model';
+
 export interface Event {
   id: string;
   title: string;
@@ -17,4 +19,9 @@ export interface Event {
   category?: string;
   available_spots?: number;
   is_full?: boolean;
+
+  // JSONB from Supabase. We only care about extra_info.form_fields for now.
+  extra_info?: {
+    form_fields?: FormField[];
+  } | null;
 }

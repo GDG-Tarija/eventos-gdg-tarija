@@ -110,3 +110,31 @@ BEGIN
   RETURNING *;
 END;
 $$;
+
+
+-- RPC function for frontend: update own profile fields (SECURITY DEFINER = bypasses RLS)
+CREATE OR REPLACE FUNCTION public.update_user_profile(
+  p_first_name text,
+  p_last_name text,
+  p_phone text
+)
+RETURNS SETOF public.users
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  UPDATE public.users
+  SET
+    first_name = p_first_name,
+    last_name = p_last_name,
+    phone = p_phone
+  WHERE id = auth.uid()
+  RETURNING *;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.update_user_profile(text, text, text) TO anon, authenticated;
+
+-- Refresh PostgREST schema cache (helps avoid 404 on /rpc/* after creating functions)
+NOTIFY pgrst, 'reload schema';

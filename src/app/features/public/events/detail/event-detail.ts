@@ -3,11 +3,12 @@ import { ActivatedRoute } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PublicEventsService } from '../data/public-events.service';
 import { Event } from '../data/event.model';
+import { EventRegistrationCheckout } from '../registration/components/event-registration-checkout';
 
 @Component({
   selector: 'app-event-detail',
   standalone: true,
-  imports: [MatProgressSpinnerModule],
+  imports: [MatProgressSpinnerModule, EventRegistrationCheckout],
   template: `
     <section class="gdg-page">
       <div class="gdg-container">
@@ -43,7 +44,7 @@ import { Event } from '../data/event.model';
               }
             </div>
 
-            <div class="p-6 sm:p-10 space-y-6">
+            <div class="p-6 sm:p-10 space-y-10">
               <div class="flex items-start gap-4">
                 @if (event()!.logo_url) {
                   <img
@@ -94,14 +95,7 @@ import { Event } from '../data/event.model';
                 <p class="text-text-secondary whitespace-pre-line">{{ event()!.description }}</p>
               }
 
-              <div class="gdg-card p-5">
-                  <div class="text-sm text-text-secondary">
-                  <div><strong>Slug:</strong> {{ event()!.slug }}</div>
-                  <div><strong>Published:</strong> {{ event()!.is_published }}</div>
-                  @if (event()!.category) { <div><strong>Category:</strong> {{ event()!.category }}</div> }
-                  @if (event()!.address_link) { <div><strong>Address:</strong> {{ event()!.address_link }}</div> }
-                </div>
-              </div>
+              <app-event-registration-checkout [event]="event()!" />
             </div>
           </div>
         }
