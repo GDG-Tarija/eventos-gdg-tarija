@@ -89,6 +89,12 @@ type ExtraInfo = { form_fields?: FormField[] };
           <div class="space-y-4">
             <h3 class="text-xl font-bold text-text-primary">Elegí tu pase</h3>
 
+            @if (selectedTicketId()) {
+              <p class="text-sm text-text-secondary">
+                Seleccionado: <strong>{{ selectedTicketPrice() > 0 ? 'De pago' : 'Gratis' }}</strong>
+              </p>
+            }
+
             @if (tickets().length === 0) {
               <p class="text-text-secondary">No hay pases disponibles por el momento.</p>
             } @else {
@@ -139,12 +145,36 @@ type ExtraInfo = { form_fields?: FormField[] };
               </div>
             </div>
           }
+          @else {
+            <div class="space-y-2">
+              <h3 class="text-xl font-bold text-text-primary">Información adicional</h3>
+              <p class="text-sm text-text-secondary">Este evento no requiere preguntas adicionales.</p>
+            </div>
+          }
 
           <!-- Comprobante (solo pagos) -->
           @if (selectedTicketPrice() > 0) {
             <div class="space-y-3">
               <h3 class="text-xl font-bold text-text-primary">Comprobante de pago</h3>
               <p class="text-sm text-text-secondary">Subí una imagen del comprobante para validar tu inscripción.</p>
+
+              @if (selectedTicketQrUrl()) {
+                <div class="gdg-card p-5">
+                  <div class="flex items-center gap-2 text-google-blue font-semibold">
+                    <span class="material-symbols-rounded" aria-hidden="true">qr_code_2</span>
+                    <span>QR de pago</span>
+                  </div>
+                  <p class="mt-2 text-sm text-text-secondary">Escaneá este QR para realizar el pago.</p>
+                  <div class="mt-4 flex justify-center">
+                    <img
+                      class="w-full max-w-xs rounded-2xl border border-black/5 bg-white object-contain"
+                      [src]="selectedTicketQrUrl()!"
+                      alt="QR de pago"
+                    />
+                  </div>
+                </div>
+              }
+
               <input type="file" accept="image/*" (change)="onFileChange($event)" />
               @if (paymentProofName()) {
                 <p class="text-sm text-text-secondary">Archivo: <strong>{{ paymentProofName() }}</strong></p>
@@ -186,6 +216,7 @@ export class EventRegistrationCheckout implements OnInit {
   readonly tickets = signal<TicketType[]>([]);
   readonly selectedTicketId = signal<string | null>(null);
   readonly selectedTicketPrice = signal(0);
+  readonly selectedTicketQrUrl = signal<string | null>(null);
 
   readonly firstName = signal('');
   readonly lastName = signal('');
@@ -214,7 +245,16 @@ export class EventRegistrationCheckout implements OnInit {
   }
 
   private parseFields(extraInfo: unknown): FormField[] {
-    const obj = extraInfo as ExtraInfo | null | undefined;
+    let normalized: unknown = extraInfo;
+    if (typeof normalized === 'string') {
+      try {
+        normalized = JSON.parse(normalized) as unknown;
+      } catch {
+        return [];
+      }
+    }
+
+    const obj = normalized as ExtraInfo | null | undefined;
     const fields = obj?.form_fields;
     if (!Array.isArray(fields)) return [];
     return fields
@@ -249,6 +289,7 @@ export class EventRegistrationCheckout implements OnInit {
   selectTicket(t: TicketType): void {
     this.selectedTicketId.set(t.id);
     this.selectedTicketPrice.set(Number(t.price ?? 0));
+    this.selectedTicketQrUrl.set(t.payment_qr_url ?? null);
     this.paymentProofFile.set(null);
   }
 
@@ -308,6 +349,7 @@ export class EventRegistrationCheckout implements OnInit {
       if (price > 0) {
         const file = this.paymentProofFile();
         if (!file) throw new Error('Falta comprobante de pago');
+        // Stored as storage object path (bucket is private)
         paymentProofUrl = await this.registrations.uploadPaymentProof(file, this.event().id, user.id);
       }
 
@@ -330,7 +372,14 @@ export class EventRegistrationCheckout implements OnInit {
         },
       };
 
-      await this.profiles.updateProfile(user.id, payload.userUpdate);
+      const updatedProfile = await this.profiles.updateProfile(user.id, payload.userUpdate);
+      if (updatedProfile) {
+        // Keep the UI consistent without forcing a full session/profile refresh.
+        this.auth.user.set({
+          ...user,
+          ...updatedProfile,
+        });
+      }
       await this.registrations.createRegistration(payload.registration);
 
       this.success.set(true);

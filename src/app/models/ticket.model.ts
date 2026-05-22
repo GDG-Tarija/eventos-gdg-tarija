@@ -4,4 +4,5 @@ export interface TicketType {
   name: string;
   price: number;
   ticket_capacity: number;
+  payment_qr_url?: string;
 }

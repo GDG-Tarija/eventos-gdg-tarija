@@ -38,17 +38,28 @@ export class RegistrationsService {
   }
 
   async uploadPaymentProof(file: File, eventId: string, userId: string): Promise<string> {
+    if (file.size <= 0) throw new Error('[storage.upload] Archivo vacío');
+    if (file.type && !file.type.startsWith('image/')) {
+      throw new Error('[storage.upload] Tipo de archivo no permitido');
+    }
+
     const ext = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
     const safeExt = (ext ?? 'jpg').toLowerCase();
     const path = `${eventId}/${userId}/${Date.now()}.${safeExt}`;
 
-    const { error } = await this.supabase.storage
-      .from('payment-proofs')
-      .upload(path, file, { upsert: false, contentType: file.type || undefined });
+    const { error } = await this.supabase.storage.from('payment-proofs').upload(path, file, {
+      upsert: false,
+      contentType: file.type || undefined,
+      cacheControl: '3600',
+    });
 
-    if (error) throw error;
+    if (error) {
+      const status = (error as unknown as { statusCode?: number }).statusCode;
+      throw new Error(`[storage.upload] ${status ?? ''} ${error.message}`.trim());
+    }
 
-    const { data } = this.supabase.storage.from('payment-proofs').getPublicUrl(path);
-    return data.publicUrl;
+    // Bucket is private in production: store the object path.
+    // When you need to display/download it, generate a signed URL server-side or via storage.createSignedUrl.
+    return path;
   }
 }

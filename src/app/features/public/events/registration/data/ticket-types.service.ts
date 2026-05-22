@@ -12,11 +12,19 @@ export class TicketTypesService {
   async listByEventId(eventId: string): Promise<TicketType[]> {
     const { data, error } = await this.supabase
       .from('ticket_types')
-      .select('id,event_id,name,price,ticket_capacity')
+      .select('id,event_id,name,price,ticket_capacity,payment_qr_url')
       .eq('event_id', eventId)
       .order('price', { ascending: true });
 
     if (error) throw error;
-    return (data as unknown as TicketTypeRow[]) ?? [];
+
+    const rows =
+      (data as unknown as Array<TicketTypeRow & { price: unknown; ticket_capacity: unknown; payment_qr_url?: unknown }>) ?? [];
+    return rows.map((r) => ({
+      ...r,
+      price: Number(r.price ?? 0),
+      ticket_capacity: Number(r.ticket_capacity ?? 0),
+      payment_qr_url: typeof r.payment_qr_url === 'string' ? r.payment_qr_url : undefined,
+    }));
   }
 }
