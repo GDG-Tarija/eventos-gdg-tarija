@@ -89,9 +89,9 @@ BEGIN
   IF EXISTS (SELECT 1 FROM public.users WHERE email = p_email AND id <> p_id) THEN
     UPDATE public.users SET
       id = p_id,
-      first_name = p_first_name,
-      last_name = p_last_name,
-      avatar_url = COALESCE(p_avatar_url, avatar_url)
+      first_name = COALESCE(NULLIF(p_first_name, ''), first_name),
+      last_name = COALESCE(NULLIF(p_last_name, ''), last_name),
+      avatar_url = COALESCE(NULLIF(p_avatar_url, ''), avatar_url)
     WHERE email = p_email;
 
     RETURN QUERY SELECT * FROM public.users WHERE id = p_id;
@@ -104,9 +104,9 @@ BEGIN
   VALUES (p_id, p_email, p_first_name, p_last_name, p_avatar_url)
   ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
-    first_name = EXCLUDED.first_name,
-    last_name = EXCLUDED.last_name,
-    avatar_url = COALESCE(EXCLUDED.avatar_url, public.users.avatar_url)
+    first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), public.users.first_name),
+    last_name = COALESCE(NULLIF(EXCLUDED.last_name, ''), public.users.last_name),
+    avatar_url = COALESCE(NULLIF(EXCLUDED.avatar_url, ''), public.users.avatar_url)
   RETURNING *;
 END;
 $$;

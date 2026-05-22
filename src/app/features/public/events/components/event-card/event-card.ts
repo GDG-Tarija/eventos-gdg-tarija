@@ -20,7 +20,7 @@ import { EventImagePlaceholder } from '../event-image-placeholder/event-image-pl
               <img
                 [src]="event().logo_url"
                 [alt]="event().title"
-                class="aspect-video sm:aspect-auto sm:h-full w-full object-cover rounded-2xl"
+                class="aspect-video w-full object-cover rounded-2xl"
               />
             } @else {
               <app-event-image-placeholder />
@@ -28,11 +28,11 @@ import { EventImagePlaceholder } from '../event-image-placeholder/event-image-pl
           </div>
 
           <div class="flex flex-col justify-between gap-3 flex-1 min-w-0">
-          <div class="space-y-2 min-w-0">
+            <div class="space-y-2 min-w-0">
               <div class="flex items-center gap-1.5 text-google-blue text-sm font-medium">
                 <span class="material-symbols-rounded text-base" aria-hidden="true">calendar_month</span>
-              <span>{{ dateLabel() }}</span>
-            </div>
+                <span>{{ dateLabel() }}</span>
+              </div>
 
             <h3 class="text-2xl font-bold leading-tight text-text-primary break-words">
               {{ event().title }}
@@ -44,14 +44,19 @@ import { EventImagePlaceholder } from '../event-image-placeholder/event-image-pl
                 </p>
               }
 
-            <div class="flex items-center gap-1 text-xs text-text-secondary min-w-0">
-              <span class="material-symbols-rounded text-sm" aria-hidden="true">location_on</span>
-              <span class="min-w-0 break-words">{{ locationLabel() }}</span>
-            </div>
+              <div class="flex items-center gap-1 text-xs text-text-secondary min-w-0">
+                <span class="material-symbols-rounded text-sm" aria-hidden="true">location_on</span>
+                <span class="min-w-0 break-words">{{ locationLabel() }}</span>
+              </div>
             </div>
 
             <div class="sm:self-end sm:w-56 w-full">
-              <button mat-flat-button type="button" class="gdg-btn-filled w-full" (click)="$event.stopPropagation()">
+              <button
+                mat-flat-button
+                type="button"
+                class="gdg-btn-filled w-full"
+                [routerLink]="['/e', event().slug]"
+              >
                 Registrarse
               </button>
             </div>

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PublicEventsService } from '../data/public-events.service';
 import { Event } from '../data/event.model';
@@ -8,7 +9,7 @@ import { EventRegistrationCheckout } from '../registration/components/event-regi
 @Component({
   selector: 'app-event-detail',
   standalone: true,
-  imports: [MatProgressSpinnerModule, EventRegistrationCheckout],
+  imports: [RouterLink, MatProgressSpinnerModule, EventRegistrationCheckout],
   template: `
     <section class="gdg-page">
       <div class="gdg-container">
@@ -26,22 +27,35 @@ import { EventRegistrationCheckout } from '../registration/components/event-regi
             <p class="mt-2 text-text-secondary">No existe un evento publicado con slug: <strong>{{ slug }}</strong></p>
           </div>
         } @else {
-          <div class="gdg-card overflow-hidden max-w-4xl mx-auto">
-            <div class="aspect-video bg-black/5">
+          <div class="max-w-5xl mx-auto">
+            <div class="mb-4">
+              <a
+                class="inline-flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary"
+                [routerLink]="['/']"
+              >
+                <span class="material-symbols-rounded text-base" aria-hidden="true">arrow_back</span>
+                <span>Volver a eventos</span>
+              </a>
+            </div>
+
+            <div class="gdg-card overflow-hidden">
+            <div class="relative h-44 sm:h-56 md:h-64 bg-black/5">
               @if (event()!.banner_url) {
                 <img
-                  class="w-full h-full object-cover"
+                  class="absolute inset-0 w-full h-full object-cover"
                   [src]="event()!.banner_url"
                   [alt]="event()!.title"
                 />
               } @else {
-                <div class="w-full h-full grid grid-cols-2 grid-rows-2">
+                <div class="absolute inset-0 w-full h-full grid grid-cols-2 grid-rows-2">
                   <div class="bg-google-blue/20"></div>
                   <div class="bg-google-red/20"></div>
                   <div class="bg-google-yellow/20"></div>
                   <div class="bg-google-green/20"></div>
                 </div>
               }
+
+              <div class="absolute inset-0 bg-black/10"></div>
             </div>
 
             <div class="p-6 sm:p-10 space-y-10">
@@ -68,21 +82,23 @@ import { EventRegistrationCheckout } from '../registration/components/event-regi
                     {{ event()!.title }}
                   </h1>
 
-                  <div class="mt-2 flex flex-wrap gap-3 text-sm text-text-secondary">
-                    <span class="inline-flex items-center gap-1">
+                  <div class="mt-3 flex flex-wrap gap-2 text-sm text-text-secondary">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-black/5 px-3 py-1">
                       <span class="material-symbols-rounded text-base" aria-hidden="true">category</span>
                       <span>{{ event()!.event_type }}</span>
                     </span>
-                    <span class="inline-flex items-center gap-1">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-black/5 px-3 py-1 max-w-full">
                       <span class="material-symbols-rounded text-base" aria-hidden="true">place</span>
-                      <span>{{ locationLabel(event()!) }}</span>
+                      <span class="min-w-0 truncate">{{ locationLabel(event()!) }}</span>
                     </span>
-                    <span class="inline-flex items-center gap-1">
-                      <span class="material-symbols-rounded text-base" aria-hidden="true">group</span>
-                      <span>Capacidad: {{ event()!.capacity }}</span>
-                    </span>
+                    @if (event()!.capacity) {
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-black/5 px-3 py-1">
+                        <span class="material-symbols-rounded text-base" aria-hidden="true">group</span>
+                        <span>Capacidad: {{ event()!.capacity }}</span>
+                      </span>
+                    }
                     @if (event()!.available_spots !== undefined) {
-                      <span class="inline-flex items-center gap-1">
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-black/5 px-3 py-1">
                         <span class="material-symbols-rounded text-base" aria-hidden="true">confirmation_number</span>
                         <span>Disponibles: {{ event()!.available_spots }}</span>
                       </span>
@@ -92,11 +108,15 @@ import { EventRegistrationCheckout } from '../registration/components/event-regi
               </div>
 
               @if (event()!.description) {
-                <p class="text-text-secondary whitespace-pre-line">{{ event()!.description }}</p>
+                <div class="gdg-card p-5 sm:p-6 bg-surface-main">
+                  <h2 class="text-base font-semibold text-text-primary">Sobre el evento</h2>
+                  <p class="mt-2 text-text-secondary whitespace-pre-line">{{ event()!.description }}</p>
+                </div>
               }
 
               <app-event-registration-checkout [event]="event()!" />
             </div>
+          </div>
           </div>
         }
       </div>
