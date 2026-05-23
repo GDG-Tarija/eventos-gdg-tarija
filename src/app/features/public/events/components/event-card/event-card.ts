@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { Event } from '../../data/event.model';
@@ -69,18 +69,19 @@ import { EventImagePlaceholder } from '../event-image-placeholder/event-image-pl
 export class EventCard {
   readonly event = input.required<Event>();
 
-  readonly dateLabel = () =>
+  readonly dateLabel = computed(() =>
     new Intl.DateTimeFormat('es-BO', {
       year: 'numeric',
       month: 'long',
       day: '2-digit',
-    }).format(this.event().date_start);
+    }).format(this.event().date_start)
+  );
 
-  readonly locationLabel = () => {
+  readonly locationLabel = computed(() => {
     const e = this.event();
     if (e.location_name) return e.location_name;
     if (e.location_type === 'VIRTUAL') return 'Virtual';
     if (e.location_type === 'HYBRID') return 'Híbrido';
     return 'Presencial';
-  };
+  });
 }

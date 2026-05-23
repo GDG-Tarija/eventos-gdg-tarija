@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { RouterLink } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -71,10 +71,10 @@ import { EventRegistrationCheckout } from '../registration/components/event-regi
                 <div class="min-w-0">
                   <div class="flex items-center gap-2 text-google-blue text-sm font-medium">
                     <span class="material-symbols-rounded text-base" aria-hidden="true">calendar_month</span>
-                    <span>{{ dateLabel(event()!.date_start) }}</span>
-                    @if (event()!.date_end) {
+                    <span>{{ startDateLabel() }}</span>
+                    @if (endDateLabel()) {
                       <span class="text-text-muted">-</span>
-                      <span>{{ dateLabel(event()!.date_end!) }}</span>
+                      <span>{{ endDateLabel() }}</span>
                     }
                   </div>
 
@@ -89,7 +89,7 @@ import { EventRegistrationCheckout } from '../registration/components/event-regi
                     </span>
                     <span class="inline-flex items-center gap-1.5 rounded-full bg-black/5 px-3 py-1 max-w-full">
                       <span class="material-symbols-rounded text-base" aria-hidden="true">place</span>
-                      <span class="min-w-0 truncate">{{ locationLabel(event()!) }}</span>
+                      <span class="min-w-0 truncate">{{ locationText() }}</span>
                     </span>
                     @if (event()!.capacity) {
                       <span class="inline-flex items-center gap-1.5 rounded-full bg-black/5 px-3 py-1">
@@ -130,6 +130,25 @@ export class EventDetail implements OnInit {
   readonly loading = signal(true);
   readonly event = signal<Event | null>(null);
 
+  readonly startDateLabel = computed(() => {
+    const e = this.event();
+    return e ? this.dateLabelFormat(e.date_start) : '';
+  });
+
+  readonly endDateLabel = computed(() => {
+    const e = this.event();
+    return e && e.date_end ? this.dateLabelFormat(e.date_end) : '';
+  });
+
+  readonly locationText = computed(() => {
+    const e = this.event();
+    if (!e) return '';
+    if (e.location_name) return e.location_name;
+    if (e.location_type === 'VIRTUAL') return 'Virtual';
+    if (e.location_type === 'HYBRID') return 'Híbrido';
+    return 'Presencial';
+  });
+
   get slug(): string {
     return this.route.snapshot.paramMap.get('slug') ?? '';
   }
@@ -140,18 +159,11 @@ export class EventDetail implements OnInit {
     this.loading.set(false);
   }
 
-  dateLabel(date: Date): string {
+  private dateLabelFormat(date: Date): string {
     return new Intl.DateTimeFormat('es-BO', {
       year: 'numeric',
       month: 'long',
       day: '2-digit',
     }).format(date);
-  }
-
-  locationLabel(e: Event): string {
-    if (e.location_name) return e.location_name;
-    if (e.location_type === 'VIRTUAL') return 'Virtual';
-    if (e.location_type === 'HYBRID') return 'Híbrido';
-    return 'Presencial';
   }
 }

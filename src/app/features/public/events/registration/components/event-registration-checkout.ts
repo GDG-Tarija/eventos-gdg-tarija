@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { form, FormField as SignalFormField, required } from '@angular/forms/signals';
 
 import { AuthService } from '../../../../../core/auth/services/auth.service';
 import { FormField } from '../../../../../models/field.model';
@@ -15,10 +16,17 @@ import { UserProfileService } from '../data/user-profile.service';
 
 type ExtraInfo = { form_fields?: FormField[] };
 
+interface CheckoutFormData {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  responses: Record<string, string>;
+}
+
 @Component({
   selector: 'app-event-registration-checkout',
   standalone: true,
-  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
+  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, SignalFormField],
   template: `
     <div class="gdg-card p-6 sm:p-10 space-y-8">
       <h2 class="gdg-h2">Registro</h2>
@@ -70,17 +78,17 @@ type ExtraInfo = { form_fields?: FormField[] };
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <mat-form-field appearance="outline">
                 <mat-label>Nombre</mat-label>
-                <input matInput [value]="firstName()" (input)="firstName.set(($any($event.target).value ?? '').toString())" />
+                <input matInput [formField]="checkoutForm.firstName" />
               </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Apellido</mat-label>
-                <input matInput [value]="lastName()" (input)="lastName.set(($any($event.target).value ?? '').toString())" />
+                <input matInput [formField]="checkoutForm.lastName" />
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="sm:col-span-2">
                 <mat-label>Celular</mat-label>
-                <input matInput [value]="phone()" (input)="phone.set(($any($event.target).value ?? '').toString())" />
+                <input matInput [formField]="checkoutForm.phone" />
               </mat-form-field>
             </div>
           </div>
@@ -137,8 +145,7 @@ type ExtraInfo = { form_fields?: FormField[] };
                     <mat-label>{{ f.label }}</mat-label>
                     <input
                       matInput
-                      [value]="responses()[f.key] || ''"
-                      (input)="setResponse(f.key, ($any($event.target).value ?? '').toString())"
+                      [formField]="checkoutForm.responses[f.key]"
                     />
                   </mat-form-field>
                 }
@@ -218,25 +225,43 @@ export class EventRegistrationCheckout implements OnInit {
   readonly selectedTicketPrice = signal(0);
   readonly selectedTicketQrUrl = signal<string | null>(null);
 
-  readonly firstName = signal('');
-  readonly lastName = signal('');
-  readonly phone = signal('');
-
   readonly fields = signal<FormField[]>([]);
-  readonly responses = signal<Record<string, string | undefined>>({});
 
   readonly paymentProofFile = signal<File | null>(null);
   readonly paymentProofName = computed(() => this.paymentProofFile()?.name ?? '');
+
+  // Formulario con Signals
+  readonly formData = signal<CheckoutFormData>({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    responses: {},
+  });
+
+  readonly checkoutForm = form(this.formData, (path) => {
+    required(path.firstName);
+    required(path.lastName);
+    required(path.phone);
+    // Validar de forma dinámica las respuestas requeridas
+    for (const f of this.fields()) {
+      if (f.required) {
+        required(path.responses[f.key]);
+      }
+    }
+  });
 
   constructor() {
     effect(() => {
       const user = this.auth.user();
       if (!user) return;
 
-      // Prefill from profile
-      this.firstName.set(user.first_name ?? '');
-      this.lastName.set(user.last_name ?? '');
-      this.phone.set(user.phone ?? '');
+      // Prefacturar formulario a partir del perfil
+      this.formData.update((prev) => ({
+        ...prev,
+        firstName: user.first_name ?? '',
+        lastName: user.last_name ?? '',
+        phone: user.phone ?? '',
+      }));
     });
   }
 
@@ -269,6 +294,16 @@ export class EventRegistrationCheckout implements OnInit {
     const fields = this.parseFields(this.event().extra_info ?? null);
     this.fields.set(fields);
 
+    // Inicializar propiedades dinámicas del formulario en respuestas
+    const initialResponses: Record<string, string> = {};
+    for (const f of fields) {
+      initialResponses[f.key] = '';
+    }
+    this.formData.update((prev) => ({
+      ...prev,
+      responses: initialResponses,
+    }));
+
     try {
       const tickets = await this.ticketTypes.listByEventId(this.event().id);
       this.tickets.set(tickets);
@@ -293,10 +328,6 @@ export class EventRegistrationCheckout implements OnInit {
     this.paymentProofFile.set(null);
   }
 
-  setResponse(key: string, value: string): void {
-    this.responses.update((prev) => ({ ...prev, [key]: value }));
-  }
-
   onFileChange(event: globalThis.Event): void {
     const inputEl = event.target as HTMLInputElement | null;
     const file = inputEl?.files?.item(0) ?? null;
@@ -308,18 +339,11 @@ export class EventRegistrationCheckout implements OnInit {
     if (this.initLoading() || this.submitting()) return false;
     if (this.alreadyRegistered() || this.success()) return false;
 
-    if (!this.phone().trim()) return false;
+    // Validación declarativa de Signal Forms
+    if (this.checkoutForm().invalid()) return false;
     if (!this.selectedTicketId()) return false;
 
-    // Dynamic required fields
-    const responses = this.responses();
-    for (const f of this.fields()) {
-      if (!f.required) continue;
-      const v = (responses[f.key] ?? '').trim();
-      if (!v) return false;
-    }
-
-    // Payment proof required for paid tickets
+    // Se requiere comprobante de pago para tickets pagos
     if (this.selectedTicketPrice() > 0 && !this.paymentProofFile()) return false;
     return true;
   });
@@ -349,15 +373,15 @@ export class EventRegistrationCheckout implements OnInit {
       if (price > 0) {
         const file = this.paymentProofFile();
         if (!file) throw new Error('Falta comprobante de pago');
-        // Stored as storage object path (bucket is private)
         paymentProofUrl = await this.registrations.uploadPaymentProof(file, this.event().id, user.id);
       }
 
+      const data = this.formData();
       const payload: RegistrationPayload = {
         userUpdate: {
-          first_name: this.firstName().trim(),
-          last_name: this.lastName().trim(),
-          phone: this.phone().trim(),
+          first_name: data.firstName.trim(),
+          last_name: data.lastName.trim(),
+          phone: data.phone.trim(),
         },
         registration: {
           event_id: this.event().id,
@@ -367,14 +391,13 @@ export class EventRegistrationCheckout implements OnInit {
           status: this.computeStatus(),
           payment_proof_url: paymentProofUrl,
           custom_responses: Object.fromEntries(
-            Object.entries(this.responses()).filter(([, v]) => typeof v === 'string' && v.trim().length > 0),
+            Object.entries(data.responses).filter(([, v]) => typeof v === 'string' && v.trim().length > 0),
           ) as Record<string, string>,
         },
       };
 
       const updatedProfile = await this.profiles.updateProfile(user.id, payload.userUpdate);
       if (updatedProfile) {
-        // Keep the UI consistent without forcing a full session/profile refresh.
         this.auth.user.set({
           ...user,
           ...updatedProfile,
