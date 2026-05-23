@@ -1,10 +1,13 @@
-# CONTEXT.md
+---
+name: project-architecture
+description: Directrices técnicas de Angular 21, Signals, Supabase Client y patrones de desarrollo del proyecto GDG.
+---
 
-> Contexto técnico denso del proyecto **GDG Events Platform**. Referenciado desde `AGENTS.md`.
->
+# Contexto Técnico y Arquitectura del Proyecto (GDG Events Platform)
+
 > Este archivo le da al agente todo lo necesario para generar código **idiomático** al stack: patrones, ejemplos, decisiones tomadas y razones detrás.
 
-📎 Ver también: [`AGENTS.md`](./AGENTS.md) (reglas y comandos), [`entities.md`](./entities.md) (esquema DB).
+📎 Ver también: [`AGENTS.md`](../../../AGENTS.md) (reglas y comandos), [database-and-features](../database-and-features/SKILL.md) (esquema DB).
 
 ---
 
@@ -21,7 +24,7 @@
 | Test runner | Karma + Jasmine | (default Angular) |
 | Lint | ESLint + `@angular-eslint` | |
 | Formato | Prettier | |
-| PWA | `@angular/service-worker` | |
+| PWA | `@angular-service-worker` | |
 
 **Restricciones:**
 - No introducir librerías UI adicionales (nada de Bootstrap, Tailwind, PrimeNG).
@@ -34,7 +37,7 @@
 
 1. **El MVP debe ser usable de punta a punta en cada hito.** Nunca dejar features a medias entre PRs.
 2. **RLS antes que guards.** La seguridad vive en SQL; el frontend solo mejora UX.
-3. **El esquema manda.** Si `entities.md` no documenta algo, no existe. Migración primero, código después.
+3. **El esquema manda.** Si el skill `database-and-features` no documenta algo, no existe. Migración primero, código después.
 4. **Tipos generados, no escritos.** `supabase gen types` es la única fuente de verdad para tipos de DB.
 5. **Mobile-first donde el usuario es asistente; desktop-first donde es organizador.**
 
@@ -119,7 +122,7 @@ src/app/
 │
 ├── app.config.ts                       # providers raíz
 ├── app.routes.ts                       # rutas raíz con lazy loading
-└── app.component.ts                    # shell mínimo
+├── app.component.ts                    # shell mínimo
 ```
 
 ---
@@ -586,58 +589,7 @@ $theme: mat.define-light-theme((
 
 ---
 
-## 9. Reglas de RLS (resumen visual)
-
-> Detalle SQL completo en `entities.md` § 5.
-
-| Recurso | Anonymous | Attendee (logged) | Organizer | Super_admin |
-|---|---|---|---|---|
-| `events` (status=published) | 👁️ ver | 👁️ ver | 👁️ ver | 👁️ ver |
-| `events` (status=draft) | ❌ | ❌ | 👁️✏️ propios | 👁️✏️ todos |
-| `events` (crear) | ❌ | ❌ | ✅ | ✅ |
-| `registrations` (crear) | ✅ (a evento published) | ✅ | ✅ | ✅ |
-| `registrations` (ver) | ❌ | 👁️ propios | 👁️ de sus eventos | 👁️ todos |
-| `registrations` (actualizar status) | ❌ | cancelar propio | ✅ de sus eventos | ✅ todos |
-
----
-
-## 10. Hoja de ruta
-
-### MVP — Etapa 1 (orden estricto)
-
-**Hito 1.1 — CRUD de eventos**
-- Rutas: `/dashboard`, `/events/new`, `/events/:id/edit`, `/events/:id`
-- Service: `EventsService` (`listMine`, `getById`, `create`, `update`, `remove`, `publish`, `archive`)
-- Form fields: ver `entities.md` § 3.2 (tabla `events`)
-- Acceso temporal sin auth: usar perfil hardcoded en local; activar RLS estricta en 1.3.
-
-**Hito 1.2 — Registro público**
-- Rutas: `/e/:slug`, `/e/:slug/register`, `/e/:slug/success`
-- Service: `RegistrationsService` (`register`, `uploadPaymentProof`, `getMine`)
-- 8 campos del formulario: ver `AGENTS.md` § 4.1 del documento maestro o `entities.md` § 3.3
-- Idempotencia: respetar constraint único `(event_id, email)`.
-
-**Hito 1.3 — Autenticación**
-- Rutas: `/login`, `/auth/callback`, `/profile`
-- Service: `AuthService` (`signInWithMagicLink`, `signOut`, `getSession`, `getCurrentProfile`)
-- Activar RLS estricta. Vincular registros previos por correo coincidente.
-
-### Módulos paralelos (post-MVP)
-
-| ID | Módulo | Tablas/columnas nuevas | Dependencias |
-|---|---|---|---|
-| A | Notificaciones por correo | `email_logs` | Edge Functions, Resend/SendGrid |
-| B | Credencial virtual + QR + check-in | `check_ins`, `registrations.qr_token` | Hito 1.3 completo |
-| C | Multi-capítulo (GDG Tarija, La Paz...) | `chapters`, `chapter_members`, `events.chapter_id` | refactor de RLS |
-| D | Sesiones / Agenda (estilo DevFest) | `sessions`, `speakers`, `rooms`, `session_bookings` | Hito 1.2 |
-| E | Encuestas post-evento | `surveys`, `survey_responses` | Módulo A (envío) |
-| F | Analytics e insights | (vistas materializadas) | MVP completo |
-| G | Sponsors y branding | `sponsors`, `event_sponsors` | Hito 1.1 |
-| H | Giveaways / Welcome Kits | `giveaways`, `giveaway_deliveries` | Módulo B (escaneo) |
-
----
-
-## 11. Anti-patrones que NO se aceptan
+## 9. Anti-patrones que NO se aceptan
 
 - ❌ Importar `@supabase/supabase-js` directamente en un componente.
 - ❌ Usar `any` sin justificar en comentario.
@@ -650,14 +602,3 @@ $theme: mat.define-light-theme((
 - ❌ Editar `database.types.ts` a mano.
 - ❌ Cambios en el esquema sin migración versionada.
 - ❌ Lógica de permisos solo en frontend (sin policy RLS detrás).
-
----
-
-## 12. Notas para el agente
-
-- Si el usuario pide un cambio de esquema, **primero** muestra el SQL de migración, **luego** el código que lo usa.
-- Si el usuario pide un componente que toca DB, ofrece también su service y su test mínimo.
-- Cuando generes un service nuevo, **registra los métodos esperados** en este archivo (sección 10, hito correspondiente) para que otros agentes los descubran.
-- Si necesitas un patrón que no esté aquí, propónlo y agrégalo al merge.
-- Prefiere usar `signal` y `computed` sobre `BehaviorSubject` / `combineLatest`.
-- Para flujos async no triviales (debounce, switchMap), sigue usando RxJS — pero conviértelo a signal con `toSignal()` lo antes posible.
