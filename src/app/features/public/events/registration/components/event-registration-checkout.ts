@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   form,
   FormField as SignalFormField,
@@ -37,6 +38,7 @@ interface CheckoutFormData {
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatSnackBarModule,
     SignalFormField,
   ],
   template: `
@@ -84,14 +86,6 @@ interface CheckoutFormData {
             </p>
           </div>
         } @else {
-          @if (error()) {
-            <div
-              class="rounded-2xl border border-google-red/20 bg-google-red/5 p-4 text-sm text-text-secondary"
-            >
-              <strong class="text-google-red">Error:</strong> {{ error() }}
-            </div>
-          }
-
           <!-- Paso 1: Perfil -->
           <div class="space-y-4">
             <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">Tus datos</h3>
@@ -283,6 +277,7 @@ export class EventRegistrationCheckout implements OnInit {
   private readonly ticketTypes = inject(TicketTypesService);
   private readonly registrations = inject(RegistrationsService);
   private readonly profiles = inject(UserProfileService);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly initLoading = signal(true);
   readonly submitting = signal(false);
@@ -339,6 +334,19 @@ export class EventRegistrationCheckout implements OnInit {
         lastName: user.last_name ?? '',
         phone: user.phone ?? '',
       }));
+    });
+
+    effect(() => {
+      const err = this.error();
+      if (err) {
+        this.snackBar.open(err, 'Cerrar', { duration: 4000 });
+      }
+    });
+
+    effect(() => {
+      if (this.success()) {
+        this.snackBar.open('¡Registro completado exitosamente!', 'Cerrar', { duration: 4000 });
+      }
     });
   }
 
