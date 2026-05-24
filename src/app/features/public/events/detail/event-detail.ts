@@ -17,11 +17,11 @@ import { LOGOS } from '../../../../core/config/logos';
       
       <!-- Contenido Principal -->
       <div class="flex-grow w-full pb-16">
-        <div class="gdg-container">
+        <div class="gdg-container md:px-0">
           
           @if (loading()) {
             <!-- Skeleton de carga sin caja pesada -->
-            <div class="max-w-5xl mx-auto space-y-8 animate-pulse pt-6">
+            <div class="space-y-8 animate-pulse pt-6">
               <div class="h-4 w-24 bg-black/5 rounded-full"></div>
               <div class="h-48 sm:h-64 md:h-80 bg-black/5 rounded-3xl"></div>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -50,7 +50,7 @@ import { LOGOS } from '../../../../core/config/logos';
               </a>
             </div>
           } @else {
-            <div class="max-w-5xl mx-auto space-y-8 pt-6">
+            <div class="space-y-8 pt-6">
 
               <!-- Hero del Evento: Banner elegante con bordes premium rounded-3xl sin card pesado -->
               <div class="relative h-48 sm:h-64 md:h-80 bg-black/5 rounded-3xl overflow-hidden shadow-sm shrink-0">
@@ -74,11 +74,11 @@ import { LOGOS } from '../../../../core/config/logos';
                 <!-- Botón de ir atrás flotante en el banner, super minimalista y elegante (estilo Airbnb/Viajes) -->
                 <a
                   [routerLink]="['/']"
-                  class="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm border border-black/5 text-text-primary hover:text-google-blue hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center shadow-md group cursor-pointer"
+                  class="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm border border-black/5 text-text-primary hover:text-google-blue hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center shadow-md group cursor-pointer no-underline"
                   aria-label="Volver a eventos"
                   title="Volver a eventos"
                 >
-                  <span class="material-symbols-rounded text-lg group-hover:-translate-x-0.5 transition-transform duration-200" aria-hidden="true">arrow_back</span>
+                  <span class="material-symbols-rounded text-lg group-hover:-translate-x-0.5 transition-transform duration-200 no-underline" aria-hidden="true">arrow_back</span>
                 </a>
               </div>
 
@@ -244,7 +244,7 @@ import { LOGOS } from '../../../../core/config/logos';
 
       <!-- Footer Global Premium de Ancho Completo -->
       <footer class="pt-6 border-t border-black/5 bg-transparent w-full mt-auto shrink-0">
-        <div class="gdg-container">
+        <div class="gdg-container md:px-0">
           <div class="flex flex-col md:flex-row items-center justify-between gap-4 pb-4">
             <!-- Lado Izquierdo: Logo y Copyright -->
             <div class="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
