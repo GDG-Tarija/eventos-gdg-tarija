@@ -1,42 +1,46 @@
 <mat-toolbar class="public-toolbar">
   <div class="gdg-container flex items-center justify-between w-full h-full">
-    <a routerLink="/" class="flex items-center">
+    <!-- Logo -->
+    <a routerLink="/" class="flex items-center shrink-0">
       <img [src]="logoHorizontal.src" [alt]="logoHorizontal.alt" class="hidden sm:block h-8 w-auto" />
       <img [src]="logoIcon.src" [alt]="logoIcon.alt" class="sm:hidden h-8 w-auto" />
     </a>
 
-    @if (auth.loading()) {
-      <mat-progress-spinner mode="indeterminate" diameter="22" aria-label="Cargando sesión" />
-    } @else if (auth.user(); as currentUser) {
-      <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menú de usuario">
-        @if (currentUser.avatar_url) {
-          <img
-            class="user-avatar"
-            [src]="currentUser.avatar_url"
-            [alt]="currentUser.first_name"
-            referrerpolicy="no-referrer"
-          />
-        } @else {
-          <mat-icon>account_circle</mat-icon>
-        }
-      </button>
-
-      <mat-menu #userMenu="matMenu">
-        <span class="menu-user-info" mat-menu-item disabled>
-          <strong>{{ currentUser.first_name }} {{ currentUser.last_name }}</strong>
-          <br />
-          <small>{{ currentUser.email }}</small>
-        </span>
-        <button mat-menu-item (click)="auth.signOut()">
-          <mat-icon>logout</mat-icon>
-          <span>Cerrar sesión</span>
+    <!-- User Actions (direct across all viewports) -->
+    <div class="flex items-center">
+      @if (auth.loading()) {
+        <mat-progress-spinner mode="indeterminate" diameter="22" aria-label="Cargando sesión" />
+      } @else if (auth.user(); as currentUser) {
+        <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Menú de usuario">
+          @if (currentUser.avatar_url) {
+            <img
+              class="user-avatar"
+              [src]="currentUser.avatar_url"
+              [alt]="currentUser.first_name"
+              referrerpolicy="no-referrer"
+            />
+          } @else {
+            <mat-icon>account_circle</mat-icon>
+          }
         </button>
-      </mat-menu>
-    } @else {
-      <button mat-stroked-button type="button" class="gdg-btn-outlined" (click)="auth.signInWithGoogle()">
-        Iniciar sesión
-      </button>
-    }
+
+        <mat-menu #userMenu="matMenu">
+          <span class="menu-user-info" mat-menu-item disabled>
+            <strong>{{ currentUser.first_name }} {{ currentUser.last_name }}</strong>
+            <br />
+            <small>{{ currentUser.email }}</small>
+          </span>
+          <button mat-menu-item (click)="auth.signOut()">
+            <mat-icon>logout</mat-icon>
+            <span>Cerrar sesión</span>
+          </button>
+        </mat-menu>
+      } @else {
+        <button mat-stroked-button type="button" class="gdg-btn-outlined" (click)="auth.signInWithGoogle()">
+          Iniciar sesión
+        </button>
+      }
+    </div>
   </div>
 </mat-toolbar>
 

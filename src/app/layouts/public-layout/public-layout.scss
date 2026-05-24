@@ -1,16 +1,18 @@
 .public-toolbar {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000 !important;
   height: 64px;
   padding: 0;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
+  background-color: var(--mat-sys-surface-container) !important;
 
   .user-avatar {
     width: 32px;
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
+    border: 1.5px solid var(--mat-sys-outline-variant);
   }
 }
 
@@ -27,3 +29,4 @@
     color: var(--mat-sys-on-surface-variant);
   }
 }
+

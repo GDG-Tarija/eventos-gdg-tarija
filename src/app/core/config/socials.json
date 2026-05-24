@@ -1,0 +1,22 @@
+[
+  {
+    "name": "LinkedIn",
+    "icon": "face",
+    "url": "https://www.linkedin.com/company/gdg-tarija/"
+  },
+  {
+    "name": "Instagram",
+    "icon": "photo_camera",
+    "url": "https://www.instagram.com/gdgtarija"
+  },
+  {
+    "name": "Facebook",
+    "icon": "face",
+    "url": "https://www.facebook.com/gdgtarija"
+  },
+  {
+    "name": "YouTube",
+    "icon": "play_circle",
+    "url": "https://www.youtube.com/channel/UCrXfaMnZX5hDpH85iBrmo1w/videos"
+  }
+]
