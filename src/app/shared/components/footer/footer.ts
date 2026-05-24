@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { LOGOS } from '../../../core/config/logos';
 import socialsData from '../../../core/config/socials.json';
+import { AuthService } from '../../../core/auth/services/auth.service';
 
 @Component({
   selector: 'app-footer',
@@ -8,7 +9,9 @@ import socialsData from '../../../core/config/socials.json';
   template: `
     <!-- Footer -->
     <footer class="mt-12 pt-4 border-t border-color-border bg-transparent w-full">
-      <div class="gdg-container flex flex-col md:flex-row items-center justify-between gap-4 pb-4 md:px-0">
+      <div
+        class="gdg-container flex flex-col md:flex-row items-center justify-between gap-4 pb-4 md:px-0"
+      >
         <!-- Lado Izquierdo: Logo y Copyright -->
         <div class="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
           <img [src]="logoIcon.src" [alt]="logoIcon.alt" class="h-7 md:h-5 w-auto" />
@@ -38,6 +41,15 @@ import socialsData from '../../../core/config/socials.json';
               class="hover:text-google-blue transition-colors duration-200 text-decoration-none"
             >
               Comunidad
+            </a>
+            <span class="text-text-secondary/20">|</span>
+            <a
+              [href]="whatsappSupportUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-google-blue transition-colors duration-200 text-decoration-none"
+            >
+              Soporte
             </a>
           </div>
 
@@ -97,9 +109,7 @@ import socialsData from '../../../core/config/socials.json';
                     </svg>
                   }
                   @default {
-                    <span class="material-symbols-rounded text-base" aria-hidden="true"
-                      >link</span
-                    >
+                    <span class="material-symbols-rounded text-base" aria-hidden="true">link</span>
                   }
                 }
               </a>
@@ -119,6 +129,17 @@ import socialsData from '../../../core/config/socials.json';
   `,
 })
 export class Footer {
+  readonly auth = inject(AuthService);
   readonly logoIcon = LOGOS.icon;
   readonly socials = socialsData;
+
+  get whatsappSupportUrl(): string {
+    const user = this.auth.user();
+    const userIdentifier = user
+      ? `${user.first_name} ${user.last_name} (${user.email})`
+      : 'invitado / no autenticado';
+
+    const baseText = `¡Hola! Soy el usuario ${userIdentifier}. Estoy navegando en la plataforma de Eventos GDG Tarija y tengo el siguiente inconveniente/error:\n\n[Escribe aquí tu consulta o el problema que se te presentó]`;
+    return `https://wa.me/59179288990?text=${encodeURIComponent(baseText)}`;
+  }
 }
