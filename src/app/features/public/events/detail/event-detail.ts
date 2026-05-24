@@ -97,9 +97,9 @@ import { LOGOS } from '../../../../core/config/logos';
               </div>
 
               <!-- Layout de Dos Columnas: Principal (Izquierda, 2/3) y Lateral (Derecha, 1/3) -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
                 <!-- Columna Principal: Descripción, Ubicación, etc. -->
-                <div class="md:col-span-2 space-y-8">
+                <div class="md:col-span-3 space-y-8">
                   <!-- Cabecera de información rápida (sin icono redundante) -->
                   <div class="space-y-4">
                     <div class="min-w-0 flex-1 space-y-2">
@@ -226,13 +226,13 @@ import { LOGOS } from '../../../../core/config/logos';
                 </div>
 
                 <!-- Columna Lateral Sticky: Registro e Información de Cupos (Rediseñada y más compacta) -->
-                <div class="space-y-6 md:sticky md:top-24">
+                <div class="md:col-span-2 space-y-4 md:sticky md:top-24">
                   <div
                     class="gdg-card border border-black/5 shadow-google-card p-4 sm:p-5 space-y-4"
                   >
                     <div class="space-y-1">
-                      <h3 class="text-base font-bold text-text-primary m-0 py-0 leading-tight">
-                        Registro de asistencia
+                      <h3 class="text-base font-bold text-text-primary m-0 py-2 leading-tight">
+                        REGISTRO DE ASISTENCIA
                       </h3>
 
                       <!-- Estado de cupos -->
@@ -268,7 +268,7 @@ import { LOGOS } from '../../../../core/config/logos';
                       }
                     </div>
 
-                    <div class="border-t border-black/5 pt-4">
+                    <div class="border-t border-black/5">
                       <!-- Checkout Form -->
                       <app-event-registration-checkout [event]="event()!" />
                     </div>
