@@ -51,15 +51,6 @@ import { LOGOS } from '../../../../core/config/logos';
             </div>
           } @else {
             <div class="max-w-5xl mx-auto space-y-8 pt-6">
-  
-              <!-- Breadcrumb -->
-              <a
-                class="inline-flex items-center gap-1.5 text-sm font-medium text-text-secondary hover:text-google-blue transition-colors duration-200 group"
-                [routerLink]="['/']"
-              >
-                <span class="material-symbols-rounded text-base group-hover:-translate-x-0.5 transition-transform duration-200" aria-hidden="true">arrow_back</span>
-                <span>Volver a eventos</span>
-              </a>
 
               <!-- Hero del Evento: Banner elegante con bordes premium rounded-3xl sin card pesado -->
               <div class="relative h-48 sm:h-64 md:h-80 bg-black/5 rounded-3xl overflow-hidden shadow-sm shrink-0">
@@ -79,6 +70,16 @@ import { LOGOS } from '../../../../core/config/logos';
                 }
                 <!-- Degradado sutil suavizado para un look limpio y premium -->
                 <div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+
+                <!-- Botón de ir atrás flotante en el banner, super minimalista y elegante (estilo Airbnb/Viajes) -->
+                <a
+                  [routerLink]="['/']"
+                  class="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm border border-black/5 text-text-primary hover:text-google-blue hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center shadow-md group cursor-pointer"
+                  aria-label="Volver a eventos"
+                  title="Volver a eventos"
+                >
+                  <span class="material-symbols-rounded text-lg group-hover:-translate-x-0.5 transition-transform duration-200" aria-hidden="true">arrow_back</span>
+                </a>
               </div>
 
               <!-- Layout de Dos Columnas: Principal (Izquierda, 2/3) y Lateral (Derecha, 1/3) -->
@@ -139,7 +140,7 @@ import { LOGOS } from '../../../../core/config/logos';
                           <button
                             type="button"
                             (click)="showFullDescription.set(!showFullDescription())"
-                            class="inline-flex items-center gap-1 mt-2 text-xs font-bold text-google-blue hover:text-blue-600 transition-colors duration-200 focus:outline-none cursor-pointer"
+                            class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-google-blue hover:text-blue-600 underline transition-colors duration-200 focus:outline-none cursor-pointer border-0 bg-transparent p-0"
                           >
                             <span>{{ showFullDescription() ? 'Ver menos' : 'Ver más' }}</span>
                             <span class="material-symbols-rounded text-sm" aria-hidden="true">
@@ -151,20 +152,11 @@ import { LOGOS } from '../../../../core/config/logos';
                     </div>
                   }
 
-                  <!-- Ubicación / Google Maps -->
+                  <!-- Ubicación / Google Maps (Directamente el mapa con tarjeta superpuesta, sin textos redundantes) -->
                   @if (mapsEmbedUrl() && event()!.location_type !== 'VIRTUAL') {
-                    <div class="space-y-4 pt-2">
-                      <div class="space-y-1">
-                        <h2 class="text-lg font-bold text-text-primary flex items-center gap-2 font-google">
-                          <span class="material-symbols-rounded text-lg text-google-blue" aria-hidden="true">location_on</span>
-                          Ubicación
-                        </h2>
-                        @if (event()!.location_name) {
-                          <p class="text-sm text-text-secondary font-medium">{{ event()!.location_name }}</p>
-                        }
-                      </div>
+                    <div class="space-y-3 pt-2">
                       
-                      <!-- Mapa embebido redondeado con fondo sutil -->
+                      <!-- Mapa embebido redondeado con la tarjeta flotante superpuesta (estilo Airbnb/Premium) -->
                       <div class="rounded-3xl overflow-hidden border border-black/5 shadow-sm h-64 sm:h-80 relative bg-black/[0.02]">
                         <iframe
                           [src]="mapsEmbedUrl()!"
@@ -177,6 +169,17 @@ import { LOGOS } from '../../../../core/config/logos';
                           title="Ubicación del evento en Google Maps"
                           aria-label="Mapa de ubicación del evento"
                         ></iframe>
+
+                        <!-- Tarjeta de lugar superpuesta elegantemente -->
+                        @if (event()!.location_name) {
+                          <div class="absolute top-4 left-4 right-4 sm:right-auto bg-white/95 backdrop-blur-sm border border-black/5 rounded-2xl px-4 py-2.5 shadow-md max-w-sm flex items-center gap-2.5">
+                            <span class="material-symbols-rounded text-google-blue text-lg" aria-hidden="true">place</span>
+                            <div class="min-w-0">
+                              <p class="text-[10px] font-bold text-text-muted uppercase tracking-wider m-0 leading-none">Lugar</p>
+                              <p class="text-xs text-text-primary font-bold truncate mt-1 leading-tight">{{ event()!.location_name }}</p>
+                            </div>
+                          </div>
+                        }
                       </div>
                       
                       @if (event()!.address_link) {
@@ -195,10 +198,10 @@ import { LOGOS } from '../../../../core/config/logos';
 
                 </div>
 
-                <!-- Columna Lateral Sticky: Registro e Información de Cupos -->
+                <!-- Columna Lateral Sticky: Registro e Información de Cupos (Rediseñada y más compacta) -->
                 <div class="space-y-6 md:sticky md:top-24">
                   
-                  <div class="gdg-card border border-black/5 shadow-google-card p-6 sm:p-8 space-y-6">
+                  <div class="gdg-card border border-black/5 shadow-google-card p-4 sm:p-5 space-y-4">
                     <div class="space-y-2">
                       <h3 class="text-base font-bold text-text-primary font-google">Registro de asistencia</h3>
                       
@@ -226,26 +229,6 @@ import { LOGOS } from '../../../../core/config/logos';
                     <div class="border-t border-black/5 pt-4">
                       <!-- Checkout Form -->
                       <app-event-registration-checkout [event]="event()!" />
-                    </div>
-
-                    <!-- Datos rápidos del evento -->
-                    <div class="border-t border-black/5 pt-4 space-y-3 text-xs text-text-secondary">
-                      <div class="flex items-center gap-2.5">
-                        <span class="material-symbols-rounded text-base text-text-muted" aria-hidden="true">calendar_month</span>
-                        <span>{{ startDateLabel() }}</span>
-                      </div>
-                      
-                      @if (event()!.capacity) {
-                        <div class="flex items-center gap-2.5">
-                          <span class="material-symbols-rounded text-base text-text-muted" aria-hidden="true">group</span>
-                          <span>Capacidad total: {{ event()!.capacity }} personas</span>
-                        </div>
-                      }
-                      
-                      <div class="flex items-center gap-2.5">
-                        <span class="material-symbols-rounded text-base text-text-muted" aria-hidden="true">place</span>
-                        <span class="truncate">{{ locationText() }}</span>
-                      </div>
                     </div>
                   </div>
 

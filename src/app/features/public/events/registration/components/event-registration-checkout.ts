@@ -28,13 +28,12 @@ interface CheckoutFormData {
   standalone: true,
   imports: [MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, SignalFormField],
   template: `
-    <div class="gdg-card p-6 sm:p-10 space-y-8">
-      <h2 class="gdg-h2">Registro</h2>
+    <div class="space-y-6 bg-transparent p-0">
 
       @if (!auth.user()) {
         <div class="space-y-3">
           <p class="text-text-secondary">Iniciá sesión para registrarte al evento.</p>
-          <button mat-flat-button type="button" class="gdg-btn-filled" (click)="auth.signInWithGoogle()">
+          <button mat-flat-button type="button" class="gdg-btn-filled w-full" (click)="auth.signInWithGoogle()">
             Iniciar sesión con Google
           </button>
         </div>
@@ -45,22 +44,22 @@ interface CheckoutFormData {
             <span>Cargando opciones de registro...</span>
           </div>
         } @else if (alreadyRegistered()) {
-          <div class="gdg-card p-6">
-            <div class="flex items-center gap-2 text-google-green font-semibold">
-              <span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+          <div class="rounded-2xl border border-google-green/20 bg-google-green/5 p-5 space-y-2">
+            <div class="flex items-center gap-2 text-google-green font-bold text-sm">
+              <span class="material-symbols-rounded text-lg" aria-hidden="true">check_circle</span>
               <span>Ya estás registrado</span>
             </div>
-            <p class="mt-2 text-text-secondary">
+            <p class="text-xs text-text-secondary leading-relaxed">
               Tu inscripción ya existe para este evento. Próximamente verás aquí tu QR.
             </p>
           </div>
         } @else if (success()) {
-          <div class="gdg-card p-6">
-            <div class="flex items-center gap-2 text-google-green font-semibold">
-              <span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+          <div class="rounded-2xl border border-google-green/20 bg-google-green/5 p-5 space-y-2">
+            <div class="flex items-center gap-2 text-google-green font-bold text-sm">
+              <span class="material-symbols-rounded text-lg" aria-hidden="true">check_circle</span>
               <span>Registro completado</span>
             </div>
-            <p class="mt-2 text-text-secondary">
+            <p class="text-xs text-text-secondary leading-relaxed">
               Tu registro se guardó correctamente. Próximamente verás aquí tu QR.
             </p>
           </div>
@@ -73,20 +72,20 @@ interface CheckoutFormData {
 
           <!-- Paso 1: Perfil -->
           <div class="space-y-4">
-            <h3 class="text-xl font-bold text-text-primary">Tus datos</h3>
+            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">Tus datos</h3>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <mat-form-field appearance="outline">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Nombre</mat-label>
                 <input matInput [formField]="checkoutForm.firstName" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
+              <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Apellido</mat-label>
                 <input matInput [formField]="checkoutForm.lastName" />
               </mat-form-field>
 
-              <mat-form-field appearance="outline" class="sm:col-span-2">
+              <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
                 <mat-label>Celular</mat-label>
                 <input matInput [formField]="checkoutForm.phone" />
               </mat-form-field>
@@ -94,33 +93,34 @@ interface CheckoutFormData {
           </div>
 
           <!-- Paso 2: Tickets -->
-          <div class="space-y-4">
-            <h3 class="text-xl font-bold text-text-primary">Elegí tu pase</h3>
+          <div class="space-y-3">
+            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">Elegí tu pase</h3>
 
             @if (selectedTicketId()) {
-              <p class="text-sm text-text-secondary">
+              <p class="text-xs text-text-secondary">
                 Seleccionado: <strong>{{ selectedTicketPrice() > 0 ? 'De pago' : 'Gratis' }}</strong>
               </p>
             }
 
             @if (tickets().length === 0) {
-              <p class="text-text-secondary">No hay pases disponibles por el momento.</p>
+              <p class="text-sm text-text-secondary">No hay pases disponibles por el momento.</p>
             } @else {
-              <div class="flex flex-col gap-4">
+              <div class="flex flex-col gap-3">
                 @for (t of tickets(); track t.id) {
                   <button
                     type="button"
-                    class="gdg-card p-5 text-left transition-shadow duration-300 ease-in-out hover:shadow-md"
+                    class="w-full rounded-2xl border border-black/5 p-4 text-left transition-all duration-200 hover:bg-black/[0.01] hover:border-black/10 active:scale-[0.99] cursor-pointer"
                     [class.border-google-blue]="selectedTicketId() === t.id"
+                    [class.bg-google-blue/[0.02]]="selectedTicketId() === t.id"
                     [class.border-2]="selectedTicketId() === t.id"
                     (click)="selectTicket(t)"
                   >
                     <div class="flex items-start justify-between gap-4">
                       <div class="min-w-0">
-                        <div class="text-lg font-bold text-text-primary break-words">{{ t.name }}</div>
-                        <div class="mt-1 text-sm text-text-secondary">Cupo: {{ t.ticket_capacity }}</div>
+                        <div class="text-sm font-bold text-text-primary truncate">{{ t.name }}</div>
+                        <div class="mt-0.5 text-xs text-text-secondary">Cupo: {{ t.ticket_capacity }}</div>
                       </div>
-                      <div class="shrink-0 text-google-blue font-bold">
+                      <div class="shrink-0 text-google-blue font-bold text-sm">
                         @if (t.price > 0) {
                           Bs {{ t.price }}
                         } @else {
@@ -136,12 +136,12 @@ interface CheckoutFormData {
 
           <!-- Paso 3: Preguntas dinámicas -->
           @if (fields().length > 0) {
-            <div class="space-y-4">
-              <h3 class="text-xl font-bold text-text-primary">Información adicional</h3>
+            <div class="space-y-3">
+              <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">Información adicional</h3>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 @for (f of fields(); track f.key) {
-                  <mat-form-field appearance="outline" class="sm:col-span-2">
+                  <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
                     <mat-label>{{ f.label }}</mat-label>
                     <input
                       matInput
@@ -153,28 +153,28 @@ interface CheckoutFormData {
             </div>
           }
           @else {
-            <div class="space-y-2">
-              <h3 class="text-xl font-bold text-text-primary">Información adicional</h3>
-              <p class="text-sm text-text-secondary">Este evento no requiere preguntas adicionales.</p>
+            <div class="space-y-1">
+              <h3 class="text-xs font-bold text-text-primary uppercase tracking-wider">Información adicional</h3>
+              <p class="text-xs text-text-secondary">Este evento no requiere preguntas adicionales.</p>
             </div>
           }
 
           <!-- Comprobante (solo pagos) -->
           @if (selectedTicketPrice() > 0) {
-            <div class="space-y-3">
-              <h3 class="text-xl font-bold text-text-primary">Comprobante de pago</h3>
-              <p class="text-sm text-text-secondary">Subí una imagen del comprobante para validar tu inscripción.</p>
+            <div class="space-y-3 pt-2">
+              <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">Comprobante de pago</h3>
+              <p class="text-xs text-text-secondary">Subí una imagen del comprobante para validar tu inscripción.</p>
 
               @if (selectedTicketQrUrl()) {
-                <div class="gdg-card p-5">
-                  <div class="flex items-center gap-2 text-google-blue font-semibold">
-                    <span class="material-symbols-rounded" aria-hidden="true">qr_code_2</span>
+                <div class="rounded-2xl border border-black/5 p-4 space-y-2 bg-black/[0.01]">
+                  <div class="flex items-center gap-2 text-google-blue font-bold text-xs">
+                    <span class="material-symbols-rounded text-base" aria-hidden="true">qr_code_2</span>
                     <span>QR de pago</span>
                   </div>
-                  <p class="mt-2 text-sm text-text-secondary">Escaneá este QR para realizar el pago.</p>
-                  <div class="mt-4 flex justify-center">
+                  <p class="text-[11px] text-text-secondary">Escaneá este QR para realizar el pago.</p>
+                  <div class="mt-2 flex justify-center">
                     <img
-                      class="w-full max-w-xs rounded-2xl border border-black/5 bg-white object-contain"
+                      class="w-full max-w-[200px] rounded-xl border border-black/5 bg-white object-contain"
                       [src]="selectedTicketQrUrl()!"
                       alt="QR de pago"
                     />
@@ -182,9 +182,9 @@ interface CheckoutFormData {
                 </div>
               }
 
-              <input type="file" accept="image/*" (change)="onFileChange($event)" />
+              <input type="file" accept="image/*" class="text-xs w-full cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-google-blue/10 file:text-google-blue hover:file:bg-google-blue/20" (change)="onFileChange($event)" />
               @if (paymentProofName()) {
-                <p class="text-sm text-text-secondary">Archivo: <strong>{{ paymentProofName() }}</strong></p>
+                <p class="text-xs text-text-secondary">Archivo: <strong>{{ paymentProofName() }}</strong></p>
               }
             </div>
           }
@@ -193,7 +193,7 @@ interface CheckoutFormData {
             <button
               mat-flat-button
               type="button"
-              class="gdg-btn-filled w-full"
+              class="gdg-btn-filled w-full text-xs font-bold"
               [disabled]="!canSubmit()"
               (click)="submit()"
             >
