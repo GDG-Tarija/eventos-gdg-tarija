@@ -7,6 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/auth/services/auth.service';
 import { LOGOS } from '../../core/config/logos';
+import { Footer } from '../../shared/components/footer/footer';
 
 @Component({
   selector: 'app-public-layout',
@@ -18,6 +19,7 @@ import { LOGOS } from '../../core/config/logos';
     MatIconModule,
     MatMenuModule,
     MatProgressSpinnerModule,
+    Footer,
   ],
   templateUrl: './public-layout.html',
   styleUrl: './public-layout.scss',
