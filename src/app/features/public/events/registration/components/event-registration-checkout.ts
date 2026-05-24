@@ -3,7 +3,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { form, FormField as SignalFormField, required } from '@angular/forms/signals';
+import {
+  form,
+  FormField as SignalFormField,
+  required,
+  minLength,
+  pattern,
+} from '@angular/forms/signals';
 
 import { AuthService } from '../../../../../core/auth/services/auth.service';
 import { FormField } from '../../../../../models/field.model';
@@ -26,21 +32,35 @@ interface CheckoutFormData {
 @Component({
   selector: 'app-event-registration-checkout',
   standalone: true,
-  imports: [MatButtonModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, SignalFormField],
+  imports: [
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    SignalFormField,
+  ],
   template: `
     <div class="space-y-6 bg-transparent p-0">
-
       @if (!auth.user()) {
         <div class="space-y-3">
           <p class="text-text-secondary">Iniciá sesión para registrarte al evento.</p>
-          <button mat-flat-button type="button" class="gdg-btn-filled w-full" (click)="auth.signInWithGoogle()">
+          <button
+            mat-flat-button
+            type="button"
+            class="gdg-btn-filled w-full"
+            (click)="auth.signInWithGoogle()"
+          >
             Iniciar sesión con Google
           </button>
         </div>
       } @else {
         @if (initLoading()) {
           <div class="flex items-center gap-3 text-text-secondary">
-            <mat-progress-spinner mode="indeterminate" diameter="22" aria-label="Cargando registro" />
+            <mat-progress-spinner
+              mode="indeterminate"
+              diameter="22"
+              aria-label="Cargando registro"
+            />
             <span>Cargando opciones de registro...</span>
           </div>
         } @else if (alreadyRegistered()) {
@@ -65,7 +85,9 @@ interface CheckoutFormData {
           </div>
         } @else {
           @if (error()) {
-            <div class="rounded-2xl border border-google-red/20 bg-google-red/5 p-4 text-sm text-text-secondary">
+            <div
+              class="rounded-2xl border border-google-red/20 bg-google-red/5 p-4 text-sm text-text-secondary"
+            >
               <strong class="text-google-red">Error:</strong> {{ error() }}
             </div>
           }
@@ -78,27 +100,45 @@ interface CheckoutFormData {
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Nombre</mat-label>
                 <input matInput [formField]="checkoutForm.firstName" />
+                @if (checkoutForm.firstName().invalid() && checkoutForm.firstName().touched()) {
+                  <mat-error class="text-xs">{{
+                    checkoutForm.firstName().errors()[0]?.message
+                  }}</mat-error>
+                }
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="w-full">
                 <mat-label>Apellido</mat-label>
                 <input matInput [formField]="checkoutForm.lastName" />
+                @if (checkoutForm.lastName().invalid() && checkoutForm.lastName().touched()) {
+                  <mat-error class="text-xs">{{
+                    checkoutForm.lastName().errors()[0]?.message
+                  }}</mat-error>
+                }
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
                 <mat-label>Celular</mat-label>
                 <input matInput [formField]="checkoutForm.phone" />
+                @if (checkoutForm.phone().invalid() && checkoutForm.phone().touched()) {
+                  <mat-error class="text-xs">{{
+                    checkoutForm.phone().errors()[0]?.message
+                  }}</mat-error>
+                }
               </mat-form-field>
             </div>
           </div>
 
           <!-- Paso 2: Tickets -->
           <div class="space-y-3">
-            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">Elegí tu pase</h3>
+            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
+              Elegí tu pase
+            </h3>
 
             @if (selectedTicketId()) {
               <p class="text-xs text-text-secondary">
-                Seleccionado: <strong>{{ selectedTicketPrice() > 0 ? 'De pago' : 'Gratis' }}</strong>
+                Seleccionado:
+                <strong>{{ selectedTicketPrice() > 0 ? 'De pago' : 'Gratis' }}</strong>
               </p>
             }
 
@@ -118,7 +158,9 @@ interface CheckoutFormData {
                     <div class="flex items-start justify-between gap-4">
                       <div class="min-w-0">
                         <div class="text-sm font-bold text-text-primary truncate">{{ t.name }}</div>
-                        <div class="mt-0.5 text-xs text-text-secondary">Cupo: {{ t.ticket_capacity }}</div>
+                        <div class="mt-0.5 text-xs text-text-secondary">
+                          Cupo: {{ t.ticket_capacity }}
+                        </div>
                       </div>
                       <div class="shrink-0 text-google-blue font-bold text-sm">
                         @if (t.price > 0) {
@@ -137,41 +179,59 @@ interface CheckoutFormData {
           <!-- Paso 3: Preguntas dinámicas -->
           @if (fields().length > 0) {
             <div class="space-y-3">
-              <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">Información adicional</h3>
+              <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
+                Información adicional
+              </h3>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 @for (f of fields(); track f.key) {
                   <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
-                    <mat-label>{{ f.label }}</mat-label>
-                    <input
-                      matInput
-                      [formField]="checkoutForm.responses[f.key]"
-                    />
+                    <mat-label>{{ f.label }}{{ f.required ? ' *' : ' (opcional)' }}</mat-label>
+                    <input matInput [formField]="checkoutForm.responses[f.key]" />
+                    @if (
+                      checkoutForm.responses[f.key]().invalid() &&
+                      checkoutForm.responses[f.key]().touched()
+                    ) {
+                      <mat-error class="text-xs">{{
+                        checkoutForm.responses[f.key]().errors()[0]?.message
+                      }}</mat-error>
+                    }
                   </mat-form-field>
                 }
               </div>
             </div>
-          }
-          @else {
+          } @else {
             <div class="space-y-1">
-              <h3 class="text-xs font-bold text-text-primary uppercase tracking-wider">Información adicional</h3>
-              <p class="text-xs text-text-secondary">Este evento no requiere preguntas adicionales.</p>
+              <h3 class="text-xs font-bold text-text-primary uppercase tracking-wider">
+                Información adicional
+              </h3>
+              <p class="text-xs text-text-secondary">
+                Este evento no requiere preguntas adicionales.
+              </p>
             </div>
           }
 
           <!-- Comprobante (solo pagos) -->
           @if (selectedTicketPrice() > 0) {
             <div class="space-y-3 pt-2">
-              <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">Comprobante de pago</h3>
-              <p class="text-xs text-text-secondary">Subí una imagen del comprobante para validar tu inscripción.</p>
+              <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
+                Comprobante de pago
+              </h3>
+              <p class="text-xs text-text-secondary">
+                Subí una imagen del comprobante para validar tu inscripción.
+              </p>
 
               @if (selectedTicketQrUrl()) {
                 <div class="rounded-2xl border border-black/5 p-4 space-y-2 bg-black/[0.01]">
                   <div class="flex items-center gap-2 text-google-blue font-bold text-xs">
-                    <span class="material-symbols-rounded text-base" aria-hidden="true">qr_code_2</span>
+                    <span class="material-symbols-rounded text-base" aria-hidden="true"
+                      >qr_code_2</span
+                    >
                     <span>QR de pago</span>
                   </div>
-                  <p class="text-[11px] text-text-secondary">Escaneá este QR para realizar el pago.</p>
+                  <p class="text-[11px] text-text-secondary">
+                    Escaneá este QR para realizar el pago.
+                  </p>
                   <div class="mt-2 flex justify-center">
                     <img
                       class="w-full max-w-[200px] rounded-xl border border-black/5 bg-white object-contain"
@@ -182,9 +242,16 @@ interface CheckoutFormData {
                 </div>
               }
 
-              <input type="file" accept="image/*" class="text-xs w-full cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-google-blue/10 file:text-google-blue hover:file:bg-google-blue/20" (change)="onFileChange($event)" />
+              <input
+                type="file"
+                accept="image/*"
+                class="text-xs w-full cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-google-blue/10 file:text-google-blue hover:file:bg-google-blue/20"
+                (change)="onFileChange($event)"
+              />
               @if (paymentProofName()) {
-                <p class="text-xs text-text-secondary">Archivo: <strong>{{ paymentProofName() }}</strong></p>
+                <p class="text-xs text-text-secondary">
+                  Archivo: <strong>{{ paymentProofName() }}</strong>
+                </p>
               }
             </div>
           }
@@ -197,7 +264,11 @@ interface CheckoutFormData {
               [disabled]="!canSubmit()"
               (click)="submit()"
             >
-              @if (submitting()) { Registrando... } @else { Confirmar registro }
+              @if (submitting()) {
+                Registrando...
+              } @else {
+                Confirmar registro
+              }
             </button>
           </div>
         }
@@ -239,13 +310,19 @@ export class EventRegistrationCheckout implements OnInit {
   });
 
   readonly checkoutForm = form(this.formData, (path) => {
-    required(path.firstName);
-    required(path.lastName);
-    required(path.phone);
+    required(path.firstName, { message: 'El nombre es obligatorio' });
+    required(path.lastName, { message: 'El apellido es obligatorio' });
+
+    required(path.phone, { message: 'El celular es obligatorio' });
+    minLength(path.phone, 5, { message: 'El celular debe tener al menos 5 dígitos' });
+    pattern(path.phone, /^\+?[0-9\s-]+$/, {
+      message: 'El celular solo puede contener números, espacios y el signo +',
+    });
+
     // Validar de forma dinámica las respuestas requeridas
     for (const f of this.fields()) {
       if (f.required) {
-        required(path.responses[f.key]);
+        required(path.responses[f.key], { message: `El campo "${f.label}" es obligatorio` });
       }
     }
   });
@@ -338,13 +415,6 @@ export class EventRegistrationCheckout implements OnInit {
     if (!this.auth.user()) return false;
     if (this.initLoading() || this.submitting()) return false;
     if (this.alreadyRegistered() || this.success()) return false;
-
-    // Validación declarativa de Signal Forms
-    if (this.checkoutForm().invalid()) return false;
-    if (!this.selectedTicketId()) return false;
-
-    // Se requiere comprobante de pago para tickets pagos
-    if (this.selectedTicketPrice() > 0 && !this.paymentProofFile()) return false;
     return true;
   });
 
@@ -357,8 +427,29 @@ export class EventRegistrationCheckout implements OnInit {
     const user = this.auth.user();
     if (!user) return;
 
-    this.submitting.set(true);
     this.error.set(null);
+
+    // 1. Validar formulario
+    if (this.checkoutForm().invalid()) {
+      this.checkoutForm().markAsTouched();
+      this.error.set('Por favor, completa correctamente todos los campos obligatorios.');
+      return;
+    }
+
+    // 2. Validar selección de ticket
+    if (!this.selectedTicketId()) {
+      this.error.set('Por favor, selecciona un pase para registrarte.');
+      return;
+    }
+
+    // 3. Validar comprobante para pases de pago
+    const price = this.selectedTicketPrice();
+    if (price > 0 && !this.paymentProofFile()) {
+      this.error.set('Por favor, sube el comprobante de pago para el pase seleccionado.');
+      return;
+    }
+
+    this.submitting.set(true);
 
     try {
       const existing = await this.registrations.getByEventAndUser(this.event().id, user.id);
@@ -367,13 +458,15 @@ export class EventRegistrationCheckout implements OnInit {
         return;
       }
 
-      const price = this.selectedTicketPrice();
       let paymentProofUrl: string | null = null;
-
       if (price > 0) {
         const file = this.paymentProofFile();
         if (!file) throw new Error('Falta comprobante de pago');
-        paymentProofUrl = await this.registrations.uploadPaymentProof(file, this.event().id, user.id);
+        paymentProofUrl = await this.registrations.uploadPaymentProof(
+          file,
+          this.event().id,
+          user.id,
+        );
       }
 
       const data = this.formData();
@@ -391,7 +484,9 @@ export class EventRegistrationCheckout implements OnInit {
           status: this.computeStatus(),
           payment_proof_url: paymentProofUrl,
           custom_responses: Object.fromEntries(
-            Object.entries(data.responses).filter(([, v]) => typeof v === 'string' && v.trim().length > 0),
+            Object.entries(data.responses).filter(
+              ([, v]) => typeof v === 'string' && v.trim().length > 0,
+            ),
           ) as Record<string, string>,
         },
       };
