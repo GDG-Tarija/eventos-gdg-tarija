@@ -2,12 +2,11 @@ import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { Event } from '../../data/event.model';
-import { EventImagePlaceholder } from '../event-image-placeholder/event-image-placeholder';
 
 @Component({
   selector: 'app-event-card',
   standalone: true,
-  imports: [RouterLink, MatButtonModule, EventImagePlaceholder],
+  imports: [RouterLink, MatButtonModule],
   template: `
     <article
       class="gdg-card border border-black/5 overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-sm cursor-pointer sm:h-[230px]"

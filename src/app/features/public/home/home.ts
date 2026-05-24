@@ -1,5 +1,4 @@
 import { AfterViewInit, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { PublicEventsService } from '../events/data/public-events.service';
 import { EventCard } from '../events/components/event-card/event-card';
 import { EventCardSkeleton } from '../events/components/event-card-skeleton/event-card-skeleton';
@@ -9,7 +8,7 @@ import { LOGOS } from '../../../core/config/logos';
 
 @Component({
   selector: 'app-home',
-  imports: [EventCard, EventCardSkeleton, RouterLink],
+  imports: [EventCard, EventCardSkeleton],
   template: `
     <section class="gdg-page">
       <div class="gdg-container space-y-12">
