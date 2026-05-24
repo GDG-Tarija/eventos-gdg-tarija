@@ -1,8 +1,10 @@
 import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import {
   form,
@@ -10,6 +12,7 @@ import {
   required,
   minLength,
   pattern,
+  validateTree,
 } from '@angular/forms/signals';
 
 import { AuthService } from '../../../../../core/auth/services/auth.service';
@@ -27,7 +30,7 @@ interface CheckoutFormData {
   firstName: string;
   lastName: string;
   phone: string;
-  responses: Record<string, string>;
+  responses: Record<string, any>;
 }
 
 @Component({
@@ -35,9 +38,11 @@ interface CheckoutFormData {
   standalone: true,
   imports: [
     MatButtonModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatSelectModule,
     MatSnackBarModule,
     SignalFormField,
   ],
@@ -179,18 +184,58 @@ interface CheckoutFormData {
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 @for (f of fields(); track f.key) {
-                  <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
-                    <mat-label>{{ f.label }}{{ f.required ? ' *' : ' (opcional)' }}</mat-label>
-                    <input matInput [formField]="checkoutForm.responses[f.key]" />
-                    @if (
-                      checkoutForm.responses[f.key]().invalid() &&
-                      checkoutForm.responses[f.key]().touched()
-                    ) {
-                      <mat-error class="text-xs">{{
-                        checkoutForm.responses[f.key]().errors()[0]?.message
-                      }}</mat-error>
-                    }
-                  </mat-form-field>
+                  @if (f.type === 'checkbox') {
+                    <div class="sm:col-span-2 py-1">
+                      <mat-checkbox [formField]="checkoutForm.responses[f.key]">
+                        <span class="text-xs text-text-primary leading-tight">
+                          {{ f.label }}{{ f.required ? ' *' : '' }}
+                        </span>
+                      </mat-checkbox>
+                      @if (
+                        checkoutForm.responses[f.key]().invalid() &&
+                        checkoutForm.responses[f.key]().touched()
+                      ) {
+                        <div class="text-[11px] text-google-red mt-1 px-1">
+                          {{ checkoutForm.responses[f.key]().errors()[0]?.message }}
+                        </div>
+                      }
+                    </div>
+                  } @else if (f.type === 'select') {
+                    <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
+                      <mat-label>{{ f.label }}{{ f.required ? ' *' : ' (opcional)' }}</mat-label>
+                      <mat-select [formField]="checkoutForm.responses[f.key]" [placeholder]="f.placeholder ?? ''">
+                        @for (opt of f.options ?? []; track opt) {
+                          <mat-option [value]="opt">{{ opt }}</mat-option>
+                        }
+                      </mat-select>
+                      @if (
+                        checkoutForm.responses[f.key]().invalid() &&
+                        checkoutForm.responses[f.key]().touched()
+                      ) {
+                        <mat-error class="text-xs">{{
+                          checkoutForm.responses[f.key]().errors()[0]?.message
+                        }}</mat-error>
+                      }
+                    </mat-form-field>
+                  } @else {
+                    <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
+                      <mat-label>{{ f.label }}{{ f.required ? ' *' : ' (opcional)' }}</mat-label>
+                      <input
+                        matInput
+                        [type]="f.type === 'number' ? 'number' : 'text'"
+                        [formField]="checkoutForm.responses[f.key]"
+                        [placeholder]="f.placeholder ?? ''"
+                      />
+                      @if (
+                        checkoutForm.responses[f.key]().invalid() &&
+                        checkoutForm.responses[f.key]().touched()
+                      ) {
+                        <mat-error class="text-xs">{{
+                          checkoutForm.responses[f.key]().errors()[0]?.message
+                        }}</mat-error>
+                      }
+                    </mat-form-field>
+                  }
                 }
               </div>
             </div>
@@ -314,12 +359,34 @@ export class EventRegistrationCheckout implements OnInit {
       message: 'El celular solo puede contener números, espacios y el signo +',
     });
 
-    // Validar de forma dinámica las respuestas requeridas
-    for (const f of this.fields()) {
-      if (f.required) {
-        required(path.responses[f.key], { message: `El campo "${f.label}" es obligatorio` });
+    // Validar de forma dinámica las respuestas requeridas de extra info
+    validateTree(path.responses, (ctx) => {
+      const errors: any[] = [];
+      const responsesVal = ctx.value() || {};
+      for (const f of this.fields()) {
+        if (f.required) {
+          const val = responsesVal[f.key];
+          if (f.type === 'checkbox') {
+            if (val !== true && val !== 'true') {
+              errors.push({
+                kind: 'required',
+                message: `Debes marcar la casilla "${f.label}"`,
+                fieldTree: (ctx.fieldTree as any)[f.key],
+              });
+            }
+          } else {
+            if (val === null || val === undefined || String(val).trim() === '') {
+              errors.push({
+                kind: 'required',
+                message: `El campo "${f.label}" es obligatorio`,
+                fieldTree: (ctx.fieldTree as any)[f.key],
+              });
+            }
+          }
+        }
       }
-    }
+      return errors;
+    });
   });
 
   constructor() {
@@ -369,7 +436,14 @@ export class EventRegistrationCheckout implements OnInit {
     if (!Array.isArray(fields)) return [];
     return fields
       .filter((f) => typeof f?.key === 'string' && typeof f?.label === 'string')
-      .map((f) => ({ key: f.key, label: f.label, required: !!f.required }));
+      .map((f) => ({
+        key: f.key,
+        label: f.label,
+        type: (f.type as any) ?? 'text',
+        required: !!f.required,
+        placeholder: f.placeholder ?? null,
+        options: Array.isArray(f.options) ? f.options : null,
+      }));
   }
 
   private async init(): Promise<void> {
@@ -380,9 +454,9 @@ export class EventRegistrationCheckout implements OnInit {
     this.fields.set(fields);
 
     // Inicializar propiedades dinámicas del formulario en respuestas
-    const initialResponses: Record<string, string> = {};
+    const initialResponses: Record<string, any> = {};
     for (const f of fields) {
-      initialResponses[f.key] = '';
+      initialResponses[f.key] = f.type === 'checkbox' ? false : '';
     }
     this.formData.update((prev) => ({
       ...prev,
@@ -430,6 +504,29 @@ export class EventRegistrationCheckout implements OnInit {
     return this.selectedTicketPrice() > 0 ? 'PENDING' : 'CONFIRMED';
   }
 
+  private getInvalidFieldsList(): string[] {
+    const invalidList: string[] = [];
+
+    if (this.checkoutForm.firstName().invalid()) {
+      invalidList.push('Nombre');
+    }
+    if (this.checkoutForm.lastName().invalid()) {
+      invalidList.push('Apellido');
+    }
+    if (this.checkoutForm.phone().invalid()) {
+      invalidList.push('Celular');
+    }
+
+    for (const f of this.fields()) {
+      const fieldControl = this.checkoutForm.responses[f.key];
+      if (fieldControl && fieldControl().invalid()) {
+        invalidList.push(f.label);
+      }
+    }
+
+    return invalidList;
+  }
+
   async submit(): Promise<void> {
     if (!this.canSubmit()) return;
     const user = this.auth.user();
@@ -440,7 +537,8 @@ export class EventRegistrationCheckout implements OnInit {
     // 1. Validar formulario
     if (this.checkoutForm().invalid()) {
       this.checkoutForm().markAsTouched();
-      this.error.set('Por favor, completa correctamente todos los campos obligatorios.');
+      const missing = this.getInvalidFieldsList().join(', ');
+      this.error.set(`Por favor, completa o corrige los siguientes campos: ${missing}`);
       return;
     }
 
