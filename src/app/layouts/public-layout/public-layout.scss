@@ -1,19 +1,17 @@
-.public-toolbar {
+.public-header {
   position: sticky;
   top: 0;
-  z-index: 1000 !important;
+  z-index: 1050 !important;
+  width: 100%;
+}
+
+.public-toolbar {
   height: 64px;
   padding: 0;
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
-  background-color: var(--mat-sys-surface-container) !important;
-
-  .user-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1.5px solid var(--mat-sys-outline-variant);
-  }
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .public-content {
@@ -24,6 +22,7 @@
   line-height: 1.4;
   cursor: default;
   opacity: 1 !important;
+  padding: 8px 16px;
 
   small {
     color: var(--mat-sys-on-surface-variant);

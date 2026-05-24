@@ -83,11 +83,11 @@ import { LOGOS } from '../../../core/config/logos';
       </div>
 
       <!-- Footer -->
-      <footer class="mt-12 py-4 border-t border-color-border bg-transparent">
-        <div class="gdg-container flex flex-col md:flex-row items-center justify-between gap-4">
+      <footer class="mt-12 pt-4 border-t border-color-border bg-transparent">
+        <div class="gdg-container flex flex-col md:flex-row items-center justify-between gap-4 pb-4">
           <!-- Lado Izquierdo: Logo y Copyright -->
           <div class="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-            <img [src]="logoIcon.src" [alt]="logoIcon.alt" class="h-5 w-auto" />
+            <img [src]="logoIcon.src" [alt]="logoIcon.alt" class="h-7 md:h-5 w-auto" />
             <span class="hidden sm:inline text-text-secondary/20">|</span>
             <p class="text-xs font-semibold text-text-secondary m-0">
               Plataforma hecha por cumpitas y cumitas tech
@@ -182,6 +182,14 @@ import { LOGOS } from '../../../core/config/logos';
               }
             </div>
           </div>
+        </div>
+
+        <!-- Barra de Colores Google/GDG al final del footer -->
+        <div class="h-[3px] w-full grid grid-cols-4 mt-4 shrink-0">
+          <div class="bg-google-blue"></div>
+          <div class="bg-google-red"></div>
+          <div class="bg-google-yellow"></div>
+          <div class="bg-google-green"></div>
         </div>
       </footer>
     </section>
