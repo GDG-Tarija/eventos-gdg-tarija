@@ -18,9 +18,9 @@ import { Event } from '../../data/event.model';
           <div
             class="w-full aspect-square max-w-[280px] sm:w-auto sm:h-full shrink-0 overflow-hidden rounded-full relative group-card-img bg-black/5 mx-auto sm:mx-0 flex items-center justify-center"
           >
-            @if (event().logo_url) {
+            @if (event().image_url) {
               <img
-                [src]="event().logo_url"
+                [src]="event().image_url"
                 [alt]="event().title"
                 class="w-full h-full object-cover rounded-full transition-transform duration-500 ease-in-out group-hover:scale-105"
               />

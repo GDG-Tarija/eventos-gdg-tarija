@@ -11,7 +11,6 @@ export interface Event {
   is_published: boolean;
   description?: string;
   image_url?: string;
-  logo_url?: string;
   banner_url?: string;
   location_type: 'PHYSICAL' | 'VIRTUAL' | 'HYBRID';
   location_name?: string;
