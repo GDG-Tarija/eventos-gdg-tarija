@@ -61,7 +61,7 @@ import { LOGOS } from '../../../../core/config/logos';
             <div class="space-y-8 pt-6">
               <!-- Hero del Evento: Banner elegante con bordes premium rounded-3xl sin card pesado -->
               <div
-                class="relative h-48 sm:h-64 md:h-80 bg-black/5 rounded-3xl overflow-hidden shadow-sm shrink-0"
+                class="relative h-24 sm:h-48 lg:h-72 bg-black/5 rounded-xl md:rounded-3xl overflow-hidden shadow-sm shrink-0"
               >
                 @if (event()!.banner_url) {
                   <img
@@ -83,7 +83,7 @@ import { LOGOS } from '../../../../core/config/logos';
                 <!-- Botón de ir atrás flotante en el banner, super minimalista y elegante (estilo Airbnb/Viajes) -->
                 <a
                   [routerLink]="['/']"
-                  class="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm border border-black/5 text-text-primary hover:text-google-blue hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center shadow-md group cursor-pointer no-underline"
+                  class="hidden sm:flex absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm border border-black/5 text-text-primary hover:text-google-blue hover:scale-105 active:scale-95 transition-all duration-200 items-center justify-center shadow-md group cursor-pointer no-underline"
                   aria-label="Volver a eventos"
                   title="Volver a eventos"
                 >
