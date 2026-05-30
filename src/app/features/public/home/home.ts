@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, computed, inject, signal } from '@angular/core';
+import { Title, Meta } from '@angular/platform-browser';
 import { PublicEventsService } from '../events/data/public-events.service';
 import { EventCard } from '../events/components/event-card/event-card';
 import { EventCardSkeleton } from '../events/components/event-card-skeleton/event-card-skeleton';
@@ -84,6 +85,26 @@ import { environment } from '../../../../environments/environment';
 })
 export class Home implements AfterViewInit {
   readonly eventsService = inject(PublicEventsService);
+  private readonly titleService = inject(Title);
+  private readonly metaService = inject(Meta);
+
+  constructor() {
+    this.titleService.setTitle('Inicio | GDG Tarija');
+    this.metaService.updateTag({
+      name: 'description',
+      content: 'Espacio de aprendizaje y conexión en tecnología. Únete a talleres, conferencias y hackathones de nivel internacional organizados por la comunidad de Google Developer Groups Tarija.',
+    });
+    this.metaService.updateTag({ property: 'og:title', content: 'Inicio | GDG Tarija' });
+    this.metaService.updateTag({ property: 'og:description', content: 'Espacio de aprendizaje y conexión en tecnología. Únete a talleres, conferencias y hackathones organizados gratis por la comunidad.' });
+    this.metaService.updateTag({ property: 'og:image', content: 'https://res.cloudinary.com/dopkch3x9/image/upload/v1779579233/GDG_Bevy_DefaultEventBanner_VKOwYjb_c913np.webp' });
+    this.metaService.updateTag({ property: 'og:url', content: 'https://eventos.gdgtarija.com/' });
+    this.metaService.updateTag({ property: 'og:type', content: 'website' });
+
+    this.metaService.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.metaService.updateTag({ name: 'twitter:title', content: 'Inicio | GDG Tarija' });
+    this.metaService.updateTag({ name: 'twitter:description', content: 'Únete a talleres, conferencias y hackathones de nivel internacional organizados de forma abierta y gratuita por la comunidad GDG Tarija.' });
+    this.metaService.updateTag({ name: 'twitter:image', content: 'https://res.cloudinary.com/dopkch3x9/image/upload/v1779579233/GDG_Bevy_DefaultEventBanner_VKOwYjb_c913np.webp' });
+  }
 
   readonly logoHorizontal = LOGOS.horizontal;
   readonly logoIcon = LOGOS.icon;

@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl, Title, Meta } from '@angular/platform-browser';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PublicEventsService } from '../data/public-events.service';
 import { Event } from '../data/event.model';
@@ -285,6 +285,8 @@ export class EventDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly events = inject(PublicEventsService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly titleService = inject(Title);
+  private readonly metaService = inject(Meta);
 
   readonly loading = signal(true);
   readonly event = signal<Event | null>(null);
@@ -419,8 +421,41 @@ export class EventDetail implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.loading.set(true);
-    this.event.set(await this.events.getBySlug(this.slug));
+    const eventData = await this.events.getBySlug(this.slug);
+    this.event.set(eventData);
     this.loading.set(false);
+
+    if (eventData) {
+      this.updateSeoTags(eventData);
+    }
+  }
+
+  private updateSeoTags(event: Event): void {
+    const pageTitle = `${event.title} | GDG Tarija`;
+    this.titleService.setTitle(pageTitle);
+
+    const desc = event.description 
+      ? event.description.substring(0, 160).trim() + '...'
+      : 'Únete a este increíble evento de tecnología organizado por la comunidad de Google Developer Groups Tarija. ¡Regístrate gratis ahora!';
+    
+    const banner = event.banner_url || 'https://res.cloudinary.com/dopkch3x9/image/upload/v1779579233/GDG_Bevy_DefaultEventBanner_VKOwYjb_c913np.webp';
+    const pageUrl = `https://eventos.gdgtarija.com/e/${event.slug}`;
+
+    // Standard SEO Tags
+    this.metaService.updateTag({ name: 'description', content: desc });
+
+    // Open Graph (Facebook, WhatsApp, Slack, LinkedIn)
+    this.metaService.updateTag({ property: 'og:title', content: pageTitle });
+    this.metaService.updateTag({ property: 'og:description', content: desc });
+    this.metaService.updateTag({ property: 'og:image', content: banner });
+    this.metaService.updateTag({ property: 'og:url', content: pageUrl });
+    this.metaService.updateTag({ property: 'og:type', content: 'website' });
+
+    // Twitter Card
+    this.metaService.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    this.metaService.updateTag({ name: 'twitter:title', content: pageTitle });
+    this.metaService.updateTag({ name: 'twitter:description', content: desc });
+    this.metaService.updateTag({ name: 'twitter:image', content: banner });
   }
 
   private dateLabelFormat(date: Date): string {
