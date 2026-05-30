@@ -190,21 +190,21 @@ interface CheckoutFormData {
                       }
 
                       <!-- Contenido de texto y métricas -->
-                      <div class="flex-grow min-w-0 flex flex-col justify-between w-full sm:p-4 sm:space-y-3 pl-4 sm:pl-0">
+                      <div class="flex-grow min-w-0 flex flex-col justify-between w-full sm:p-4 sm:space-y-3 pl-4">
                         <div class="space-y-1">
-                          <div class="text-[12px] sm:text-sm font-bold text-text-primary leading-tight font-google line-clamp-2">
+                          <div class="text-sm sm:text-base font-bold text-text-primary leading-tight font-google line-clamp-2">
                             {{ t.name }}
                           </div>
-                          <div class="text-[10px] sm:text-xs text-text-secondary flex items-center gap-1 font-medium">
-                            <span class="material-symbols-rounded text-[11px] sm:text-sm text-text-muted" aria-hidden="true">group</span>
+                          <div class="text-xs sm:text-xs text-text-secondary flex items-center gap-1 font-medium">
+                            <span class="material-symbols-rounded text-xs sm:text-sm text-text-muted" aria-hidden="true">group</span>
                             <span>Cupo: {{ t.ticket_capacity }}</span>
                           </div>
                         </div>
 
                         <!-- Barra de precio inferior integrada -->
                         <div class="flex items-center justify-between pt-1 sm:pt-2 border-t border-black/5 w-full">
-                          <span class="text-[10px] sm:text-xs text-text-secondary font-medium">Precio</span>
-                          <span class="text-google-blue font-extrabold text-[11px] sm:text-sm bg-google-blue/5 px-2.5 py-0.5 rounded-full shrink-0">
+                          <span class="text-xs sm:text-xs text-text-secondary font-medium">Precio</span>
+                          <span class="text-google-blue font-extrabold text-xs sm:text-sm bg-google-blue/5 px-2.5 py-0.5 rounded-full shrink-0">
                             @if (t.price > 0) {
                               Bs {{ t.price }}
                             } @else {
@@ -358,18 +358,20 @@ interface CheckoutFormData {
             <button
               mat-flat-button
               type="button"
-              class="gdg-btn-filled w-full text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl flex items-center justify-center gap-2"
+              class="gdg-btn-filled w-full text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
               [disabled]="!canSubmit()"
               (click)="submit()"
             >
-              @if (submitting()) {
-                <span>Registrando...</span>
-              } @else {
-                <span>Confirmar registro</span>
-                <span class="material-symbols-rounded text-sm" aria-hidden="true"
-                  >chevron_right</span
-                >
-              }
+              <span class="flex items-center justify-center gap-1.5 w-full h-full">
+                @if (submitting()) {
+                  <span>Registrando...</span>
+                } @else {
+                  <span>Confirmar registro</span>
+                  <span class="material-symbols-rounded text-sm" aria-hidden="true"
+                    >chevron_right</span
+                  >
+                }
+              </span>
             </button>
           </div>
         }
