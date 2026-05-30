@@ -293,7 +293,7 @@ interface CheckoutFormData {
 
               <div class="space-y-3">
                 @if (selectedTicketQrUrl()) {
-                  <div class="rounded-2xl border border-black/5 p-4 space-y-2 bg-white">
+                  <div class="rounded-2xl border border-black/5 p-4 space-y-3 bg-white flex flex-col items-center">
                     <div class="flex justify-center">
                       <img
                         class="w-full max-w-[260px] rounded-xl border border-black/5 bg-white object-contain"
@@ -301,6 +301,15 @@ interface CheckoutFormData {
                         alt="QR de pago"
                       />
                     </div>
+                    <a
+                      [href]="selectedTicketQrUrl()!"
+                      download="qr-pago.png"
+                      target="_blank"
+                      class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border border-google-blue text-google-blue hover:bg-google-blue/5 transition-all duration-200 text-xs font-bold cursor-pointer no-underline active:scale-95"
+                    >
+                      <span class="material-symbols-rounded text-sm" aria-hidden="true">download</span>
+                      <span>Descargar QR</span>
+                    </a>
                   </div>
                 }
 
