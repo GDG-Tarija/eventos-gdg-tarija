@@ -93,7 +93,14 @@ interface CheckoutFormData {
         } @else {
           <!-- Paso 1: Perfil -->
           <div class="space-y-4">
-            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">Tus datos</h3>
+            <div class="flex items-center gap-2 pb-2 border-b border-black/5">
+              <span class="material-symbols-rounded text-base text-google-blue" aria-hidden="true"
+                >person</span
+              >
+              <h3 class="text-xs font-bold text-text-primary uppercase tracking-wider m-0">
+                Tus datos
+              </h3>
+            </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <mat-form-field appearance="outline" class="w-full">
@@ -128,82 +135,111 @@ interface CheckoutFormData {
             </div>
           </div>
 
+          <hr class="border-t border-black/5 my-4" />
+
           <!-- Paso 2: Tickets -->
-          <div class="space-y-3">
-            <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
-              Elegí tu pase
-            </h3>
+          <div class="space-y-4">
+            <div class="flex items-center gap-2 pb-2 border-b border-black/5">
+              <span class="material-symbols-rounded text-base text-google-blue" aria-hidden="true"
+                >confirmation_number</span
+              >
+              <h3 class="text-xs font-bold text-text-primary uppercase tracking-wider m-0">
+                Elegí tu pase
+              </h3>
+            </div>
 
-            @if (selectedTicketId()) {
-              <p class="text-xs text-text-secondary">
-                Seleccionado:
-                <strong>{{ selectedTicketPrice() > 0 ? 'De pago' : 'Gratis' }}</strong>
-              </p>
-            }
+            <div class="space-y-3">
+              @if (selectedTicketId()) {
+                <div
+                  class="inline-flex items-center gap-1.5 rounded-full bg-google-blue/10 text-google-blue px-3 py-1 text-xs font-semibold"
+                >
+                  <span>Seleccionado: {{ selectedTicketPrice() > 0 ? 'De pago' : 'Gratis' }}</span>
+                </div>
+              }
 
-            @if (tickets().length === 0) {
-              <p class="text-sm text-text-secondary">No hay pases disponibles por el momento.</p>
-            } @else {
-              <div class="flex flex-col gap-3">
-                @for (t of tickets(); track t.id) {
-                  <button
-                    type="button"
-                    class="w-full rounded-2xl border border-black/5 p-4 text-left transition-all duration-200 hover:bg-black/[0.01] hover:border-black/10 active:scale-[0.99] cursor-pointer"
-                    [class.border-google-blue]="selectedTicketId() === t.id"
-                    [class.bg-google-blue/[0.02]]="selectedTicketId() === t.id"
-                    [class.border-2]="selectedTicketId() === t.id"
-                    (click)="selectTicket(t)"
-                  >
-                    <div class="flex items-start justify-between gap-4">
-                      <div class="min-w-0">
-                        <div class="text-sm font-bold text-text-primary truncate">{{ t.name }}</div>
-                        <div class="mt-0.5 text-xs text-text-secondary">
-                          Cupo: {{ t.ticket_capacity }}
+              @if (tickets().length === 0) {
+                <p class="text-sm text-text-secondary m-0">
+                  No hay pases disponibles por el momento.
+                </p>
+              } @else {
+                <div class="flex flex-col gap-2.5">
+                  @for (t of tickets(); track t.id) {
+                    <button
+                      type="button"
+                      class="w-full rounded-2xl border border-black/5 p-4 text-left transition-all duration-200 hover:bg-black/[0.01] hover:border-black/10 active:scale-[0.99] cursor-pointer bg-white"
+                      [class.border-google-blue]="selectedTicketId() === t.id"
+                      [class.bg-google-blue/[0.02]]="selectedTicketId() === t.id"
+                      [class.border-2]="selectedTicketId() === t.id"
+                      (click)="selectTicket(t)"
+                    >
+                      <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0">
+                          <div class="text-sm font-bold text-text-primary truncate">
+                            {{ t.name }}
+                          </div>
+                          <div class="mt-0.5 text-xs text-text-secondary">
+                            Cupo: {{ t.ticket_capacity }}
+                          </div>
+                        </div>
+                        <div class="shrink-0 text-google-blue font-bold text-sm">
+                          @if (t.price > 0) {
+                            Bs {{ t.price }}
+                          } @else {
+                            Gratis
+                          }
                         </div>
                       </div>
-                      <div class="shrink-0 text-google-blue font-bold text-sm">
-                        @if (t.price > 0) {
-                          Bs {{ t.price }}
-                        } @else {
-                          Gratis
-                        }
-                      </div>
-                    </div>
-                  </button>
-                }
-              </div>
-            }
+                    </button>
+                  }
+                </div>
+              }
+            </div>
           </div>
 
           <!-- Paso 3: Preguntas dinámicas -->
           @if (fields().length > 0) {
-            <div class="space-y-3">
-              <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
-                Información adicional
-              </h3>
+            <hr class="border-t border-black/5 my-4" />
+
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-black/5">
+                <span class="material-symbols-rounded text-base text-google-blue" aria-hidden="true"
+                  >assignment</span
+                >
+                <h3 class="text-xs font-bold text-text-primary uppercase tracking-wider m-0">
+                  Información adicional
+                </h3>
+              </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 @for (f of fields(); track f.key) {
                   @if (f.type === 'checkbox') {
-                    <div class="sm:col-span-2 py-1">
+                    <div class="sm:col-span-2 space-y-1.5 py-1">
+                      <div class="text-xs sm:text-sm font-semibold text-text-primary leading-snug">
+                        {{ getLabel(f) }}
+                      </div>
                       <mat-checkbox [formField]="checkoutForm.responses[f.key]">
-                        <span class="text-xs text-text-primary leading-tight">
-                          {{ f.label }}{{ f.required ? ' *' : '' }}
+                        <span
+                          class="text-xs sm:text-sm text-text-secondary select-none font-medium"
+                        >
+                          Sí, confirmo
                         </span>
                       </mat-checkbox>
                       @if (
                         checkoutForm.responses[f.key]().invalid() &&
                         checkoutForm.responses[f.key]().touched()
                       ) {
-                        <div class="text-[11px] text-google-red mt-1 px-1">
+                        <div class="text-xs text-google-red mt-1 pl-6 font-semibold">
                           {{ checkoutForm.responses[f.key]().errors()[0]?.message }}
                         </div>
                       }
                     </div>
                   } @else if (f.type === 'select') {
                     <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
-                      <mat-label>{{ f.label }}{{ f.required ? ' *' : ' (opcional)' }}</mat-label>
-                      <mat-select [formField]="checkoutForm.responses[f.key]" [placeholder]="f.placeholder ?? ''">
+                      <mat-label>{{ getLabel(f) }}</mat-label>
+                      <mat-select
+                        [formField]="checkoutForm.responses[f.key]"
+                        [placeholder]="getPlaceholder(f)"
+                      >
                         @for (opt of f.options ?? []; track opt) {
                           <mat-option [value]="opt">{{ opt }}</mat-option>
                         }
@@ -219,12 +255,12 @@ interface CheckoutFormData {
                     </mat-form-field>
                   } @else {
                     <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
-                      <mat-label>{{ f.label }}{{ f.required ? ' *' : ' (opcional)' }}</mat-label>
+                      <mat-label>{{ getLabel(f) }}</mat-label>
                       <input
                         matInput
                         [type]="f.type === 'number' ? 'number' : 'text'"
                         [formField]="checkoutForm.responses[f.key]"
-                        [placeholder]="f.placeholder ?? ''"
+                        [placeholder]="getPlaceholder(f)"
                       />
                       @if (
                         checkoutForm.responses[f.key]().invalid() &&
@@ -239,59 +275,49 @@ interface CheckoutFormData {
                 }
               </div>
             </div>
-          } @else {
-            <div class="space-y-1">
-              <h3 class="text-xs font-bold text-text-primary uppercase tracking-wider">
-                Información adicional
-              </h3>
-              <p class="text-xs text-text-secondary">
-                Este evento no requiere preguntas adicionales.
-              </p>
-            </div>
           }
 
           <!-- Comprobante (solo pagos) -->
           @if (selectedTicketPrice() > 0) {
-            <div class="space-y-3 pt-2">
-              <h3 class="text-sm font-bold text-text-primary uppercase tracking-wider">
-                Comprobante de pago
-              </h3>
-              <p class="text-xs text-text-secondary">
-                Subí una imagen del comprobante para validar tu inscripción.
-              </p>
+            <hr class="border-t border-black/5 my-4" />
 
-              @if (selectedTicketQrUrl()) {
-                <div class="rounded-2xl border border-black/5 p-4 space-y-2 bg-black/[0.01]">
-                  <div class="flex items-center gap-2 text-google-blue font-bold text-xs">
-                    <span class="material-symbols-rounded text-base" aria-hidden="true"
-                      >qr_code_2</span
-                    >
-                    <span>QR de pago</span>
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-black/5">
+                <span class="material-symbols-rounded text-base text-google-blue" aria-hidden="true"
+                  >payments</span
+                >
+                <h3 class="text-xs font-bold text-text-primary uppercase tracking-wider m-0">
+                  Comprobante de pago
+                </h3>
+              </div>
+
+              <div class="space-y-3">
+                @if (selectedTicketQrUrl()) {
+                  <div class="rounded-2xl border border-black/5 p-4 space-y-2 bg-white">
+                    <div class="flex justify-center">
+                      <img
+                        class="w-full max-w-[260px] rounded-xl border border-black/5 bg-white object-contain"
+                        [src]="selectedTicketQrUrl()!"
+                        alt="QR de pago"
+                      />
+                    </div>
                   </div>
-                  <p class="text-[11px] text-text-secondary">
-                    Escaneá este QR para realizar el pago.
-                  </p>
-                  <div class="mt-2 flex justify-center">
-                    <img
-                      class="w-full max-w-[200px] rounded-xl border border-black/5 bg-white object-contain"
-                      [src]="selectedTicketQrUrl()!"
-                      alt="QR de pago"
-                    />
-                  </div>
+                }
+
+                <div class="pt-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="text-xs w-full cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-google-blue/10 file:text-google-blue hover:file:bg-google-blue/20 bg-white border border-black/5 rounded-2xl p-2.5"
+                    (change)="onFileChange($event)"
+                  />
                 </div>
-              }
-
-              <input
-                type="file"
-                accept="image/*"
-                class="text-xs w-full cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-google-blue/10 file:text-google-blue hover:file:bg-google-blue/20"
-                (change)="onFileChange($event)"
-              />
-              @if (paymentProofName()) {
-                <p class="text-xs text-text-secondary">
-                  Archivo: <strong>{{ paymentProofName() }}</strong>
-                </p>
-              }
+                @if (paymentProofName()) {
+                  <p class="text-xs text-text-secondary m-0">
+                    Archivo: <strong>{{ paymentProofName() }}</strong>
+                  </p>
+                }
+              </div>
             </div>
           }
 
@@ -299,14 +325,17 @@ interface CheckoutFormData {
             <button
               mat-flat-button
               type="button"
-              class="gdg-btn-filled w-full text-xs font-bold"
+              class="gdg-btn-filled w-full text-xs font-bold py-5 rounded-2xl flex items-center justify-center gap-2"
               [disabled]="!canSubmit()"
               (click)="submit()"
             >
               @if (submitting()) {
-                Registrando...
+                <span>Registrando...</span>
               } @else {
-                Confirmar registro
+                <span>Confirmar registro</span>
+                <span class="material-symbols-rounded text-sm" aria-hidden="true"
+                  >chevron_right</span
+                >
               }
             </button>
           </div>
@@ -612,6 +641,27 @@ export class EventRegistrationCheckout implements OnInit {
       this.error.set(msg);
     } finally {
       this.submitting.set(false);
+    }
+  }
+
+  getLabel(field: FormField): string {
+    const label = field.label;
+    if (field.required) {
+      return label.endsWith(' *') ? label : `${label} *`;
+    } else {
+      const hasOpcional = label.toLowerCase().includes('opcional');
+      return hasOpcional ? label : `${label} (opcional)`;
+    }
+  }
+
+  getPlaceholder(field: FormField): string {
+    const placeholder = field.placeholder ?? '';
+    if (!placeholder) return '';
+    if (field.required) {
+      return placeholder;
+    } else {
+      // Strip redundant "(opcional)" or "opcional" from the input placeholder
+      return placeholder.replace(/\s*\(?opcional\)?/gi, '').trim();
     }
   }
 }
