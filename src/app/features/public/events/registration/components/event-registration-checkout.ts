@@ -504,7 +504,7 @@ export class EventRegistrationCheckout implements OnInit {
         key: f.key,
         label: f.label,
         type: (f.type as any) ?? 'text',
-        required: !!f.required,
+        required: (f as any).required === true || (f as any).required === 'true',
         placeholder: f.placeholder ?? null,
         options: Array.isArray(f.options) ? f.options : null,
       }));

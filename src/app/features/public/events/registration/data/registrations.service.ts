@@ -58,8 +58,8 @@ export class RegistrationsService {
       throw new Error(`[storage.upload] ${status ?? ''} ${error.message}`.trim());
     }
 
-    // Bucket is private in production: store the object path.
-    // When you need to display/download it, generate a signed URL server-side or via storage.createSignedUrl.
-    return path;
+    // El bucket ahora es público: obtenemos y devolvemos la URL pública del archivo.
+    const { data } = this.supabase.storage.from('payment-proofs').getPublicUrl(path);
+    return data.publicUrl;
   }
 }
