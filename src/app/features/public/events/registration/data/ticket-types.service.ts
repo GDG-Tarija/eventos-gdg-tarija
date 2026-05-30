@@ -27,12 +27,21 @@ export class TicketTypesService {
           image_url?: unknown;
         }
       >) ?? [];
-    return rows.map((r) => ({
-      ...r,
-      price: Number(r.price ?? 0),
-      ticket_capacity: Number(r.ticket_capacity ?? 0),
-      payment_qr_url: typeof r.payment_qr_url === 'string' ? r.payment_qr_url : undefined,
-      image_url: typeof r.image_url === 'string' ? r.image_url : undefined,
-    }));
+    return rows.map((r) => {
+      let imageUrl = typeof r.image_url === 'string' ? r.image_url : undefined;
+      if (imageUrl) {
+        // Cache-busting dinámico agregando un parámetro de tiempo único
+        const separator = imageUrl.includes('?') ? '&' : '?';
+        imageUrl = `${imageUrl}${separator}t=${new Date().getTime()}`;
+      }
+
+      return {
+        ...r,
+        price: Number(r.price ?? 0),
+        ticket_capacity: Number(r.ticket_capacity ?? 0),
+        payment_qr_url: typeof r.payment_qr_url === 'string' ? r.payment_qr_url : undefined,
+        image_url: imageUrl,
+      };
+    });
   }
 }
