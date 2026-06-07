@@ -32,94 +32,97 @@ La arquitectura de vistas y menús del sistema está distribuida en los siguient
 
 Todas las columnas de las tablas de Supabase se generan de forma tipada. No modificar la base de datos a mano; proponer primero una migración SQL en `supabase/migrations/` y actualizar este documento.
 
-### 2.1. Brand (Marcas / Organizaciones asociadas)
+### 2.1. Tabla Consolidada de Base de Datos (Postgres / Supabase)
 
-**Tabla:** `brands`
-
-| Columna     | Tipo          | Restricciones                     | Descripción |
-|-------------|---------------|-----------------------------------|-------------|
-| `id`          | String (UUID) | PK, `default: gen_random_uuid()`  | Identificador único de la marca. |
-| `name`        | String        | Nullable                          | Nombre comercial de la marca. |
-| `description` | String        | Nullable                          | Descripción corta de la marca. |
-| `score`       | String        | Nullable                          | Puntuación o valor de scoring de marca. |
-| `state`       | State (enum)  | `NOT NULL`, `default: ACTIVE`       | Estado del registro (`ACTIVE` / `INACTIVE`). |
-| `created_at`  | TIMESTAMPTZ   | `default: NOW()`                  | Fecha y hora de creación automática. |
-| `updated_at`  | TIMESTAMPTZ   | `default: NOW()`                  | Fecha y hora de última modificación. |
-
-### 2.2. Events (Eventos de la Comunidad)
-
-**Tabla:** `events`
-
-| Columna | Tipo | ¿Acepta Nulos? | Descripción |
-|---|---|---|---|
-| `id` | UUID | NO | Identificador único del evento. PK. |
-| `title` | Character Varying | NO | Título descriptivo del evento. |
-| `slug` | Character Varying | NO | Slug único para URL pública (ej: `devfest-2026`). |
-| `event_type` | Character Varying | NO | Tipo de evento (ej: `MEETUP`, `CONFERENCE`, `HACKATHON`, `WORKSHOP`). |
-| `capacity` | Integer | NO | Capacidad máxima de asistentes admitidos. |
-| `date_start` | Timestamp with Time Zone | NO | Fecha y hora de inicio del evento. |
-| `date_end` | Timestamp with Time Zone | SÍ | Fecha y hora de finalización (opcional). |
-| `is_published` | Boolean | SÍ | Estado de publicación del evento en la landing pública. |
-| `created_at` | Timestamp with Time Zone | SÍ | Fecha y hora de creación automática. |
-| `updated_at` | Timestamp with Time Zone | SÍ | Fecha y hora de última actualización automática. |
-| `description` | Text | SÍ | Descripción extensa o contenido informativo del evento. |
-| `image_url` | Text | SÍ | Enlace de la imagen promocional. |
-| `logo_url` | Text | SÍ | Enlace del logo o insignia del evento. |
-| `banner_url` | Text | SÍ | Enlace del banner superior horizontal. |
-| `location_type` | Character Varying | SÍ | Modalidad (ej: `PHYSICAL`, `VIRTUAL`, `HYBRID`). |
-| `location_name` | Text | SÍ | Nombre de la ubicación física o plataforma virtual (ej: `Edificio Postgrado UAJMS`). |
-| `address_link` | Text | SÍ | Enlace interactivo de mapa (Google Maps) o aula virtual. |
-| `category` | Character Varying | SÍ | Eje temático o categoría tecnológica. |
-| `extra_info` | JSONB | SÍ | Metadata dinámica (contiene las preguntas personalizadas `form_fields`). |
-
-### 2.3. Registrations (Inscripciones a Eventos)
-
-**Tabla:** `registrations`
-
-| Columna | Tipo | ¿Acepta Nulos? | Descripción |
-|---|---|---|---|
-| `id` | UUID | NO | Identificador único de la inscripción. PK. |
-| `event_id` | UUID | NO | Identificador del evento. FK a `events.id`. |
-| `user_id` | UUID | SÍ | Identificador del usuario asistente. FK a `users.id` (vincular en login). |
-| `ticket_type_id` | UUID | NO | Tipo de pase seleccionado. FK a `ticket_types.id`. |
-| `event_role` | Character Varying | NO | Rol en el evento (ej: `ATTENDEE`, `SPEAKER`, `ORGANIZER`, `VOLUNTEER`). |
-| `status` | Character Varying | NO | Estado del registro (ej: `CONFIRMED`, `PENDING` para de pago, `CANCELLED`). |
-| `created_at` | Timestamp with Time Zone | SÍ | Fecha y hora de la inscripción. |
-| `updated_at` | Timestamp with Time Zone | SÍ | Fecha y hora de última modificación. |
-| `custom_responses` | JSONB | SÍ | Respuestas dinámicas al formulario configurable del evento. |
-| `payment_proof_url` | Text | SÍ | Enlace o path al almacenamiento del comprobante de pago. |
-
-### 2.4. Ticket Types (Tipos de Entradas / Pases)
-
-**Tabla:** `ticket_types`
-
-| Columna | Tipo | ¿Acepta Nulos? | Descripción |
-|---|---|---|---|
-| `id` | UUID | NO | Identificador único del tipo de ticket. PK. |
-| `event_id` | UUID | NO | Identificador del evento asociado. FK a `events.id`. |
-| `name` | Character Varying | NO | Nombre del tipo de pase (ej: `Entrada General`, `Pase VIP`). |
-| `price` | Numeric | NO | Precio en moneda local (0 si es gratis). |
-| `ticket_capacity` | Integer | SÍ | Capacidad de tickets disponibles para esta categoría. |
-| `created_at` | Timestamp with Time Zone | SÍ | Fecha y hora de creación. |
-| `updated_at` | Timestamp with Time Zone | SÍ | Fecha y hora de última actualización. |
-| `payment_qr_url` | Text | SÍ | Enlace al QR de pago bancario/transferencia (solo si es de pago). |
-
-### 2.5. Users (Perfiles y Cuentas de Usuarios)
-
-**Tabla:** `users`
-
-| Columna | Tipo | ¿Acepta Nulos? | Descripción |
-|---|---|---|---|
-| `id` | UUID | NO | Identificador único del usuario. PK (vínculo con Supabase Auth). |
-| `email` | Character Varying | NO | Correo electrónico de la cuenta de usuario. |
-| `first_name` | Character Varying | NO | Nombre de pila. |
-| `last_name` | Character Varying | NO | Apellidos. |
-| `avatar_url` | Text | SÍ | Enlace de la foto de perfil (proveído por Google OAuth). |
-| `phone` | Character Varying | SÍ | Número celular de contacto. |
-| `extra_info` | JSONB | SÍ | Campos extras dinámicos del perfil. |
-| `is_staff` | Boolean | SÍ | Permiso especial de personal organizador (vista de administración). |
-| `created_at` | Timestamp with Time Zone | SÍ | Fecha y hora del primer registro de la cuenta. |
-| `updated_at` | Timestamp with Time Zone | SÍ | Fecha y hora de última modificación del perfil. |
+| esquema | tabla                  | columna           | tipo_dato                | permite_nulos |
+| ------- | ---------------------- | ----------------- | ------------------------ | ------------- |
+| public  | events                 | id                | uuid                     | NO            |
+| public  | events                 | title             | character varying        | NO            |
+| public  | events                 | slug              | character varying        | NO            |
+| public  | events                 | event_type        | character varying        | NO            |
+| public  | events                 | capacity          | integer                  | NO            |
+| public  | events                 | date_start        | timestamp with time zone | NO            |
+| public  | events                 | date_end          | timestamp with time zone | YES           |
+| public  | events                 | is_published      | boolean                  | YES           |
+| public  | events                 | created_at        | timestamp with time zone | YES           |
+| public  | events                 | updated_at        | timestamp with time zone | YES           |
+| public  | events                 | description       | text                     | YES           |
+| public  | events                 | image_url         | text                     | YES           |
+| public  | events                 | banner_url        | text                     | YES           |
+| public  | events                 | location_type     | character varying        | YES           |
+| public  | events                 | location_name     | text                     | YES           |
+| public  | events                 | address_link      | text                     | YES           |
+| public  | events                 | category          | character varying        | YES           |
+| public  | events                 | extra_info        | jsonb                    | YES           |
+| public  | inscripciones_sessions | id                | uuid                     | NO            |
+| public  | inscripciones_sessions | usuario_id        | uuid                     | NO            |
+| public  | inscripciones_sessions | session_id        | uuid                     | NO            |
+| public  | inscripciones_sessions | inscrito_en       | timestamp with time zone | NO            |
+| public  | inscripciones_sessions | asistio           | boolean                  | NO            |
+| public  | inscripciones_sessions | checked_in_at     | timestamp with time zone | YES           |
+| public  | registrations          | id                | uuid                     | NO            |
+| public  | registrations          | event_id          | uuid                     | NO            |
+| public  | registrations          | user_id           | uuid                     | YES           |
+| public  | registrations          | ticket_type_id    | uuid                     | NO            |
+| public  | registrations          | event_role        | character varying        | NO            |
+| public  | registrations          | status            | character varying        | NO            |
+| public  | registrations          | created_at        | timestamp with time zone | YES           |
+| public  | registrations          | updated_at        | timestamp with time zone | YES           |
+| public  | registrations          | custom_responses  | jsonb                    | YES           |
+| public  | registrations          | payment_proof_url | text                     | YES           |
+| public  | scan_logs              | id                | uuid                     | NO            |
+| public  | scan_logs              | registration_id   | uuid                     | NO            |
+| public  | scan_logs              | scanned_by        | uuid                     | YES           |
+| public  | scan_logs              | scan_type         | character varying        | NO            |
+| public  | scan_logs              | scanned_at        | timestamp with time zone | YES           |
+| public  | scan_logs              | created_at        | timestamp with time zone | YES           |
+| public  | scan_logs              | updated_at        | timestamp with time zone | YES           |
+| public  | session_registrations  | registration_id   | uuid                     | NO            |
+| public  | session_registrations  | session_id        | uuid                     | NO            |
+| public  | session_registrations  | registered_at     | timestamp with time zone | YES           |
+| public  | sessions               | id                | uuid                     | NO            |
+| public  | sessions               | event_id          | uuid                     | NO            |
+| public  | sessions               | title             | character varying        | NO            |
+| public  | sessions               | capacity          | integer                  | NO            |
+| public  | sessions               | created_at        | timestamp with time zone | YES           |
+| public  | sessions               | updated_at        | timestamp with time zone | YES           |
+| public  | sponsors               | id                | uuid                     | NO            |
+| public  | sponsors               | name              | text                     | YES           |
+| public  | sponsors               | description       | text                     | YES           |
+| public  | sponsors               | score             | text                     | YES           |
+| public  | sponsors               | state             | USER-DEFINED             | NO            |
+| public  | sponsors               | created_at        | timestamp with time zone | NO            |
+| public  | sponsors               | updated_at        | timestamp with time zone | NO            |
+| public  | staff_whitelist        | id                | uuid                     | NO            |
+| public  | staff_whitelist        | email             | character varying        | NO            |
+| public  | staff_whitelist        | role              | character varying        | NO            |
+| public  | staff_whitelist        | created_at        | timestamp with time zone | YES           |
+| public  | staff_whitelist        | updated_at        | timestamp with time zone | YES           |
+| public  | ticket_types           | id                | uuid                     | NO            |
+| public  | ticket_types           | event_id          | uuid                     | NO            |
+| public  | ticket_types           | name              | character varying        | NO            |
+| public  | ticket_types           | price             | numeric                  | NO            |
+| public  | ticket_types           | ticket_capacity   | integer                  | YES           |
+| public  | ticket_types           | created_at        | timestamp with time zone | YES           |
+| public  | ticket_types           | updated_at        | timestamp with time zone | YES           |
+| public  | ticket_types           | payment_qr_url    | text                     | YES           |
+| public  | ticket_types           | description       | text                     | YES           |
+| public  | ticket_types           | image_url         | text                     | YES           |
+| public  | tracks                 | id                | uuid                     | NO            |
+| public  | tracks                 | evento_id         | uuid                     | NO            |
+| public  | tracks                 | nombre            | text                     | NO            |
+| public  | tracks                 | descripcion       | text                     | YES           |
+| public  | tracks                 | created_at        | timestamp with time zone | NO            |
+| public  | users                  | id                | uuid                     | NO            |
+| public  | users                  | email             | character varying        | NO            |
+| public  | users                  | first_name        | character varying        | NO            |
+| public  | users                  | last_name         | character varying        | NO            |
+| public  | users                  | avatar_url        | text                     | YES           |
+| public  | users                  | phone             | character varying        | YES           |
+| public  | users                  | extra_info        | jsonb                    | YES           |
+| public  | users                  | is_staff          | boolean                  | YES           |
+| public  | users                  | created_at        | timestamp with time zone | YES           |
+| public  | users                  | updated_at        | timestamp with time zone | YES           |
 
 ---
 
