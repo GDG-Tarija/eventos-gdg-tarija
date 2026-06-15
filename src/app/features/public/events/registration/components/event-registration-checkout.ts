@@ -31,11 +31,75 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
     StepConfirmar,
   ],
   styles: [`
-    ::ng-deep .mat-stepper-vertical .mat-step-header {
-      padding: 12px 6px;
+    /* Remueve fondos del stepper por defecto */
+    ::ng-deep .mat-stepper-vertical {
+      background: transparent !important;
     }
+
+    /* Encabezado de los pasos */
+    ::ng-deep .mat-stepper-vertical .mat-step-header {
+      padding: 14px 8px !important;
+      border-radius: 14px;
+      transition: background-color 0.2s ease;
+    }
+    ::ng-deep .mat-stepper-vertical .mat-step-header:hover {
+      background-color: rgba(66, 133, 244, 0.03) !important;
+    }
+
+    /* Círculo e Icono del paso */
+    ::ng-deep .mat-step-icon {
+      background-color: rgba(0, 0, 0, 0.04) !important;
+      color: #5f6368 !important;
+      font-weight: 700 !important;
+      font-family: 'Google Sans', 'Outfit', sans-serif !important;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      border: 1px solid rgba(0, 0, 0, 0.04) !important;
+    }
+
+    /* Estado seleccionado: Azul Google */
+    ::ng-deep .mat-step-icon-selected {
+      background-color: #4285F4 !important;
+      color: #ffffff !important;
+      border-color: #4285F4 !important;
+      box-shadow: 0 4px 10px rgba(66, 133, 244, 0.2) !important;
+      transform: scale(1.05);
+    }
+
+    /* Estado completado: Verde Google */
+    ::ng-deep .mat-step-icon-state-edit,
+    ::ng-deep .mat-step-icon-state-done {
+      background-color: #34A853 !important;
+      color: #ffffff !important;
+      border-color: #34A853 !important;
+      box-shadow: 0 4px 10px rgba(52, 168, 83, 0.15) !important;
+    }
+
+    /* Línea vertical de conexión entre pasos */
+    ::ng-deep .mat-stepper-vertical-line::after {
+      border-left-color: rgba(0, 0, 0, 0.05) !important;
+      border-left-width: 2px !important;
+    }
+
     ::ng-deep .mat-vertical-content-container {
-      margin-left: 20px;
+      margin-left: 20px !important;
+      padding: 0 0 16px 12px !important;
+    }
+
+    ::ng-deep .mat-vertical-content {
+      padding: 4px 0 8px 0 !important;
+    }
+
+    /* Textos del paso */
+    ::ng-deep .mat-step-label {
+      font-family: 'Google Sans', 'Outfit', sans-serif !important;
+      color: #5f6368 !important;
+      font-size: 13.5px !important;
+      font-weight: 500 !important;
+      transition: color 0.2s ease;
+    }
+    ::ng-deep .mat-step-label-selected {
+      color: #202124 !important;
+      font-weight: 700 !important;
     }
   `],
   template: `
