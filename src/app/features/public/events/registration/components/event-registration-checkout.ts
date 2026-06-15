@@ -196,10 +196,19 @@ export class EventRegistrationCheckout implements OnInit {
   private async init(): Promise<void> {
     this.initLoading.set(true);
     try {
+      console.log('[Checkout] Initiating load for eventId:', this.event().id);
       const [tickets, sessions] = await Promise.all([
-        this.ticketTypes.listByEventId(this.event().id),
-        this.sbSessions.listByEvent(this.event().id).catch(() => [] as SessionWithTrack[]),
+        this.ticketTypes.listByEventId(this.event().id).catch(err => {
+          console.error('[Checkout] Error loading tickets:', err);
+          throw err;
+        }),
+        this.sbSessions.listByEvent(this.event().id).catch(err => {
+          console.error('[Checkout] Error loading sessions:', err);
+          return [] as SessionWithTrack[];
+        }),
       ]);
+      console.log('[Checkout] Loaded tickets count:', tickets.length, tickets);
+      console.log('[Checkout] Loaded sessions count:', sessions.length, sessions);
       this.tickets.set(tickets);
       this.sessions.set(sessions);
 
@@ -210,6 +219,7 @@ export class EventRegistrationCheckout implements OnInit {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al cargar el registro';
+      console.error('[Checkout] Error during init:', e);
       this.snackBar.open(msg, 'Cerrar', { duration: 4000 });
     } finally {
       this.initLoading.set(false);
