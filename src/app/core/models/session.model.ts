@@ -12,6 +12,7 @@ export interface Session {
   start_time: string | null;
   end_time: string | null;
   speaker: string | null;
+  speaker_avatar_url?: string | null;
   city: string | null;
   level: SessionLevel | null;
   topic: string | null;

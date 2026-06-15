@@ -71,6 +71,7 @@ export class SbSessions {
         start_time: (r.start_time as string | null) ?? null,
         end_time: (r.end_time as string | null) ?? null,
         speaker: (r.speaker as string | null) ?? null,
+        speaker_avatar_url: (r.speaker_avatar_url as string | null) ?? null,
         city: (r.city as string | null) ?? null,
         level: (r.level as SessionWithTrack['level']) ?? null,
         topic: (r.topic as string | null) ?? null,
