@@ -30,16 +30,11 @@ export class RegistrationsService {
     return (data as unknown as RegistrationRow) ?? null;
   }
 
-  async createRegistration(registration: RegistrationInsert): Promise<{ id: string }> {
-    const { data, error } = await this.supabase
-      .from('registrations')
-      .insert(registration)
-      .select('id')
-      .single();
+  async createRegistration(registration: RegistrationInsert): Promise<void> {
+    const { error } = await this.supabase.from('registrations').insert(registration);
     if (error) {
       throw new Error(`[registrations.insert] ${error.code ?? ''} ${error.message} ${error.details ?? ''}`.trim());
     }
-    return data as unknown as { id: string };
   }
 
   async uploadPaymentProof(file: File, eventId: string, userId: string): Promise<string> {
