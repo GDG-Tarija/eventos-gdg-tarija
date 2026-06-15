@@ -10,7 +10,7 @@ import { SessionPicker } from '../session-picker/session-picker';
   template: `
     <div class="space-y-5 pt-2">
       <!-- Info / instrucciones -->
-      @if (sessions().length > 0) {
+      @if (sessions().length > 0 && !hideNavigation()) {
         <div class="rounded-2xl border border-google-blue/10 bg-google-blue/5 px-4 py-3 flex items-start gap-2.5">
           <span class="material-symbols-rounded text-base text-google-blue mt-0.5 shrink-0" aria-hidden="true">info</span>
           <p class="text-xs text-google-blue font-medium leading-relaxed m-0">

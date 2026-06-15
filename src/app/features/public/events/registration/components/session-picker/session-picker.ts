@@ -165,14 +165,14 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                         }
 
                         @if (session.level || topics.length > 0) {
-                          <div class="flex items-center gap-1.5 flex-wrap">
+                          <div class="flex items-center gap-2 flex-wrap">
                             @if (lvl) {
                               <span class="text-xs font-bold px-2.5 py-0.5 rounded-full" [ngClass]="[lvl.bg, lvl.text]">
                                 {{ lvl.label }}
                               </span>
                             }
                             @for (t of topics; track t) {
-                              <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-black/5 text-text-secondary">
+                              <span class="text-xs font-medium text-text-secondary/70">
                                 #{{ t }}
                               </span>
                             }
@@ -212,7 +212,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                           [attr.aria-label]="session.title + (isFull ? ' (sin cupos)' : '')"
                         >
                           @if (session.track_name) {
-                            <span class="self-start text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider" [ngClass]="[color.bg, color.text]">
+                            <span class="self-start text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider sm:hidden" [ngClass]="[color.bg, color.text]">
                               {{ session.track_name }}
                             </span>
                           }
@@ -235,21 +235,21 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                           }
 
                           @if (session.level || topics.length > 0) {
-                            <div class="flex items-center gap-1.5 flex-wrap">
+                            <div class="flex items-center gap-2 flex-wrap">
                               @if (lvl) {
                                 <span class="text-xs font-bold px-2.5 py-0.5 rounded-full" [ngClass]="[lvl.bg, lvl.text]">
                                   {{ lvl.label }}
                                 </span>
                               }
                               @for (t of topics; track t) {
-                                <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-black/5 text-text-secondary">
+                                <span class="text-xs font-medium text-text-secondary/70">
                                   #{{ t }}
                                 </span>
                               }
                             </div>
                           }
 
-                          <div class="flex items-center gap-1.5 pt-2 border-t border-black/5 w-full mt-auto">
+                          <div class="flex items-center gap-1.5 mt-auto pt-1 w-full">
                             <span class="material-symbols-rounded text-base" [class.text-google-green]="!isFull" [class.text-google-red]="isFull" aria-hidden="true">
                               {{ isFull ? 'person_off' : 'group' }}
                             </span>
@@ -322,21 +322,21 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                             }
 
                             @if (session.level || topics.length > 0) {
-                              <div class="flex items-center gap-1.5 flex-wrap">
+                              <div class="flex items-center gap-2 flex-wrap">
                                 @if (lvl) {
                                   <span class="text-xs font-bold px-2.5 py-0.5 rounded-full" [ngClass]="[lvl.bg, lvl.text]">
                                     {{ lvl.label }}
                                   </span>
                                 }
                                 @for (t of topics; track t) {
-                                  <span class="text-xs font-medium px-2.5 py-0.5 rounded-full bg-black/5 text-text-secondary">
+                                  <span class="text-xs font-medium text-text-secondary/70">
                                     #{{ t }}
                                   </span>
                                 }
                               </div>
                             }
 
-                            <div class="flex items-center gap-1.5 pt-2 border-t border-black/5 w-full mt-auto">
+                            <div class="flex items-center gap-1.5 mt-auto pt-1 w-full">
                               <span class="material-symbols-rounded text-base" [class.text-google-green]="!isFull" [class.text-google-red]="isFull" aria-hidden="true">
                                 {{ isFull ? 'person_off' : 'group' }}
                               </span>
@@ -358,16 +358,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
           </div>
         }
 
-        <!-- Resumen de selección -->
-        @if (selectedIds().length > 0) {
-          <div class="rounded-xl border border-google-blue/20 bg-google-blue/5 px-4 py-3">
-            <p class="text-xs text-google-blue font-semibold m-0">
-              <span class="material-symbols-rounded text-sm align-middle mr-1" aria-hidden="true">check_circle</span>
-              {{ selectedIds().length }} sesión{{ selectedIds().length === 1 ? '' : 'es' }}
-              seleccionada{{ selectedIds().length === 1 ? '' : 's' }}
-            </p>
-          </div>
-        }
+
 
       </div>
     }
