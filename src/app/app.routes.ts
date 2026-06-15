@@ -18,7 +18,7 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     loadComponent: () => import('./layouts/admin-layout/admin-layout').then(m => m.AdminLayout),
-    canActivate: [authGuard],
+    //canActivate: [authGuard],
     children: [
       { path: '', loadComponent: () => import('./features/dashboard/dashboard').then(m => m.Dashboard) },
       {

@@ -30,7 +30,7 @@ export class RegistrationsService {
     return (data as unknown as RegistrationRow) ?? null;
   }
 
-  async createRegistration(registration: RegistrationInsert): Promise<{ id: string }> {
+  async createRegistration(registration: RegistrationInsert): Promise<string> {
     const { data, error } = await this.supabase
       .from('registrations')
       .insert(registration)
@@ -39,7 +39,7 @@ export class RegistrationsService {
     if (error) {
       throw new Error(`[registrations.insert] ${error.code ?? ''} ${error.message} ${error.details ?? ''}`.trim());
     }
-    return data as unknown as { id: string };
+    return (data as unknown as { id: string }).id;
   }
 
   async uploadPaymentProof(file: File, eventId: string, userId: string): Promise<string> {
