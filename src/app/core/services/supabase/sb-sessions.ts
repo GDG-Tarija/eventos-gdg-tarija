@@ -12,7 +12,7 @@ export class SbSessions {
     
     const { data: rows, error: sessErr } = await this.supabase
       .from('sessions')
-      .select('*')
+      .select('*, tracks(nombre)')
       .eq('event_id', eventId)
       .order('created_at', { ascending: true });
 
@@ -77,7 +77,11 @@ export class SbSessions {
         topic: (r.topic as string | null) ?? null,
         created_at: (r.created_at as string | null) ?? null,
         updated_at: (r.updated_at as string | null) ?? null,
-        track_name: null,
+        track_name: r.tracks
+          ? (Array.isArray(r.tracks)
+              ? (r.tracks[0]?.nombre as string | null)
+              : (r.tracks.nombre as string | null))
+          : null,
         enrolled_count: countMap.get(r.id as string) ?? 0,
       };
     });
@@ -91,5 +95,45 @@ export class SbSessions {
     const rows = sessionIds.map((session_id) => ({ registration_id: registrationId, session_id }));
     const { error } = await this.supabase.from('session_registrations').insert(rows);
     if (error) throw new Error(`[sessions.saveRegistrations] ${error.message}`);
+  }
+
+  async getRegistrationsByRegistrationId(registrationId: string): Promise<string[]> {
+    const { data, error } = await this.supabase
+      .from('session_registrations')
+      .select('session_id')
+      .eq('registration_id', registrationId);
+
+    if (error) {
+      console.error('[SbSessions] Error al obtener registros de sesión:', error);
+      throw new Error(`[sessions.getRegistrationsByRegistrationId] ${error.message}`);
+    }
+
+    return (data ?? []).map((r: any) => r.session_id as string);
+  }
+
+  async updateSessionRegistrations(registrationId: string, sessionIds: string[]): Promise<void> {
+    // 1. Eliminar inscripciones anteriores
+    const { error: delErr } = await this.supabase
+      .from('session_registrations')
+      .delete()
+      .eq('registration_id', registrationId);
+
+    if (delErr) {
+      console.error('[SbSessions] Error al limpiar registros anteriores de sesión:', delErr);
+      throw new Error(`[sessions.updateSessionRegistrations.delete] ${delErr.message}`);
+    }
+
+    // 2. Insertar las nuevas inscripciones
+    if (sessionIds.length > 0) {
+      const rows = sessionIds.map((session_id) => ({ registration_id: registrationId, session_id }));
+      const { error: insErr } = await this.supabase
+        .from('session_registrations')
+        .insert(rows);
+
+      if (insErr) {
+        console.error('[SbSessions] Error al insertar nuevas inscripciones de sesión:', insErr);
+        throw new Error(`[sessions.updateSessionRegistrations.insert] ${insErr.message}`);
+      }
+    }
   }
 }

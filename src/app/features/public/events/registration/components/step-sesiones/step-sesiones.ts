@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, effect, input, model, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { SessionWithTrack } from '../../../../../../core/models/session.model';
 import { SessionPicker } from '../session-picker/session-picker';
@@ -23,7 +23,7 @@ import { SessionPicker } from '../session-picker/session-picker';
       <!-- Lista de sesiones -->
       <app-session-picker
         [sessions]="sessions()"
-        (selectionChange)="onSelectionChange($event)"
+        [(selectedIds)]="selectedIds"
       />
 
       <!-- Resumen de selección (cuando hay más de 1 bloque con sesiones) -->
@@ -42,45 +42,54 @@ import { SessionPicker } from '../session-picker/session-picker';
       }
 
       <!-- Navegación del step -->
-      <div class="flex gap-3 pt-1">
-        <button
-          mat-stroked-button
-          type="button"
-          class="gdg-btn-outlined flex-1 text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
-          (click)="back.emit()"
-        >
-          <span class="flex items-center justify-center gap-1">
-            <span class="material-symbols-rounded text-sm" aria-hidden="true">chevron_left</span>
-            <span>Atrás</span>
-          </span>
-        </button>
-        <button
-          mat-flat-button
-          type="button"
-          class="gdg-btn-filled flex-[2] text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
-          (click)="next.emit()"
-        >
-          <span class="flex items-center justify-center gap-1.5">
-            @if (sessions().length === 0 || selectedIds().length === 0) {
-              <span>Omitir</span>
-            } @else {
-              <span>Continuar</span>
-            }
-            <span class="material-symbols-rounded text-sm" aria-hidden="true">chevron_right</span>
-          </span>
-        </button>
-      </div>
+      @if (!hideNavigation()) {
+        <div class="flex gap-3 pt-1">
+          <button
+            mat-stroked-button
+            type="button"
+            class="gdg-btn-outlined flex-1 text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
+            (click)="back.emit()"
+          >
+            <span class="flex items-center justify-center gap-1">
+              <span class="material-symbols-rounded text-sm" aria-hidden="true">chevron_left</span>
+              <span>Atrás</span>
+            </span>
+          </button>
+          <button
+            mat-flat-button
+            type="button"
+            class="gdg-btn-filled flex-[2] text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
+            (click)="next.emit()"
+          >
+            <span class="flex items-center justify-center gap-1.5">
+              @if (sessions().length === 0 || selectedIds().length === 0) {
+                <span>Omitir</span>
+              } @else {
+                <span>Continuar</span>
+              }
+              <span class="material-symbols-rounded text-sm" aria-hidden="true">chevron_right</span>
+            </span>
+          </button>
+        </div>
+      }
     </div>
   `,
 })
 export class StepSesiones {
   readonly sessions = input.required<SessionWithTrack[]>();
+  readonly hideNavigation = input<boolean>(false);
 
   readonly next = output<void>();
   readonly back = output<void>();
   readonly selectionChange = output<string[]>();
 
-  protected readonly selectedIds = signal<string[]>([]);
+  readonly selectedIds = model<string[]>([]);
+
+  constructor() {
+    effect(() => {
+      this.selectionChange.emit(this.selectedIds());
+    });
+  }
 
   readonly totalSlots = computed(() => {
     const keys = new Set(this.sessions().map((s) => `${s.date ?? ''}|${s.start_time ?? ''}`));
@@ -90,9 +99,4 @@ export class StepSesiones {
   readonly selectedSessions = computed(() =>
     this.sessions().filter((s) => this.selectedIds().includes(s.id)),
   );
-
-  onSelectionChange(ids: string[]): void {
-    this.selectedIds.set(ids);
-    this.selectionChange.emit(ids);
-  }
 }
