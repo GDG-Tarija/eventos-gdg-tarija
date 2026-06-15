@@ -83,7 +83,10 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | sessions               | id                | uuid                     | NO            |
 | public  | sessions               | event_id          | uuid                     | NO            |
 | public  | sessions               | title             | character varying        | NO            |
+| public  | sessions               | description       | text                     | YES           |
 | public  | sessions               | capacity          | integer                  | NO            |
+| public  | sessions               | time_slot         | smallint                 | NO            |
+| public  | sessions               | track_id          | uuid (FK tracks.id)      | YES           |
 | public  | sessions               | created_at        | timestamp with time zone | YES           |
 | public  | sessions               | updated_at        | timestamp with time zone | YES           |
 | public  | sponsors               | id                | uuid                     | NO            |

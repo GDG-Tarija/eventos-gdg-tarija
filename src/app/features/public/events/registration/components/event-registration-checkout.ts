@@ -16,6 +16,8 @@ import {
 } from '@angular/forms/signals';
 
 import { AuthService } from '../../../../../core/auth/services/auth.service';
+import { SessionWithTrack } from '../../../../../core/models/session.model';
+import { SbSessions } from '../../../../../core/services/supabase/sb-sessions';
 import { FormField } from '../../../../../models/field.model';
 import { RegistrationPayload, RegistrationStatus } from '../../../../../models/registration.model';
 import { TicketType } from '../../../../../models/ticket.model';
@@ -23,6 +25,7 @@ import type { Event as EventModel } from '../../data/event.model';
 import { RegistrationsService } from '../data/registrations.service';
 import { TicketTypesService } from '../data/ticket-types.service';
 import { UserProfileService } from '../data/user-profile.service';
+import { SessionPicker } from './session-picker/session-picker';
 
 type ExtraInfo = { form_fields?: FormField[] };
 
@@ -45,6 +48,7 @@ interface CheckoutFormData {
     MatSelectModule,
     MatSnackBarModule,
     SignalFormField,
+    SessionPicker,
   ],
   template: `
     <div class="space-y-6 bg-transparent p-0">
@@ -220,7 +224,29 @@ interface CheckoutFormData {
             </div>
           </div>
 
-          <!-- Paso 3: Preguntas dinámicas -->
+          <!-- Paso 3: Sesiones -->
+          @if (hasSessions()) {
+            <hr class="border-t border-black/5 my-4" />
+
+            <div class="space-y-4">
+              <div class="flex items-center gap-2 pb-2 border-b border-black/5">
+                <span class="material-symbols-rounded text-base text-google-blue" aria-hidden="true">event_seat</span>
+                <h3 class="text-xs font-bold text-text-primary uppercase tracking-wider m-0">
+                  Elige tus sesiones
+                </h3>
+              </div>
+              <p class="text-xs text-text-secondary m-0 -mt-1">
+                Podés inscribirte a una sesión por bloque horario. No es posible asistir a dos sesiones simultáneas.
+              </p>
+              <app-session-picker
+                [sessions]="sessions()"
+                [(selectedIds)]="selectedSessionIds"
+                (selectionChange)="selectedSessionIds.set($event)"
+              />
+            </div>
+          }
+
+          <!-- Paso 4: Preguntas dinámicas -->
           @if (fields().length > 0) {
             <hr class="border-t border-black/5 my-4" />
 
@@ -386,6 +412,7 @@ export class EventRegistrationCheckout implements OnInit {
   private readonly ticketTypes = inject(TicketTypesService);
   private readonly registrations = inject(RegistrationsService);
   private readonly profiles = inject(UserProfileService);
+  private readonly sbSessions = inject(SbSessions);
   private readonly snackBar = inject(MatSnackBar);
 
   readonly initLoading = signal(true);
@@ -404,6 +431,10 @@ export class EventRegistrationCheckout implements OnInit {
 
   readonly paymentProofFile = signal<File | null>(null);
   readonly paymentProofName = computed(() => this.paymentProofFile()?.name ?? '');
+
+  readonly sessions = signal<SessionWithTrack[]>([]);
+  readonly selectedSessionIds = signal<string[]>([]);
+  readonly hasSessions = computed(() => this.sessions().length > 0);
 
   // Formulario con Signals
   readonly formData = signal<CheckoutFormData>({
@@ -530,6 +561,14 @@ export class EventRegistrationCheckout implements OnInit {
     try {
       const tickets = await this.ticketTypes.listByEventId(this.event().id);
       this.tickets.set(tickets);
+
+      // Sesiones: carga no-fatal — si la migración aún no se aplicó, el checkout sigue funcionando
+      try {
+        const sessionList = await this.sbSessions.listByEvent(this.event().id);
+        this.sessions.set(sessionList);
+      } catch {
+        this.sessions.set([]);
+      }
 
       const user = this.auth.user();
       if (user) {
@@ -668,7 +707,11 @@ export class EventRegistrationCheckout implements OnInit {
           ...updatedProfile,
         });
       }
-      await this.registrations.createRegistration(payload.registration);
+      const newRegistration = await this.registrations.createRegistration(payload.registration);
+
+      if (newRegistration && this.selectedSessionIds().length > 0) {
+        await this.sbSessions.saveSessionRegistrations(newRegistration.id, this.selectedSessionIds());
+      }
 
       this.success.set(true);
     } catch (e) {
