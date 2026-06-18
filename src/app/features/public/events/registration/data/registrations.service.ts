@@ -76,7 +76,7 @@ export class RegistrationsService {
       .from('event_coupons')
       .select('id, role, max_uses')
       .eq('event_id', eventId)
-      .eq('code', cleanCode)
+      .ilike('code', cleanCode)
       .maybeSingle();
 
     if (error) {
