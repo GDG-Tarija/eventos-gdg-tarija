@@ -1,4 +1,4 @@
-export type EventRole = 'ATTENDEE';
+export type EventRole = 'ATTENDEE' | 'SPEAKER' | 'SPONSOR' | 'STAFF';
 export type RegistrationStatus = 'CONFIRMED' | 'PENDING';
 
 export interface UserUpdate {
@@ -15,6 +15,7 @@ export interface RegistrationInsert {
   status: RegistrationStatus;
   payment_proof_url: string | null;
   custom_responses: Record<string, string>;
+  coupon_id?: string | null;
 }
 
 export interface RegistrationPayload {

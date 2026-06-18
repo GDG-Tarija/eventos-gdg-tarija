@@ -17,6 +17,7 @@ import { AuthService } from '../../../../../../core/auth/services/auth.service';
 import { FormField } from '../../../../../../models/field.model';
 import { TicketType } from '../../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../../data/event.model';
+import { RegistrationsService } from '../../data/registrations.service';
 
 export interface StepDatosOutput {
   firstName: string;
@@ -26,6 +27,8 @@ export interface StepDatosOutput {
   responses: Record<string, any>;
   ticket: TicketType;
   paymentProofFile: File | null;
+  appliedRole: 'ATTENDEE' | 'SPEAKER' | 'STAFF';
+  couponId?: string | null;
 }
 
 interface CheckoutFormData {
@@ -125,6 +128,37 @@ type ExtraInfo = { form_fields?: FormField[] };
           }
         }
       </div>
+
+      <!-- Código de Invitación / Cupón (Oculto tras enlace por defecto) -->
+      @if (!showCouponField()) {
+        <div class="pt-1">
+          <button
+            type="button"
+            class="text-xs text-google-blue font-bold hover:underline cursor-pointer bg-transparent border-0 p-0 text-left font-google"
+            (click)="showCouponField.set(true)"
+          >
+            ¿Tenés un código de descuento o invitación?
+          </button>
+        </div>
+      } @else {
+        <div class="space-y-3">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Código de invitación / Cupón</mat-label>
+            <input matInput placeholder="XXX-XXXX" (input)="onCouponInput($event)" />
+            @if (couponSuccessMessage()) {
+              <mat-hint class="text-google-green font-bold text-xs flex items-center gap-1 mt-1">
+                <span class="material-symbols-rounded text-sm" aria-hidden="true">verified</span>
+                <span>{{ couponSuccessMessage() }}</span>
+              </mat-hint>
+            } @else if (couponErrorMessage()) {
+              <mat-hint class="text-google-red font-semibold text-xs flex items-center gap-1 mt-1">
+                <span class="material-symbols-rounded text-sm" aria-hidden="true">error</span>
+                <span>{{ couponErrorMessage() }}</span>
+              </mat-hint>
+            }
+          </mat-form-field>
+        </div>
+      }
 
       <!-- Campos dinámicos -->
       @if (fields().length > 0) {
@@ -228,6 +262,8 @@ export class StepDatos implements OnInit {
   readonly stepComplete = output<StepDatosOutput>();
 
   private readonly auth = inject(AuthService);
+  private readonly registrationsService = inject(RegistrationsService);
+  private lastValidatedCode = '';
 
   readonly fields = signal<FormField[]>([]);
   readonly selectedTicketId = signal<string | null>(null);
@@ -235,6 +271,15 @@ export class StepDatos implements OnInit {
   readonly selectedTicketQrUrl = signal<string | null>(null);
   readonly paymentProofFile = signal<File | null>(null);
   readonly paymentProofName = computed(() => this.paymentProofFile()?.name ?? '');
+
+  // Lógica para códigos de invitación / cupones
+  readonly showCouponField = signal(false);
+  readonly couponCode = signal('');
+  readonly appliedRole = signal<'ATTENDEE' | 'SPEAKER' | 'STAFF'>('ATTENDEE');
+  readonly couponId = signal<string | null>(null);
+  readonly couponSuccessMessage = signal<string | null>(null);
+  readonly couponErrorMessage = signal<string | null>(null);
+  readonly originalTicketPrice = signal(0);
   readonly ticketError = signal<string | null>(null);
   readonly proofError = signal<string | null>(null);
 
@@ -289,12 +334,70 @@ export class StepDatos implements OnInit {
   }
 
   selectTicket(t: TicketType): void {
+    const price = Number(t.price ?? 0);
     this.selectedTicketId.set(t.id);
-    this.selectedTicketPrice.set(Number(t.price ?? 0));
+    this.originalTicketPrice.set(price);
+    
+    // Si ya se aplicó un código de invitación, el costo del pase es cero
+    if (this.appliedRole() !== 'ATTENDEE') {
+      this.selectedTicketPrice.set(0);
+    } else {
+      this.selectedTicketPrice.set(price);
+    }
+    
     this.selectedTicketQrUrl.set(t.payment_qr_url ?? null);
     this.paymentProofFile.set(null);
     this.ticketError.set(null);
     this.proofError.set(null);
+  }
+
+  async onCouponInput(event: Event): Promise<void> {
+    const code = (event.target as HTMLInputElement).value.trim().toLowerCase();
+    this.couponCode.set(code);
+    this.lastValidatedCode = code;
+
+    if (!code) {
+      this.appliedRole.set('ATTENDEE');
+      this.couponId.set(null);
+      this.selectedTicketPrice.set(this.originalTicketPrice());
+      this.couponSuccessMessage.set(null);
+      this.couponErrorMessage.set(null);
+      return;
+    }
+
+    // Debounce de 250ms
+    await new Promise(resolve => setTimeout(resolve, 250));
+    if (this.lastValidatedCode !== code) return;
+
+    const res = await this.registrationsService.validateCoupon(this.event().id, code);
+    
+    // Evitar condición de carrera si el usuario continuó escribiendo durante la petición HTTP
+    if (this.lastValidatedCode !== code) return;
+
+    if (!res) {
+      this.appliedRole.set('ATTENDEE');
+      this.couponId.set(null);
+      this.selectedTicketPrice.set(this.originalTicketPrice());
+      this.couponSuccessMessage.set(null);
+      this.couponErrorMessage.set('Código de invitación no válido o expirado.');
+      return;
+    }
+
+    if (!res.valid) {
+      this.appliedRole.set('ATTENDEE');
+      this.couponId.set(null);
+      this.selectedTicketPrice.set(this.originalTicketPrice());
+      this.couponSuccessMessage.set(null);
+      this.couponErrorMessage.set(res.error ?? 'Código de invitación no válido o expirado.');
+    } else {
+      this.appliedRole.set(res.role ?? 'ATTENDEE');
+      this.couponId.set(res.id ?? null);
+      this.selectedTicketPrice.set(0);
+
+      const roleLabel = res.role === 'SPEAKER' ? 'Speaker' : res.role === 'STAFF' ? 'Staff' : 'Asistente';
+      this.couponSuccessMessage.set(`Código de invitación de ${roleLabel} aplicado (100% de descuento).`);
+      this.couponErrorMessage.set(null);
+    }
   }
 
   onFileChange(event: globalThis.Event): void {
@@ -325,6 +428,8 @@ export class StepDatos implements OnInit {
       responses: data.responses,
       ticket,
       paymentProofFile: this.paymentProofFile(),
+      appliedRole: this.appliedRole(),
+      couponId: this.couponId(),
     });
   }
 

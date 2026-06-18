@@ -329,17 +329,19 @@ export class EventRegistrationCheckout implements OnInit {
         this.auth.user.set({ ...user, ...updatedProfile });
       }
 
-      const status: RegistrationStatus = d.ticket.price > 0 ? 'PENDING' : 'CONFIRMED';
+      const isPromo = d.appliedRole && d.appliedRole !== 'ATTENDEE';
+      const status: RegistrationStatus = (d.ticket.price > 0 && !isPromo) ? 'PENDING' : 'CONFIRMED';
       const registrationId = await this.registrations.createRegistration({
         event_id: this.event().id,
         user_id: user.id,
         ticket_type_id: d.ticket.id,
-        event_role: 'ATTENDEE',
+        event_role: d.appliedRole ?? 'ATTENDEE',
         status,
         payment_proof_url: paymentProofUrl,
         custom_responses: Object.fromEntries(
           Object.entries(d.responses).filter(([, v]) => typeof v === 'string' && (v as string).trim().length > 0),
         ) as Record<string, string>,
+        coupon_id: d.couponId || null,
       });
 
       if (this.selectedSessionIds().length > 0) {

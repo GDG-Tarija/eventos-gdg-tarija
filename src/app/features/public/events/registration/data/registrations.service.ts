@@ -67,4 +67,45 @@ export class RegistrationsService {
     const { data } = this.supabase.storage.from('payment-proofs').getPublicUrl(path);
     return data.publicUrl;
   }
+
+  async validateCoupon(eventId: string, code: string): Promise<{ valid: boolean; id?: string; role?: 'ATTENDEE' | 'SPEAKER' | 'STAFF'; error?: string } | null> {
+    const cleanCode = code.trim().toLowerCase();
+    if (!cleanCode) return null;
+
+    const { data: coupon, error } = await this.supabase
+      .from('event_coupons')
+      .select('id, role, max_uses')
+      .eq('event_id', eventId)
+      .eq('code', cleanCode)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[RegistrationsService.validateCoupon] Error al buscar cupón:', error);
+      return { valid: false, error: 'Error al verificar el cupón' };
+    }
+
+    if (!coupon) {
+      return { valid: false, error: 'Código de invitación no válido o expirado.' };
+    }
+
+    // Contar los usos actuales del cupón de manera segura usando la función RPC
+    const { data: usedCount, error: countErr } = await this.supabase
+      .rpc('get_coupon_uses', { p_coupon_id: coupon.id });
+
+    if (countErr) {
+      console.error('[RegistrationsService.validateCoupon] Error al contar los usos del cupón:', countErr);
+      return { valid: false, error: 'Error al validar los usos del cupón' };
+    }
+
+    const used = (usedCount as number) ?? 0;
+    if (used >= coupon.max_uses) {
+      return { valid: false, error: 'Este código de invitación ya ha superado el límite de usos permitidos.' };
+    }
+
+    return {
+      valid: true,
+      id: coupon.id as string,
+      role: coupon.role as 'ATTENDEE' | 'SPEAKER' | 'STAFF',
+    };
+  }
 }

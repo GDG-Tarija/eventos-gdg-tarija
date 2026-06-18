@@ -60,6 +60,13 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | inscripciones_sessions | inscrito_en       | timestamp with time zone | NO            |
 | public  | inscripciones_sessions | asistio           | boolean                  | NO            |
 | public  | inscripciones_sessions | checked_in_at     | timestamp with time zone | YES           |
+| public  | event_coupons          | id                | uuid                     | NO            |
+| public  | event_coupons          | event_id          | uuid                     | NO            |
+| public  | event_coupons          | code              | character varying        | NO            |
+| public  | event_coupons          | role              | character varying        | NO            |
+| public  | event_coupons          | max_uses          | integer                  | NO            |
+| public  | event_coupons          | created_at        | timestamp with time zone | YES           |
+| public  | event_coupons          | updated_at        | timestamp with time zone | YES           |
 | public  | registrations          | id                | uuid                     | NO            |
 | public  | registrations          | event_id          | uuid                     | NO            |
 | public  | registrations          | user_id           | uuid                     | YES           |
@@ -70,6 +77,7 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | registrations          | updated_at        | timestamp with time zone | YES           |
 | public  | registrations          | custom_responses  | jsonb                    | YES           |
 | public  | registrations          | payment_proof_url | text                     | YES           |
+| public  | registrations          | coupon_id         | uuid                     | YES           |
 | public  | scan_logs              | id                | uuid                     | NO            |
 | public  | scan_logs              | registration_id   | uuid                     | NO            |
 | public  | scan_logs              | scanned_by        | uuid                     | YES           |
