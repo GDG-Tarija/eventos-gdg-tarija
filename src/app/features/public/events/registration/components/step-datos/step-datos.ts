@@ -338,8 +338,8 @@ export class StepDatos implements OnInit {
     this.selectedTicketId.set(t.id);
     this.originalTicketPrice.set(price);
     
-    // Si ya se aplicó un código de invitación, el costo del pase es cero
-    if (this.appliedRole() !== 'ATTENDEE') {
+    // Si ya se aplicó un cupón válido, el costo del pase es cero
+    if (this.couponId()) {
       this.selectedTicketPrice.set(0);
     } else {
       this.selectedTicketPrice.set(price);
