@@ -10,6 +10,9 @@ import { Event } from '../../data/event.model';
   template: `
     <article
       class="gdg-card border border-black/5 overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-sm cursor-pointer sm:h-[230px]"
+      [class.opacity-75]="isPast()"
+      [class.grayscale-\[50\%\]]="isPast()"
+      [class.bg-black\/\[0\.02\]]="isPast()"
       [routerLink]="['/e', event().slug]"
     >
       <div class="p-3 sm:p-5 h-full">
@@ -48,7 +51,11 @@ import { Event } from '../../data/event.model';
               <div class="flex flex-wrap items-center gap-2 text-xs">
                 <!-- Fecha -->
                 <div
-                  class="flex items-center gap-1.5 text-google-blue bg-google-blue/5 px-2.5 py-1 rounded-full font-semibold shrink-0"
+                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold shrink-0"
+                  [class.text-google-blue]="!isPast()"
+                  [class.bg-google-blue\/5]="!isPast()"
+                  [class.text-text-muted]="isPast()"
+                  [class.bg-black\/5]="isPast()"
                 >
                   <span class="material-symbols-rounded text-sm" aria-hidden="true"
                     >calendar_month</span
@@ -107,9 +114,16 @@ import { Event } from '../../data/event.model';
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full border-t border-black/5 pt-2.5 mt-0.5 shrink-0"
             >
-              <!-- Alertas de Cupo -->
+              <!-- Alertas de Cupo / Estado -->
               <div class="flex items-center gap-3 text-xs font-semibold text-text-secondary">
-                @if (
+                @if (isPast()) {
+                  <div
+                    class="flex items-center gap-1 text-text-muted bg-black/5 px-2 py-0.5 rounded"
+                  >
+                    <span class="material-symbols-rounded text-sm" aria-hidden="true">event_busy</span>
+                    <span>Finalizado</span>
+                  </div>
+                } @else if (
                   event().available_spots !== undefined &&
                   event().available_spots! <= 10 &&
                   event().available_spots! > 0
@@ -130,16 +144,19 @@ import { Event } from '../../data/event.model';
                 }
               </div>
 
-              <!-- Acción: Registrarse -->
+              <!-- Acción: Registrarse / Ver evento -->
               <div class="w-full sm:w-auto">
                 <button
                   mat-flat-button
                   type="button"
                   class="gdg-btn-filled h-8 w-full sm:w-auto px-4 rounded-full text-xs font-bold transition-all duration-300 active:scale-95 hover:shadow-sm"
+                  [class.\!bg-black\/10]="isPast()"
+                  [class.\!text-text-secondary]="isPast()"
+                  [class.\!shadow-none]="isPast()"
                   [routerLink]="['/e', event().slug]"
                 >
                   <span class="flex items-center justify-center gap-1.5 w-full h-full leading-none">
-                    <span>Registrarse</span>
+                    <span>{{ isPast() ? 'Ver evento' : 'Registrarse' }}</span>
                     <span class="material-symbols-rounded text-sm" aria-hidden="true"
                       >arrow_forward</span
                     >
@@ -155,6 +172,14 @@ import { Event } from '../../data/event.model';
 })
 export class EventCard {
   readonly event = input.required<Event>();
+
+  readonly isPast = computed(() => {
+    const e = this.event();
+    if (!e) return false;
+    const now = new Date();
+    const endDate = e.date_end ?? e.date_start;
+    return now > endDate;
+  });
 
   readonly dateLabel = computed(() =>
     new Intl.DateTimeFormat('es-BO', {

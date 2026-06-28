@@ -235,7 +235,16 @@ import { LOGOS } from '../../../../core/config/logos';
                       </h3>
 
                       <!-- Estado de cupos -->
-                      @if (event()!.available_spots !== undefined) {
+                      @if (isPast()) {
+                        <div
+                          class="inline-flex items-center gap-1.5 rounded-full bg-black/5 text-text-muted px-3 py-1 text-xs font-semibold"
+                        >
+                          <span class="material-symbols-rounded text-base" aria-hidden="true"
+                            >event_busy</span
+                          >
+                          <span>Evento finalizado</span>
+                        </div>
+                      } @else if (event()!.available_spots !== undefined) {
                         @if (event()!.is_full) {
                           <div
                             class="inline-flex items-center gap-1.5 rounded-full bg-google-red/10 text-google-red px-3 py-1 text-xs font-semibold"
@@ -295,6 +304,15 @@ export class EventDetail implements OnInit {
 
   // Estado para la visualización del texto extendido
   readonly showFullDescription = signal(false);
+
+  // Computa si el evento ya finalizó
+  readonly isPast = computed(() => {
+    const e = this.event();
+    if (!e) return false;
+    const now = new Date();
+    const endDate = e.date_end ?? e.date_start;
+    return now > endDate;
+  });
 
   // Computa si la descripción del evento es extensa (más de 300 caracteres o 5 líneas)
   readonly isDescriptionLong = computed(() => {

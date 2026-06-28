@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -104,19 +104,7 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
   `],
   template: `
     <div class="space-y-6 bg-transparent p-0">
-      @if (!auth.user()) {
-        <div class="space-y-3">
-          <p class="text-text-secondary text-sm">Iniciá sesión para registrarte al evento.</p>
-          <button
-            mat-flat-button
-            type="button"
-            class="gdg-btn-filled w-full"
-            (click)="auth.signInWithGoogle()"
-          >
-            Iniciar sesión con Google
-          </button>
-        </div>
-      } @else if (initLoading()) {
+      @if (initLoading()) {
         <div class="flex items-center gap-3 text-text-secondary">
           <mat-progress-spinner mode="indeterminate" diameter="22" aria-label="Cargando registro" />
           <span class="text-sm">Cargando opciones de registro...</span>
@@ -172,6 +160,42 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
             </p>
           </div>
         }
+      } @else if (isPast()) {
+        <!-- Si el evento ya pasó y el usuario no está registrado -->
+        <div class="rounded-2xl border border-black/10 bg-black/[0.02] p-5 space-y-3">
+          <div class="flex items-center gap-2 text-text-secondary font-bold text-sm">
+            <span class="material-symbols-rounded text-lg text-text-muted" aria-hidden="true">event_busy</span>
+            <span>Evento finalizado</span>
+          </div>
+          <p class="text-xs text-text-secondary leading-relaxed m-0">
+            El registro para este evento ya no se encuentra disponible porque el evento ha concluido.
+          </p>
+          @if (!auth.user()) {
+            <div class="pt-2 border-t border-black/5 space-y-2">
+              <p class="text-xs text-text-muted m-0">¿Ya te habías registrado anteriormente?</p>
+              <button
+                mat-flat-button
+                type="button"
+                class="gdg-btn-filled w-full text-xs font-bold"
+                (click)="auth.signInWithGoogle()"
+              >
+                Iniciar sesión para ver tu registro
+              </button>
+            </div>
+          }
+        </div>
+      } @else if (!auth.user()) {
+        <div class="space-y-3">
+          <p class="text-text-secondary text-sm">Iniciá sesión para registrarte al evento.</p>
+          <button
+            mat-flat-button
+            type="button"
+            class="gdg-btn-filled w-full"
+            (click)="auth.signInWithGoogle()"
+          >
+            Iniciar sesión con Google
+          </button>
+        </div>
       } @else {
         <mat-stepper #stepper [linear]="false" orientation="vertical">
           <mat-step label="Tus datos">
@@ -218,6 +242,14 @@ export class EventRegistrationCheckout implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
 
   @ViewChild('stepper') private stepper!: MatStepper;
+
+  readonly isPast = computed(() => {
+    const e = this.event();
+    if (!e) return false;
+    const now = new Date();
+    const endDate = e.date_end ?? e.date_start;
+    return now > endDate;
+  });
 
   readonly initLoading = signal(true);
   readonly submitting = signal(false);
