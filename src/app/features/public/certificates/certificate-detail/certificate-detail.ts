@@ -23,38 +23,36 @@ import { CertificateDetailData } from '../data/certificate.model';
       <div class="gdg-container space-y-6 pt-6 max-w-5xl mx-auto">
         <!-- Barra de Acciones Superior -->
         <div
-          class="flex flex-wrap items-center justify-between gap-3 bg-surface-paper p-4 rounded-2xl border border-black/5 shadow-sm"
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface-paper p-4 sm:p-5 rounded-2xl border border-black/5 shadow-sm"
         >
-          <div class="flex items-center gap-2">
+          <div class="flex items-center">
             <a
               routerLink="/certificados"
-              class="inline-flex items-center gap-1.5 text-xs font-bold text-google-blue hover:underline cursor-pointer no-underline font-google"
+              class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-google-blue hover:underline cursor-pointer no-underline font-google"
             >
-              <span class="material-symbols-rounded text-base" aria-hidden="true">arrow_back</span>
+              <span class="material-symbols-rounded text-lg" aria-hidden="true">arrow_back</span>
               <span>Volver a Mis Certificados</span>
             </a>
           </div>
 
           @if (certificate()) {
-            <div class="flex items-center gap-2.5">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
               <button
-                mat-flat-button
                 type="button"
-                class="gdg-btn-filled px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                class="h-10 px-5 rounded-full text-xs font-bold bg-google-blue text-white hover:bg-google-blue/90 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 [disabled]="downloadingPdf()"
                 (click)="downloadPdf()"
               >
-                <span class="material-symbols-rounded text-sm" aria-hidden="true">download</span>
+                <span class="material-symbols-rounded text-lg" aria-hidden="true">download</span>
                 <span>{{ downloadingPdf() ? 'Generando PDF...' : 'Descargar en PDF' }}</span>
               </button>
 
               <button
-                mat-stroked-button
                 type="button"
-                class="px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 border border-google-blue text-google-blue hover:bg-google-blue/5 transition-colors cursor-pointer active:scale-95 bg-transparent"
+                class="h-10 px-5 rounded-full text-xs font-bold border-2 border-google-blue text-google-blue hover:bg-google-blue/10 active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer bg-transparent"
                 (click)="shareOnLinkedIn()"
               >
-                <span class="material-symbols-rounded text-sm" aria-hidden="true">share</span>
+                <span class="material-symbols-rounded text-lg" aria-hidden="true">share</span>
                 <span>Compartir en LinkedIn</span>
               </button>
             </div>
@@ -286,7 +284,7 @@ export class CertificateDetail implements OnInit {
       `${this.getCertificateTitle(cert.eventRole)} - ${cert.eventTitle}`,
     );
     const pageUrl = encodeURIComponent(window.location.href);
-    const org = encodeURIComponent('Google Developer Groups Tarija');
+    const org = encodeURIComponent('GDG Tarija');
     const year = cert.eventDateStart.getFullYear();
     const month = cert.eventDateStart.getMonth() + 1;
 
