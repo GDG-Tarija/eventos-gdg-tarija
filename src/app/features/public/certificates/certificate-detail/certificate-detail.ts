@@ -16,12 +16,12 @@ import { CertificateDetailData } from '../data/certificate.model';
       <div class="gdg-container space-y-6 pt-6 max-w-5xl mx-auto">
         <!-- Barra de Acciones Superior -->
         <div
-          class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-black/5 shadow-sm"
+          class="flex flex-wrap items-center justify-between gap-3 bg-surface-paper p-4 rounded-2xl border border-black/5 shadow-sm"
         >
           <div class="flex items-center gap-2">
             <a
               routerLink="/certificados"
-              class="inline-flex items-center gap-1.5 text-xs font-bold text-google-blue hover:underline cursor-pointer no-underline"
+              class="inline-flex items-center gap-1.5 text-xs font-bold text-google-blue hover:underline cursor-pointer no-underline font-google"
             >
               <span class="material-symbols-rounded text-base" aria-hidden="true">arrow_back</span>
               <span>Volver a Mis Certificados</span>
@@ -42,8 +42,9 @@ import { CertificateDetailData } from '../data/certificate.model';
               </button>
 
               <button
+                mat-stroked-button
                 type="button"
-                class="px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 bg-[#0A66C2] text-white hover:bg-[#004182] transition-colors cursor-pointer border-0 active:scale-95 shadow-sm"
+                class="px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 border border-google-blue text-google-blue hover:bg-google-blue/5 transition-colors cursor-pointer active:scale-95 bg-transparent"
                 (click)="shareOnLinkedIn()"
               >
                 <span class="material-symbols-rounded text-sm" aria-hidden="true">share</span>
@@ -86,7 +87,7 @@ import { CertificateDetailData } from '../data/certificate.model';
           <div class="w-full overflow-x-auto pb-4 flex justify-center">
             <div
               #certificateElement
-              class="relative w-[900px] h-[636px] bg-white rounded-2xl overflow-hidden shadow-2xl border border-black/10 shrink-0 select-none"
+              class="relative w-[900px] h-[636px] bg-surface-paper rounded-2xl overflow-hidden shadow-2xl border border-black/10 shrink-0 select-none"
               style="font-family: 'Google Sans', 'Outfit', sans-serif;"
             >
               <!-- Imagen de Plantilla Oficial -->
@@ -99,10 +100,10 @@ import { CertificateDetailData } from '../data/certificate.model';
 
               <!-- Capa de Contenido Superpuesto -->
               <div
-                class="relative z-10 w-full h-full flex flex-col justify-between p-10 px-16 text-center text-[#202124]"
+                class="relative z-10 w-full h-full flex flex-col justify-between p-10 px-16 text-center text-text-primary"
               >
                 <!-- Espaciador Superior sutilmente reducido -->
-                <div class="h-16"></div>
+                <div class="h-24"></div>
 
                 <!-- Bloque Central de Textos (Alineación sutilmente elevada) -->
                 <div
@@ -110,7 +111,7 @@ import { CertificateDetailData } from '../data/certificate.model';
                 >
                   <!-- Título del Certificado -->
                   <h1
-                    class="text-4xl sm:text-5xl font-extrabold tracking-wide uppercase text-[#1a73e8] font-google m-0 drop-shadow-sm"
+                    class="text-4xl sm:text-5xl font-extrabold tracking-wide uppercase text-google-blue font-google m-0 drop-shadow-sm"
                   >
                     {{ getCertificateTitle(certificate()!.eventRole) }}
                   </h1>
@@ -123,9 +124,9 @@ import { CertificateDetailData } from '../data/certificate.model';
                   </p>
 
                   <!-- Nombre del Participante -->
-                  <div class="py-1">
+                  <div class="">
                     <h2
-                      class="text-4xl sm:text-5xl font-extrabold text-[#202124] font-google tracking-tight m-0 px-8 border-b-2 border-google-blue/40 inline-block pb-1.5"
+                      class="text-4xl sm:text-5xl font-extrabold text-text-primary font-google tracking-tight m-0 px-8 border-b-2 border-google-blue/40 inline-block pb-1.5"
                     >
                       {{ certificate()!.userFirstName }} {{ certificate()!.userLastName }}
                     </h2>
@@ -144,29 +145,22 @@ import { CertificateDetailData } from '../data/certificate.model';
                   </p>
                 </div>
 
-                <!-- Pie del Certificado elevado claramente por encima de las firmas -->
+                <!-- Pie del Certificado elevado significativamente por encima de las firmas -->
                 <div
-                  class="h-36 flex items-start justify-between text-xs text-text-secondary px-6 pt-1 pb-14"
+                  class="h-40 flex items-start justify-between text-xs text-text-secondary px-6 pt-0 pb-20"
                 >
                   <div class="text-left space-y-0.5">
                     <p class="m-0 font-bold text-text-primary">
                       Tarija, {{ formatDate(certificate()!.eventDateStart) }}
                     </p>
-                    <p class="m-0 text-[11px] text-text-muted">
-                      Asistencia verificada por Check-in
-                    </p>
                   </div>
                   <div class="text-right space-y-0.5">
-                    <p class="m-0 font-mono text-[11px] text-text-muted">
-                      ID: {{ certificate()!.registrationId }}
+                    <p class="m-0 font-mono text-[11px] text-text-secondary font-medium">
+                      {{ certificate()!.registrationId }}
                     </p>
                     <span
                       class="inline-flex items-center gap-1 text-google-green font-bold text-xs"
                     >
-                      <span class="material-symbols-rounded text-sm" aria-hidden="true"
-                        >verified</span
-                      >
-                      <span>Documento Oficial GDG</span>
                     </span>
                   </div>
                 </div>
