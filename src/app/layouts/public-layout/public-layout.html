@@ -40,6 +40,10 @@
               <br />
               <small>{{ currentUser.email }}</small>
             </span>
+            <a mat-menu-item routerLink="/certificados">
+              <mat-icon>workspace_premium</mat-icon>
+              <span>Mis certificados</span>
+            </a>
             <button mat-menu-item (click)="auth.signOut()">
               <mat-icon>logout</mat-icon>
               <span>Cerrar sesión</span>

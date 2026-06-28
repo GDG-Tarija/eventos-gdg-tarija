@@ -9,6 +9,8 @@ export const routes: Routes = [
       { path: '', loadComponent: () => import('./features/public/home/home').then(m => m.Home) },
       { path: 'auth/login', loadComponent: () => import('./features/auth/login/login').then(m => m.Login) },
       { path: 'e/:slug', loadComponent: () => import('./features/public/events/detail/event-detail').then(m => m.EventDetail) },
+      { path: 'certificados', loadComponent: () => import('./features/public/certificates/certificates-list/certificates-list').then(m => m.CertificatesList) },
+      { path: 'certificados/:id', loadComponent: () => import('./features/public/certificates/certificate-detail/certificate-detail').then(m => m.CertificateDetail) },
     ],
   },
   {

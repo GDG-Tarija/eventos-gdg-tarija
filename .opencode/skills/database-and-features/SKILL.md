@@ -14,6 +14,10 @@ Este documento centraliza el diseño lógico de las entidades de la base de dato
 La arquitectura de vistas y menús del sistema está distribuida en los siguientes módulos:
 
 ```
+├── Public/                               # Módulos Públicos / Asistentes
+│   ├── Eventos/                        # Listado y detalle de eventos (/e/:slug)
+│   └── Certificados/                   # Listado (/certificados) y vista de certificado (/certificados/:id)
+│
 ├── Dashboard/                          # Dashboard principal y widget cards
 │
 ├── Admin/                              # Módulos de Administración
