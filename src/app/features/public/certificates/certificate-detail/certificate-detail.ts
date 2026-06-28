@@ -1,4 +1,11 @@
-import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -83,12 +90,12 @@ import { CertificateDetailData } from '../data/certificate.model';
             </a>
           </div>
         } @else {
-          <!-- Contenedor del Certificado con plantilla visual oficial en imagen de fondo -->
-          <div class="w-full overflow-x-auto pb-4 flex justify-center">
+          <!-- Contenedor del Certificado fluida y nativamente responsive en Mobile y Desktop -->
+          <div class="w-full flex justify-center py-2">
             <div
               #certificateElement
-              class="relative w-[900px] h-[636px] bg-surface-paper rounded-2xl overflow-hidden shadow-2xl border border-black/10 shrink-0 select-none"
-              style="font-family: 'Google Sans', 'Outfit', sans-serif;"
+              class="relative w-full max-w-[900px] aspect-[900/636] bg-surface-paper rounded-2xl overflow-hidden shadow-2xl border border-black/10 select-none flex flex-col justify-between"
+              style="container-type: inline-size; font-family: 'Google Sans', 'Outfit', sans-serif;"
             >
               <!-- Imagen de Plantilla Oficial -->
               <img
@@ -98,35 +105,35 @@ import { CertificateDetailData } from '../data/certificate.model';
                 crossorigin="anonymous"
               />
 
-              <!-- Capa de Contenido Superpuesto -->
+              <!-- Capa de Contenido Superpuesto con unidades vectoriales cqw -->
               <div
-                class="relative z-10 w-full h-full flex flex-col justify-between p-10 px-16 text-center text-text-primary"
+                class="relative z-10 w-full h-full flex flex-col justify-between p-[4cqw] px-[7cqw] text-center text-text-primary"
               >
-                <!-- Espaciador Superior sutilmente reducido -->
-                <div class="h-24"></div>
+                <!-- Espaciador Superior -->
+                <div class="h-[9cqw]"></div>
 
-                <!-- Bloque Central de Textos (Alineación sutilmente elevada) -->
+                <!-- Bloque Central de Textos -->
                 <div
-                  class="flex-grow flex flex-col justify-center items-center space-y-3 px-6 pb-2"
+                  class="flex-grow flex flex-col justify-center items-center space-y-[1.2cqw] px-[3cqw]"
                 >
                   <!-- Título del Certificado -->
                   <h1
-                    class="text-4xl sm:text-5xl font-extrabold tracking-wide uppercase text-google-blue font-google m-0 drop-shadow-sm"
+                    class="text-[4.2cqw] font-extrabold tracking-wide uppercase text-google-blue font-google m-0 drop-shadow-sm leading-none"
                   >
                     {{ getCertificateTitle(certificate()!.eventRole) }}
                   </h1>
 
                   <!-- Encabezado de Otorgación -->
                   <p
-                    class="text-sm sm:text-base font-bold tracking-widest uppercase text-text-secondary m-0 pt-1"
+                    class="text-[1.6cqw] font-bold tracking-widest uppercase text-text-secondary m-0 pt-[0.5cqw]"
                   >
                     Otorgado a:
                   </p>
 
                   <!-- Nombre del Participante -->
-                  <div class="">
+                  <div class="py-[0.5cqw]">
                     <h2
-                      class="text-4xl sm:text-5xl font-extrabold text-text-primary font-google tracking-tight m-0 px-8 border-b-2 border-google-blue/40 inline-block pb-1.5"
+                      class="text-[4.5cqw] font-extrabold text-text-primary font-google tracking-tight m-0 px-[4cqw] border-b-2 border-google-blue/40 inline-block pb-[0.4cqw] leading-tight"
                     >
                       {{ certificate()!.userFirstName }} {{ certificate()!.userLastName }}
                     </h2>
@@ -134,7 +141,7 @@ import { CertificateDetailData } from '../data/certificate.model';
 
                   <!-- Párrafo descriptivo -->
                   <p
-                    class="text-sm sm:text-base text-text-secondary leading-relaxed max-w-2xl mx-auto m-0 pt-2 font-medium"
+                    class="text-[1.7cqw] text-text-secondary leading-relaxed max-w-[75cqw] mx-auto m-0 pt-[0.5cqw] font-medium"
                   >
                     Por su participación activa y destacada en el evento
                     <strong class="text-text-primary font-bold">{{
@@ -145,22 +152,29 @@ import { CertificateDetailData } from '../data/certificate.model';
                   </p>
                 </div>
 
-                <!-- Pie del Certificado elevado significativamente por encima de las firmas -->
+                <!-- Pie del Certificado elevado por encima de las firmas -->
                 <div
-                  class="h-40 flex items-start justify-between text-xs text-text-secondary px-6 pt-0 pb-20"
+                  class="h-[16cqw] flex items-start justify-between text-[1.4cqw] text-text-secondary px-[3cqw] pt-0 pb-[7cqw]"
                 >
-                  <div class="text-left space-y-0.5">
+                  <div class="text-left space-y-[0.2cqw]">
                     <p class="m-0 font-bold text-text-primary">
                       Tarija, {{ formatDate(certificate()!.eventDateStart) }}
                     </p>
+                    <p class="m-0 text-[1.2cqw] text-text-secondary font-medium">
+                      Asistencia verificada por Check-in
+                    </p>
                   </div>
-                  <div class="text-right space-y-0.5">
-                    <p class="m-0 font-mono text-[11px] text-text-secondary font-medium">
-                      {{ certificate()!.registrationId }}
+                  <div class="text-right space-y-[0.2cqw]">
+                    <p class="m-0 font-mono text-[1.2cqw] text-text-secondary font-medium">
+                      ID: {{ certificate()!.registrationId }}
                     </p>
                     <span
-                      class="inline-flex items-center gap-1 text-google-green font-bold text-xs"
+                      class="inline-flex items-center gap-[0.4cqw] text-google-green font-bold text-[1.3cqw]"
                     >
+                      <span class="material-symbols-rounded text-[1.5cqw]" aria-hidden="true"
+                        >verified</span
+                      >
+                      <span>Documento Oficial GDG</span>
                     </span>
                   </div>
                 </div>
@@ -229,11 +243,18 @@ export class CertificateDetail implements OnInit {
     if (this.downloadingPdf() || !this.certificateElement?.nativeElement) return;
     this.downloadingPdf.set(true);
 
+    const element = this.certificateElement.nativeElement;
+    const originalStyle = element.getAttribute('style') || '';
+
     try {
-      // Cargar dinámicamente html2pdf para no recargar bundles innecesariamente
+      // Fijar temporalmente dimensiones absolutas a 900x636 para la captura PDF
+      element.style.width = '900px';
+      element.style.maxWidth = '900px';
+      element.style.height = '636px';
+
+      // Cargar dinámicamente html2pdf
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const html2pdf = await this.loadHtml2Pdf();
-      const element = this.certificateElement.nativeElement;
       const cert = this.certificate();
       const cleanName = `${cert?.userFirstName}_${cert?.userLastName}`.replace(/\s+/g, '_');
       const fileName = `Certificado_${cleanName}_GDG.pdf`;
@@ -250,9 +271,9 @@ export class CertificateDetail implements OnInit {
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error('[CertificateDetail] Error al generar el PDF:', err);
-      // Fallback nativo de impresión si falla html2pdf
       window.print();
     } finally {
+      element.setAttribute('style', originalStyle);
       this.downloadingPdf.set(false);
     }
   }
