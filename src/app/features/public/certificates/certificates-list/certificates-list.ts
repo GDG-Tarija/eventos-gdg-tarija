@@ -3,6 +3,8 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Title, Meta } from '@angular/platform-browser';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { filter, firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { CertificatesService } from '../data/certificates.service';
@@ -125,6 +127,9 @@ export class CertificatesList implements OnInit {
   readonly loading = signal(true);
   readonly certificates = signal<CertificateItem[]>([]);
 
+  // toObservable DEBE llamarse en un contexto de inyección (inicialización de campos de la clase)
+  private readonly authLoading$ = toObservable(this.auth.loading);
+
   constructor() {
     this.titleService.setTitle('Mis Certificados | GDG Tarija');
     this.metaService.updateTag({ name: 'description', content: 'Consulta y descarga tus certificados de asistencia a los eventos de Google Developer Groups Tarija.' });
@@ -132,6 +137,14 @@ export class CertificatesList implements OnInit {
 
   async ngOnInit(): Promise<void> {
     this.loading.set(true);
+
+    // Esperar de manera reactiva a que termine auth.loading
+    await firstValueFrom(
+      this.authLoading$.pipe(
+        filter(loading => !loading)
+      )
+    );
+
     const user = this.auth.user();
     if (user) {
       const list = await this.certsService.listMyCertificates(user.id);

@@ -17,4 +17,5 @@ export interface CertificateDetailData extends CertificateItem {
   userFirstName: string;
   userLastName: string;
   userEmail: string;
+  userId?: string;
 }

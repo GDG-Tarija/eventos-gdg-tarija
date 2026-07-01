@@ -10,9 +10,12 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Title, Meta } from '@angular/platform-browser';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { filter, firstValueFrom } from 'rxjs';
 
 import { CertificatesService } from '../data/certificates.service';
 import { CertificateDetailData } from '../data/certificate.model';
+import { AuthService } from '../../../../core/auth/services/auth.service';
 
 @Component({
   selector: 'app-certificate-detail',
@@ -37,24 +40,35 @@ import { CertificateDetailData } from '../data/certificate.model';
 
           @if (certificate()) {
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-              <button
-                type="button"
-                class="h-10 px-5 rounded-full text-xs font-bold bg-google-blue text-white hover:bg-google-blue/90 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                [disabled]="downloadingPdf()"
-                (click)="downloadPdf()"
-              >
-                <span class="material-symbols-rounded text-lg" aria-hidden="true">download</span>
-                <span>{{ downloadingPdf() ? 'Generando PDF...' : 'Descargar en PDF' }}</span>
-              </button>
+              @if (isOwner()) {
+                <button
+                  type="button"
+                  class="h-10 px-5 rounded-full text-xs font-bold bg-google-blue text-white hover:bg-google-blue/90 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  [disabled]="downloadingPdf()"
+                  (click)="downloadPdf()"
+                >
+                  <span class="material-symbols-rounded text-lg" aria-hidden="true">download</span>
+                  <span>{{ downloadingPdf() ? 'Generando PDF...' : 'Descargar en PDF' }}</span>
+                </button>
 
-              <button
-                type="button"
-                class="h-10 px-5 rounded-full text-xs font-bold border-2 border-google-blue text-google-blue hover:bg-google-blue/10 active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer bg-transparent"
-                (click)="shareOnLinkedIn()"
-              >
-                <span class="material-symbols-rounded text-lg" aria-hidden="true">share</span>
-                <span>Compartir en LinkedIn</span>
-              </button>
+                <button
+                  type="button"
+                  class="h-10 px-5 rounded-full text-xs font-bold border-2 border-google-blue text-google-blue hover:bg-google-blue/10 active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer bg-transparent"
+                  (click)="shareOnLinkedIn()"
+                >
+                  <span class="material-symbols-rounded text-lg" aria-hidden="true">share</span>
+                  <span>Compartir en LinkedIn</span>
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="h-10 px-5 rounded-full text-xs font-bold border-2 border-google-blue text-google-blue hover:bg-google-blue/10 active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer bg-transparent"
+                  (click)="copyValidationLink()"
+                >
+                  <span class="material-symbols-rounded text-lg" aria-hidden="true">link</span>
+                  <span>Copiar enlace de validación</span>
+                </button>
+              }
             </div>
           }
         </div>
@@ -185,6 +199,7 @@ import { CertificateDetailData } from '../data/certificate.model';
   `,
 })
 export class CertificateDetail implements OnInit {
+  readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly certsService = inject(CertificatesService);
   private readonly titleService = inject(Title);
@@ -196,12 +211,23 @@ export class CertificateDetail implements OnInit {
   readonly downloadingPdf = signal(false);
   readonly certificate = signal<CertificateDetailData | null>(null);
 
+  // toObservable DEBE declararse en el contexto de inyección (inicialización de campos de clase)
+  private readonly authLoading$ = toObservable(this.auth.loading);
+
   get id(): string {
     return this.route.snapshot.paramMap.get('id') ?? '';
   }
 
   async ngOnInit(): Promise<void> {
     this.loading.set(true);
+
+    // Esperar de manera reactiva a que termine auth.loading
+    await firstValueFrom(
+      this.authLoading$.pipe(
+        filter(loading => !loading)
+      )
+    );
+
     const data = await this.certsService.getCertificateById(this.id);
     this.certificate.set(data);
     this.loading.set(false);
@@ -274,6 +300,25 @@ export class CertificateDetail implements OnInit {
       element.setAttribute('style', originalStyle);
       this.downloadingPdf.set(false);
     }
+  }
+
+  isOwner(): boolean {
+    const user = this.auth.user();
+    const cert = this.certificate();
+    if (!user || !cert) return false;
+    return user.id === cert.userId;
+  }
+
+  copyValidationLink(): void {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(
+      () => {
+        alert('Enlace de validación copiado al portapapeles.');
+      },
+      (err) => {
+        console.error('Error al copiar el enlace:', err);
+      }
+    );
   }
 
   shareOnLinkedIn(): void {

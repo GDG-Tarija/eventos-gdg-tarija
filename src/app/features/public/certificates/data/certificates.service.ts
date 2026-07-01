@@ -112,38 +112,7 @@ export class CertificatesService {
     if (!registrationId) return null;
 
     const { data, error } = await this.supabase
-      .from('registrations')
-      .select(`
-        id,
-        event_id,
-        user_id,
-        event_role,
-        created_at,
-        events!inner (
-          id,
-          title,
-          slug,
-          banner_url,
-          date_start,
-          date_end
-        ),
-        ticket_types (
-          id,
-          name
-        ),
-        users (
-          id,
-          first_name,
-          last_name,
-          email
-        ),
-        scan_logs (
-          id,
-          scan_type,
-          scanned_at
-        )
-      `)
-      .eq('id', registrationId)
+      .rpc('get_public_certificate', { p_registration_id: registrationId })
       .maybeSingle();
 
     if (error || !data) {
@@ -151,33 +120,24 @@ export class CertificatesService {
       return null;
     }
 
-    const reg = data as unknown as RawRegistrationSelect;
-    if (!reg.events) return null;
-
-    const logs = reg.scan_logs || [];
-    if (logs.length === 0) return null;
-
-    let checkInDate = new Date();
-    if (logs[0]?.scanned_at) {
-      checkInDate = new Date(logs[0].scanned_at);
-    } else if (reg.created_at) {
-      checkInDate = new Date(reg.created_at);
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const row = data as any;
 
     return {
-      registrationId: reg.id,
-      eventId: reg.events.id,
-      eventTitle: reg.events.title,
-      eventSlug: reg.events.slug,
-      eventBannerUrl: reg.events.banner_url,
-      eventDateStart: new Date(reg.events.date_start),
-      eventDateEnd: reg.events.date_end ? new Date(reg.events.date_end) : null,
-      eventRole: reg.event_role as EventRole,
-      ticketName: reg.ticket_types?.name || 'Entrada General',
-      checkInDate,
-      userFirstName: reg.users?.first_name || 'Asistente',
-      userLastName: reg.users?.last_name || '',
-      userEmail: reg.users?.email || '',
+      registrationId: row.registration_id,
+      eventId: row.event_id,
+      eventTitle: row.event_title,
+      eventSlug: row.event_slug,
+      eventBannerUrl: row.event_banner_url,
+      eventDateStart: new Date(row.event_date_start),
+      eventDateEnd: row.event_date_end ? new Date(row.event_date_end) : null,
+      eventRole: row.event_role as EventRole,
+      ticketName: row.ticket_name || 'Entrada General',
+      checkInDate: new Date(row.check_in_date),
+      userFirstName: row.user_first_name || 'Asistente',
+      userLastName: row.user_last_name || '',
+      userEmail: row.user_email || '',
+      userId: row.user_id || undefined,
     };
   }
 }
