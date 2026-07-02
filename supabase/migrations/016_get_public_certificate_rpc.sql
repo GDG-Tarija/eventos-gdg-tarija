@@ -26,9 +26,10 @@ SECURITY DEFINER -- Ejecuta con privilegios elevados para saltar RLS de consulta
 AS $$
 BEGIN
   -- Validamos de forma estricta que la inscripción cuente con registro de asistencia (check-in)
+  -- Calificamos scan_logs.registration_id para evitar conflictos con la columna de retorno
   IF NOT EXISTS (
-    SELECT 1 FROM public.scan_logs
-    WHERE registration_id = p_registration_id
+    SELECT 1 FROM public.scan_logs sl
+    WHERE sl.registration_id = p_registration_id
   ) THEN
     RETURN;
   END IF;
@@ -54,9 +55,9 @@ BEGIN
   LEFT JOIN public.ticket_types t ON t.id = r.ticket_type_id
   LEFT JOIN public.users u ON u.id = r.user_id
   LEFT JOIN LATERAL (
-    SELECT scanned_at FROM public.scan_logs
-    WHERE registration_id = r.id
-    ORDER BY scanned_at ASC
+    SELECT sl_lat.scanned_at FROM public.scan_logs sl_lat
+    WHERE sl_lat.registration_id = r.id
+    ORDER BY sl_lat.scanned_at ASC
     LIMIT 1
   ) s ON true
   WHERE r.id = p_registration_id;

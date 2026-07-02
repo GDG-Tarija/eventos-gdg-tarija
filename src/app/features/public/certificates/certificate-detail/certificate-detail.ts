@@ -233,12 +233,28 @@ export class CertificateDetail implements OnInit {
     this.loading.set(false);
 
     if (data) {
-      const pageTitle = `Certificado - ${data.eventTitle} | GDG Tarija`;
+      const pageTitle = `Certificado de ${data.userFirstName} ${data.userLastName} - ${data.eventTitle} | GDG Tarija`;
       this.titleService.setTitle(pageTitle);
-      this.metaService.updateTag({
-        name: 'description',
-        content: `Certificado de asistencia de ${data.userFirstName} ${data.userLastName} al evento ${data.eventTitle}.`,
-      });
+
+      const description = `Certificado oficial de asistencia y participación de ${data.userFirstName} ${data.userLastName} en el evento "${data.eventTitle}" de la comunidad Google Developer Groups Tarija.`;
+      const bannerUrl = data.eventBannerUrl || 'https://res.cloudinary.com/dopkch3x9/image/upload/v1779579233/GDG_Bevy_DefaultEventBanner_VKOwYjb_c913np.webp';
+      const pageUrl = window.location.href;
+
+      // Meta estándar
+      this.metaService.updateTag({ name: 'description', content: description });
+
+      // Open Graph (Facebook, LinkedIn, Slack, WhatsApp)
+      this.metaService.updateTag({ property: 'og:title', content: pageTitle }, "property='og:title'");
+      this.metaService.updateTag({ property: 'og:description', content: description }, "property='og:description'");
+      this.metaService.updateTag({ property: 'og:image', content: bannerUrl }, "property='og:image'");
+      this.metaService.updateTag({ property: 'og:url', content: pageUrl }, "property='og:url'");
+      this.metaService.updateTag({ property: 'og:type', content: 'website' }, "property='og:type'");
+
+      // Twitter Cards (Twitter / X)
+      this.metaService.updateTag({ name: 'twitter:card', content: 'summary_large_image' }, "name='twitter:card'");
+      this.metaService.updateTag({ name: 'twitter:title', content: pageTitle }, "name='twitter:title'");
+      this.metaService.updateTag({ name: 'twitter:description', content: description }, "name='twitter:description'");
+      this.metaService.updateTag({ name: 'twitter:image', content: bannerUrl }, "name='twitter:image'");
     }
   }
 

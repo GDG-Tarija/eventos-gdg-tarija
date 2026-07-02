@@ -131,8 +131,26 @@ export class CertificatesList implements OnInit {
   private readonly authLoading$ = toObservable(this.auth.loading);
 
   constructor() {
-    this.titleService.setTitle('Mis Certificados | GDG Tarija');
-    this.metaService.updateTag({ name: 'description', content: 'Consulta y descarga tus certificados de asistencia a los eventos de Google Developer Groups Tarija.' });
+    const pageTitle = 'Mis Certificados | GDG Tarija';
+    const description = 'Consulta, valida y descarga tus certificados oficiales de participación en los eventos de la comunidad Google Developer Groups Tarija.';
+    const defaultImage = 'https://res.cloudinary.com/dopkch3x9/image/upload/v1779579233/GDG_Bevy_DefaultEventBanner_VKOwYjb_c913np.webp';
+
+    this.titleService.setTitle(pageTitle);
+
+    // Meta estándar
+    this.metaService.updateTag({ name: 'description', content: description });
+
+    // Open Graph
+    this.metaService.updateTag({ property: 'og:title', content: pageTitle }, "property='og:title'");
+    this.metaService.updateTag({ property: 'og:description', content: description }, "property='og:description'");
+    this.metaService.updateTag({ property: 'og:image', content: defaultImage }, "property='og:image'");
+    this.metaService.updateTag({ property: 'og:type', content: 'website' }, "property='og:type'");
+
+    // Twitter Cards
+    this.metaService.updateTag({ name: 'twitter:card', content: 'summary_large_image' }, "name='twitter:card'");
+    this.metaService.updateTag({ name: 'twitter:title', content: pageTitle }, "name='twitter:title'");
+    this.metaService.updateTag({ name: 'twitter:description', content: description }, "name='twitter:description'");
+    this.metaService.updateTag({ name: 'twitter:image', content: defaultImage }, "name='twitter:image'");
   }
 
   async ngOnInit(): Promise<void> {
