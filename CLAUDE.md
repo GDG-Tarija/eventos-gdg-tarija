@@ -29,7 +29,7 @@ supabase db diff -f <nombre>
 supabase gen types typescript --local > src/app/core/supabase/supabase.client.ts
 ```
 
-> `lint` and `test:ci` are not in `package.json` yet — add them before use and document in `AGENTS.md`.
+> `npm run lint` (Angular ESLint) is now configured. `test:ci` is still not in `package.json` — add it before use and document in `AGENTS.md`.
 
 ---
 
@@ -63,8 +63,10 @@ src/app/
     ├── public/home/                 ← event listing landing
     ├── public/events/detail/        ← /e/:slug
     ├── public/events/registration/  ← checkout + ticket flow
+    ├── public/certificates/         ← certificate list/detail + PDF export
     ├── dashboard/                   ← /dashboard home
-    └── admin/sponsor/               ← canonical CRUD example
+    ├── admin/sponsor/               ← canonical CRUD example
+    └── admin/users/
 ```
 
 ### Routing
