@@ -206,14 +206,16 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
             />
           </mat-step>
 
-          <mat-step label="Sesiones">
-            <app-step-sesiones
-              [sessions]="sessions()"
-              [(selectedIds)]="selectedSessionIds"
-              (next)="onStep2Next()"
-              (back)="onStep2Back()"
-            />
-          </mat-step>
+          @if (sessions().length > 0) {
+            <mat-step label="Sesiones">
+              <app-step-sesiones
+                [sessions]="sessions()"
+                [(selectedIds)]="selectedSessionIds"
+                (next)="onStep2Next()"
+                (back)="onStep2Back()"
+              />
+            </mat-step>
+          }
 
           <mat-step label="Confirmar">
             <app-step-confirmar
