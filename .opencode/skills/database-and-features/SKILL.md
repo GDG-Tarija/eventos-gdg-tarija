@@ -142,5 +142,24 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 
 1. **Definir la columna/tabla en este documento**: Antes de usar una columna en frontend o backend, debe estar listada aquí.
 2. **Crear migración SQL**: Escribir la migración en `supabase/migrations/` definiendo PKs, FKs con `on delete` explícito y habilitando RLS.
-3. **Generar tipos**: Correr `supabase gen types typescript --local > src/app/core/models/database.types.ts` para sincronizar tipos con TypeScript.
+3. **Generar tipos**: Correr `supabase gen types typescript --local` (o vía MCP `generate_typescript_types`) y actualizar `src/app/core/supabase/supabase.client.ts` (el `Database` type completo vive ahí, ya no es hand-written).
 4. **Actualizar el componente de navegación**: Ajustar el menú de navegación correspondiente en `src/app/` para que coincida con la ruta y los módulos definidos en este skill.
+
+---
+
+## 4. Seguridad (RLS)
+
+Todas las tablas de `public` tienen RLS habilitado (migración `017_security_hardening.sql`, 2026-08-15). Antes de esa migración, `events`, `ticket_types`, `staff_whitelist`, `registrations` y `users` NO tenían RLS activo y eran de lectura/escritura pública total vía la anon key — corregido.
+
+**Helper `public.is_staff()`**: `SECURITY DEFINER`, reconoce staff por `users.is_staff = true` (mecanismo real usado hoy) o por `staff_whitelist` (legacy/futuro). Usar `public.is_staff()` en cualquier policy nueva que deba restringirse a organizadores/admins — no reinventar el chequeo inline.
+
+**Patrón por tabla**:
+- `events`, `ticket_types`: lectura pública (eventos solo si `is_published = true`, salvo staff), escritura solo staff.
+- `registrations`: cada usuario ve/crea la suya (`auth.uid() = user_id`); staff ve/actualiza todas.
+- `users`: cada usuario ve/edita su propia fila; staff tiene acceso total.
+- `staff_whitelist`: sin policies — solo accesible por `service_role`/Studio directo. No exponer a `anon`/`authenticated` bajo ninguna circunstancia (define quién es admin).
+- `sponsors`, `event_coupons`: lectura pública controlada; escritura restringida a staff (`event_coupons` solo lectura para `authenticated`, no `anon`, para no exponer códigos de invitación).
+
+**Funciones `SECURITY DEFINER`**: cualquier función nueva con `SECURITY DEFINER` que reciba un id de usuario/registro como parámetro DEBE validar `auth.uid()` internamente (no confiar en el parámetro) — así se corrigió el IDOR en `upsert_user_profile` y se eliminó la variante insegura de `update_user_profile(user_id uuid, ...)`.
+
+Antes de tocar policies/funciones de seguridad, correr `get_advisors(type: "security")` (MCP Supabase) para verificar el estado real — el schema local en `supabase/migrations/` puede divergir de producción (ya pasó: `back.sql` declaraba RLS en `users`/`registrations` que en producción estaba desactivado).
