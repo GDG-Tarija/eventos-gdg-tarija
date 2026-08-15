@@ -163,3 +163,7 @@ Todas las tablas de `public` tienen RLS habilitado (migración `017_security_har
 **Funciones `SECURITY DEFINER`**: cualquier función nueva con `SECURITY DEFINER` que reciba un id de usuario/registro como parámetro DEBE validar `auth.uid()` internamente (no confiar en el parámetro) — así se corrigió el IDOR en `upsert_user_profile` y se eliminó la variante insegura de `update_user_profile(user_id uuid, ...)`.
 
 Antes de tocar policies/funciones de seguridad, correr `get_advisors(type: "security")` (MCP Supabase) para verificar el estado real — el schema local en `supabase/migrations/` puede divergir de producción (ya pasó: `back.sql` declaraba RLS en `users`/`registrations` que en producción estaba desactivado).
+
+**Ojo con tablas que YA tienen RLS activo**: tener RLS habilitado no significa que las policies sean seguras. En `018_security_hardening_followup.sql` se corrigieron dos casos donde RLS estaba activo pero con `WITH CHECK (true)` / `USING (true)` demasiado amplios: `scan_logs` (cualquier autenticado podía auto-marcarse asistencia y sacar certificado sin check-in real de staff) y `session_registrations` (cualquiera podía insertar inscripciones a sesión apuntando a `registration_id` ajenas). Al auditar, revisar `pg_policies` completo, no solo qué tablas tienen RLS on/off.
+
+**Pendiente manual (no aplicable vía SQL/MCP)**: activar "Leaked Password Protection" en Supabase Studio → Authentication → Policies. El advisor lo reporta como WARN persistente.
