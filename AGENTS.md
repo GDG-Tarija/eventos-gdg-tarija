@@ -7,6 +7,38 @@ Este es el proyecto **GDG Events Platform**, una PWA en Angular 21 + Supabase pa
 
 ---
 
+## Ramas (obligatorio)
+
+- **`main` no se toca.** Nunca hagas commit, push, merge ni rebase directo a `main`. `main` es producción (Vercel publica desde ahí): solo recibe PRs de release `dev → main`, que mergea un organizador.
+- Todo trabajo va en una rama creada desde `dev` (`feat/…`, `fix/…`, `chore/…`) y entra por PR **contra `dev`**.
+- Antes de empezar: `git checkout dev && git pull` en este repo y en back-office, y `npm run db:migrate --prefix ../back-office-gdg-tarija` para tener la base local al día.
+
+---
+
+## Levantar el proyecto en local
+
+Requisitos: Docker corriendo (≥ 4 GB de RAM), Node 22, y `eventos-gdg-tarija` y `back-office-gdg-tarija` clonados en la misma carpeta, en la rama `dev`.
+
+```bash
+# 1. Base de datos local (vive en back-office)
+cd ../back-office-gdg-tarija
+npm install                                   # incluye el CLI de Supabase (versión fijada)
+cp supabase/.env.example supabase/.env        # client ID + secret de Google: pedirlos a un organizador
+npm run db:start                              # Supabase local: migraciones + seed ficticio
+
+# 2. Esta app
+cd ../eventos-gdg-tarija
+npm install
+cp src/environments/environment.eg.ts src/environments/environment.ts
+npm start                                     # http://localhost:4200
+```
+
+- Studio local: http://127.0.0.1:54323. El back-office corre en http://localhost:4300 (ver su `AGENTS.md`).
+- Al terminar: `npm run db:stop --prefix ../back-office-gdg-tarija`.
+- Detalle completo (flujo de migraciones, releases, backups): `back-office-gdg-tarija/docs/entornos-supabase.md`.
+
+---
+
 ## Comandos del proyecto
 
 ```bash
@@ -17,18 +49,20 @@ npm run watch                # build en modo watch
 
 # Calidad
 npm run lint                 # ESLint
-npm run test                 # Karma + Jasmine (unit tests)
-npm run test:ci              # tests sin watch, para CI
-npm run format               # Prettier sobre src/
+npm test                     # Vitest (vía @angular/build:unit-test), no Karma/Jasmine
 
-# Supabase (local)
-supabase start               # arranca stack local (Postgres, Auth, Storage)
-supabase db reset            # reset + reaplica migraciones
-supabase db diff -f <nombre> # genera nueva migración desde cambios
-supabase gen types typescript --local > src/app/core/models/database.types.ts
+# Supabase local (vive en ../back-office-gdg-tarija, requiere Docker)
+npm run db:start --prefix ../back-office-gdg-tarija   # Supabase local: http://127.0.0.1:54321, Studio :54323
+npm run db:reset --prefix ../back-office-gdg-tarija   # recrea la base local: migraciones + seed ficticio
+npm run db:migrate --prefix ../back-office-gdg-tarija # aplica solo las migraciones nuevas (tras git pull de dev)
+(cd ../back-office-gdg-tarija && npx supabase gen types typescript --local)   # pegar el tipo Database en src/app/core/supabase/supabase.client.ts
 ```
 
-> Si algún comando no existe aún en `package.json`, agrégalo antes de usarlo y documéntalo aquí.
+> No existen `test:ci` ni `format` en `package.json`. Si necesitas un comando nuevo, agrégalo y documéntalo aquí.
+>
+> **Migraciones:** `supabase/` (migraciones, `config.toml`, seed) vive solo en `back-office-gdg-tarija`; este repo no guarda copia. Crea las migraciones allá.
+>
+> **Entornos:** `src/environments/environment.ts` (ignorado por git) apunta al Supabase local (copia `environment.eg.ts`), **nunca a producción**. Solo hay dos entornos: local y prod. Ver `back-office-gdg-tarija/docs/entornos-supabase.md`.
 
 ---
 
@@ -38,17 +72,17 @@ supabase gen types typescript --local > src/app/core/models/database.types.ts
 1. **Standalone components siempre.** Nada de `NgModule`. Angular 21 + signals.
 2. **Signal Forms** para formularios nuevos (no `ReactiveFormsModule`).
 3. **Lazy loading** por feature en `app.routes.ts` con `loadComponent` / `loadChildren`.
-4. **No importar `@supabase/supabase-js` en componentes.** Todo acceso a Supabase pasa por un service en `core/supabase/` o `features/<feature>/data/`.
-5. **Tipos de Supabase generados, nunca a mano.** Regenerar con `supabase gen types` tras cada migración.
+4. **No importar `@supabase/supabase-js` en componentes.** Todo acceso a Supabase pasa por un service en `core/services/supabase/` o `features/<feature>/data/`.
+5. **Tipos de Supabase generados, nunca a mano.** El tipo `Database` vive en `core/supabase/supabase.client.ts`; regenerarlo (o copiarlo desde back-office-gdg-tarija) tras cada migración.
 
 ### Seguridad
-6. **RLS es la fuente de verdad de permisos.** El frontend usa guards para UX, pero la seguridad real está en políticas SQL (ver `entities.md` § 5).
+6. **RLS es la fuente de verdad de permisos.** El frontend usa guards para UX, pero la seguridad real está en políticas SQL (ver `.opencode/skills/database-and-features/SKILL.md`).
 7. **Nunca commitear `service_role` keys.** Solo `anon` key va al frontend. `.env.local` está en `.gitignore`.
 8. **Validación doble:** cliente (UX rápido) + DB (constraints + RLS).
 
 ### Base de datos
-9. **Antes de usar una columna, verifica que exista en `entities.md`.** Si no existe, propón una migración primero.
-10. **Toda migración va a `supabase/migrations/`** con timestamp. Nada de cambios manuales en Studio sin migración.
+9. **Antes de usar una columna, verifica que exista en `.opencode/skills/database-and-features/SKILL.md`.** Si no existe, propón una migración primero.
+10. **Toda migración va a `back-office-gdg-tarija/supabase/migrations/`** (`npm run db:new` allá) y llega a prod solo con el release `dev → main` de back-office, con aprobación manual. **La base va primero:** este repo se publica en Vercel con su propio release `dev → main`, así que se libera después de back-office, con la migración ya aplicada en prod. Nada de cambios manuales en prod (Studio, SQL Editor, escrituras vía MCP).
 11. **Cada FK declara `on delete` explícito.** Cada tabla tiene `id`, `created_at`, `updated_at`.
 
 ### Estilo de código
@@ -93,23 +127,20 @@ Un PR = un hito o sub-tarea pequeña. No mezclar feat con refactor masivo.
 ├── AGENTS.md                # este archivo
 ├── src/
 │   ├── app/
-│   │   ├── core/            # singletons: auth, supabase client, guards, interceptores
-│   │   ├── shared/          # componentes/pipes/directivas reutilizables
+│   │   ├── core/            # auth (guards, services), supabase client, services/supabase/sb-*.ts, models, config
+│   │   ├── shared/          # componentes reutilizables (dialog-frame, footer, nav-menu)
 │   │   ├── features/        # feature modules (lazy loaded)
-│   │   │   ├── auth/
-│   │   │   ├── admin/
+│   │   │   ├── auth/        # login, callback, register
+│   │   │   ├── admin/       # sponsor (CRUD de referencia), users
 │   │   │   ├── dashboard/
-│   │   │   └── public/
+│   │   │   └── public/      # home, events (detail, registration), certificates
 │   │   ├── layouts/        # Layouts containers (lazy loaded)
 │   │   │   ├── admin-layout/
 │   │   │   ├── auth-layout/
 │   │   │   └── public-layout/
 │   │   └── app.routes.ts
-│   ├── environments/
-│   └── styles/              # tema Material 3 (paleta GDG)
-├── supabase/
-│   ├── migrations/
-│   └── seeds/
+│   └── environments/
+├── supabase/            # solo README: la base vive en back-office-gdg-tarija/supabase/
 └── package.json
 ```
 
@@ -123,17 +154,17 @@ Trabajamos en este orden. **No saltarse hitos** salvo justificación explícita.
 - [ ] **Hito 1.2** — Registro público de asistentes en `/e/:slug` (8 campos + comprobante)
 - [ ] **Hito 1.3** — Autenticación con magic link (Supabase Auth)
 
-Módulos A–H se desarrollan en paralelo **después** del MVP. Ver `CONTEXT.md` § Hoja de ruta para el detalle de cada uno.
+Módulos A–H se desarrollan en paralelo **después** del MVP. 
 
 ---
 
 ## Cuando recibas una tarea, sigue este flujo
 
-1. **Lee** `CONTEXT.md` y `entities.md` si no los tienes en contexto.
+1. **Lee** `CLAUDE.md` y `.opencode/skills/database-and-features/SKILL.md` si no los tienes en contexto.
 2. **Identifica el hito** al que pertenece la tarea (1.1, 1.2, 1.3 o módulo A–H).
-3. **Verifica el esquema:** ¿las tablas/columnas que necesitas existen en `entities.md`?
-   - Si **no**, primero genera la migración SQL y actualiza `entities.md`.
-4. **Genera tipos** (`supabase gen types`) si la migración afectó tablas.
+3. **Verifica el esquema:** ¿las tablas/columnas que necesitas existen en `database-and-features/SKILL.md`?
+   - Si **no**, primero genera la migración SQL (en back-office-gdg-tarija) y actualiza el SKILL.
+4. **Genera tipos** desde el Supabase local (`npx supabase gen types typescript --local` en back-office) si la migración afectó tablas.
 5. **Escribe el código** siguiendo las reglas de arriba.
 6. **Añade tests** (al menos happy-path).
 7. **Verifica lint** (`npm run lint`).
