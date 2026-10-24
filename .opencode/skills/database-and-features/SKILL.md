@@ -34,7 +34,7 @@ La arquitectura de vistas y menús del sistema está distribuida en los siguient
 
 ## 2. Esquema de Entidades de Base de Datos
 
-Todas las columnas de las tablas de Supabase se generan de forma tipada. No modificar la base de datos a mano; proponer primero una migración SQL en `supabase/migrations/` y actualizar este documento.
+Todas las columnas de las tablas de Supabase se generan de forma tipada. No modificar la base de datos a mano; proponer primero una migración SQL en `../back-office-gdg-tarija/supabase/migrations/` (el repo dueño de la base) y actualizar este documento.
 
 ### 2.1. Tabla Consolidada de Base de Datos (Postgres / Supabase)
 
@@ -141,8 +141,8 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 ## 3. Flujo para Modificaciones de Base de Datos y Rutas
 
 1. **Definir la columna/tabla en este documento**: Antes de usar una columna en frontend o backend, debe estar listada aquí.
-2. **Crear migración SQL**: Escribir la migración en `supabase/migrations/` definiendo PKs, FKs con `on delete` explícito y habilitando RLS.
-3. **Generar tipos**: Correr `supabase gen types typescript --local` (o vía MCP `generate_typescript_types`) y actualizar `src/app/core/supabase/supabase.client.ts` (el `Database` type completo vive ahí, ya no es hand-written).
+2. **Crear migración SQL**: `npm run db:new -- <nombre>` en back-office-gdg-tarija (crea el archivo en `../back-office-gdg-tarija/supabase/migrations/`) definiendo PKs, FKs con `on delete` explícito y habilitando RLS. Probarla con `npm run db:reset` allá; llega a prod solo con el release `dev → main` de back-office (con aprobación manual).
+3. **Generar tipos**: Correr `npx supabase gen types typescript --local` en back-office-gdg-tarija (contra el Supabase local, nunca contra prod) y actualizar `src/app/core/supabase/supabase.client.ts` (el `Database` type completo vive ahí, ya no es hand-written).
 4. **Actualizar el componente de navegación**: Ajustar el menú de navegación correspondiente en `src/app/` para que coincida con la ruta y los módulos definidos en este skill.
 
 ---

@@ -1,5 +1,25 @@
 # EventosGdgTarija
 
+App pública de eventos de GDG Tarija (Angular 21 + Supabase). La base de datos se comparte con
+[back-office-gdg-tarija](https://github.com/GDG-Tarija/back-office-gdg-tarija), que es dueño de
+`supabase/` (migraciones, config y seed).
+
+## Entorno local
+
+Se desarrolla contra un **Supabase local** con datos ficticios, nunca contra producción, y siempre en
+una rama creada desde `dev` (`main` no se toca: solo recibe releases `dev → main`). Requiere Docker
+corriendo y back-office clonado al lado de este repo.
+
+```bash
+cd ../back-office-gdg-tarija && npm install && npm run db:start && cd -   # Supabase local
+cp src/environments/environment.eg.ts src/environments/environment.ts      # apunta a local
+npm install
+npm start                                                                  # http://localhost:4200
+```
+
+Login con Google, cómo volverte SUPERADMIN y flujo de migraciones a producción:
+`back-office-gdg-tarija/docs/entornos-supabase.md`.
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.6.
 
 ## Development server

@@ -8,7 +8,7 @@ Crea un nuevo CRUD para la entidad `$ARGUMENTS`.
 Usa razonamiento: adaptive thinking.
 
 1. Toma como ejemplo el CRUD de sponsor en `src/app/features/admin/sponsor` y analízalo para mantener el estilo, con las siguientes consideraciones.
-2. Analiza y crea/actualiza la migración en `supabase/migrations/` compatible con Supabase, con todas las configuraciones necesarias (RLS, `on delete`, `id`/`created_at`/`updated_at`). Toma como ejemplo `supabase/migrations/sponsors.sql` y crea el archivo `supabase/migrations/<timestamp>_$ARGUMENTS.sql`.
+2. Analiza y crea la migración en `../back-office-gdg-tarija/supabase/migrations/` (repo dueño de la base) compatible con Supabase, con todas las configuraciones necesarias (RLS, `on delete`, `id`/`created_at`/`updated_at`). Toma como ejemplo la definición de `sponsors` en `../back-office-gdg-tarija/supabase/migrations/20261024032707_baseline.sql` y crea el archivo con `npm run db:new -- $ARGUMENTS` en back-office-gdg-tarija; pruébalo con `npm run db:reset` allá.
 3. Todos los componentes, clases de estilo y variables deben estar en inglés; solo los labels y textos de UI en español. No agregues iconos innecesarios y conserva el estilo base.
 4. Ruta base para todo el CRUD: `src/app/features/admin/$ARGUMENTS/`.
 5. Usa las columnas/entidades definidas en `.opencode/skills/database-and-features/SKILL.md` y agrega el modelo en `src/app/core/models/$ARGUMENTS.model.ts`. Si la entidad no existe ahí, escribe la migración primero y actualiza ese SKILL.md.
