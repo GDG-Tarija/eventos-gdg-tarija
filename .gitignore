@@ -47,5 +47,3 @@ Thumbs.db
 src/environments/environment.ts
 src/environments/environment.prod.ts
 
-# Backups locales de Supabase (pueden contener datos sensibles)
-supabase/backups/

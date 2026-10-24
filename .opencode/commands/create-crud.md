@@ -4,7 +4,7 @@ utiliza un razonamiento: adaptive thinking
 
 1. Toma como ejemplo el CRUD de product-category en `src\app\features\admin\sponsor` analizalo para mantener el estilo
 Con la siguientes consideraciones
-2. Analiza y actualiza la base de datos `supabase\migrations` que sea compatible con supabase con todos las configuraciones necesarios, toma como ejemplo `supabase\migrations\sponsors.sql` y crea el archivo `supabase\migrations\$ARGUMENTS.sql`
+2. Crea la migración en `../back-office-gdg-tarija/supabase/migrations/` (repo dueño de la base) con `npm run db:new -- $ARGUMENTS` allá, compatible con supabase y con todas las configuraciones necesarias; toma como ejemplo la definición de `sponsors` en `../back-office-gdg-tarija/supabase/migrations/20261024032707_baseline.sql` y pruébala con `npm run db:reset` en back-office
 3. Todos los componentes, class de estilo y variables deben estar en ingles, solo los labels y registros en ES, no agregues iconos innecesarios y conserva el estilo base.
 4. Ruta base para todo el CRUD en `src/app/features/admin/$ARGUMENTS/`.
 5. Utliza las propiedades que se espesifican en `.opencode\docs\entities.md` y agrega la interfaz en `src/app/core/models/` y realiza los ajustes en otras solo si fuera necesario y estan relacionadas

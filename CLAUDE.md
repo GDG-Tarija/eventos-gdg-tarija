@@ -10,6 +10,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Branches — `main` is off-limits
+
+- **Never touch `main`.** Do not commit, push, merge, rebase, or open PRs that target `main` (except release PRs `dev → main`, which only organizers create and merge). `main` is production: Vercel deploys from it.
+- Every change goes on a branch created from `dev` (`feat/…`, `fix/…`, `chore/…`) and its PR targets `dev`.
+- Before starting: `git checkout dev && git pull` (here and in `../back-office-gdg-tarija`), then `npm run db:migrate --prefix ../back-office-gdg-tarija`.
+
+---
+
+## Running locally
+
+Full step-by-step (local Supabase + both apps) is in `AGENTS.md` → "Levantar el proyecto en local". Short version:
+
+```bash
+(cd ../back-office-gdg-tarija && npm install && cp -n supabase/.env.example supabase/.env && npm run db:start)
+npm install && cp -n src/environments/environment.eg.ts src/environments/environment.ts && npm start   # http://localhost:4200
+```
+
+---
+
 ## Commands
 
 ```bash
@@ -22,14 +41,18 @@ npm run vercel-build # set-env.js + ng build (CI/CD)
 # Tests
 npm test             # Vitest (not Karma — the test runner is Vitest)
 
-# Supabase local stack
-supabase start
-supabase db reset
-supabase db diff -f <nombre>
-supabase gen types typescript --local > src/app/core/supabase/supabase.client.ts
+# Supabase local stack — lives in ../back-office-gdg-tarija (requires Docker)
+npm run db:start --prefix ../back-office-gdg-tarija   # http://127.0.0.1:54321, Studio :54323
+npm run db:reset --prefix ../back-office-gdg-tarija   # rebuild local DB: migrations + fake seed
+npm run db:migrate --prefix ../back-office-gdg-tarija # apply only new migrations (after pulling dev)
+(cd ../back-office-gdg-tarija && npx supabase gen types typescript --local)   # paste into supabase.client.ts
 ```
 
-> `npm run lint` (Angular ESLint) is now configured. `test:ci` is still not in `package.json` — add it before use and document in `AGENTS.md`.
+> `npm run lint` (Angular ESLint) must stay at zero errors. There is no `test:ci` script. Tests use Vitest via `@angular/build:unit-test`.
+>
+> **Migrations:** `supabase/` (migrations, `config.toml`, seed) lives only in the sibling repo `back-office-gdg-tarija`; this repo keeps no copy. Create migrations there. The `Database` type in `supabase.client.ts` is synced from that repo's generated type.
+>
+> **Environments:** `src/environments/environment.ts` (gitignored) must point to the local stack — copy `environment.eg.ts` — **never to production**. There are only two environments (local and prod); they and the migration flow are documented in `back-office-gdg-tarija/docs/entornos-supabase.md`.
 
 ---
 
@@ -43,7 +66,7 @@ src/app/
 │   ├── auth/
 │   │   ├── guards/auth.guard.ts
 │   │   └── services/auth.service.ts
-│   ├── supabase/supabase.client.ts   ← SUPABASE token + Database type (hand-written; goal is generated)
+│   ├── supabase/supabase.client.ts   ← SUPABASE token + Database type (synced from back-office-gdg-tarija's generated type)
 │   ├── services/
 │   │   ├── theme.ts
 │   │   └── supabase/sb-<entity>.ts   ← one service per entity
@@ -71,13 +94,13 @@ src/app/
 
 ### Routing
 
-Two layout trees share the root path — one for `PublicLayout`, one for `AdminLayout` — both defined in [src/app/app.routes.ts](src/app/app.routes.ts). All routes use `loadComponent` (lazy). `authGuard` exists but is currently commented out in the dashboard route.
+Two layout trees share the root path — one for `PublicLayout`, one for `AdminLayout` — both defined in [src/app/app.routes.ts](src/app/app.routes.ts). All routes use `loadComponent` (lazy). `authGuard` protects `/dashboard` but only checks for a session, not a role. Role-based authorization is still pending (RLS is the real barrier).
 
 ### Supabase client
 
 The `SUPABASE` `InjectionToken` is declared in [src/app/core/supabase/supabase.client.ts](src/app/core/supabase/supabase.client.ts). Components must never import `@supabase/supabase-js` directly — all DB access goes through services in `core/services/supabase/`.
 
-The `Database` type is currently hand-written in `supabase.client.ts`. After any migration, regenerate it with `supabase gen types` and replace that section.
+The `Database` type in `supabase.client.ts` is generated (synced from `back-office-gdg-tarija`). After any migration, regenerate it with `supabase gen types` and replace that section. Checkout coupon validation goes through the `validate_coupon` RPC (authenticated only); never read `event_coupons` directly.
 
 ### Service pattern
 
@@ -109,7 +132,7 @@ Use `.opencode/commands/create-crud.md` as a prompt template for generating a ne
 
 **Database**
 - Never use a column that isn't in `.opencode/skills/database-and-features/SKILL.md`. If it doesn't exist, write the migration first, then update the skill doc.
-- All migrations go to `supabase/migrations/` with a timestamp prefix. No manual Studio edits without a migration.
+- All migrations go to `back-office-gdg-tarija/supabase/migrations/` (`npm run db:new -- <name>` there). They reach prod only through the release PR `dev → main` in back-office, after manual approval. This app deploys to Vercel when its own `dev → main` release is merged, so release back-office first (DB approved) and eventos after; removals of DB objects ship one release after the code that stops using them. Never change the prod schema by hand (Studio, SQL Editor, Supabase MCP writes, local `db push`).
 - Every FK must declare `on delete`. Every table needs `id`, `created_at`, `updated_at`.
 - RLS policies are the real security layer. Guards are UX-only.
 
@@ -141,6 +164,6 @@ Use `.opencode/commands/create-crud.md` as a prompt template for generating a ne
 
 **Workflow for any task:**
 1. Check the DB schema in `database-and-features/SKILL.md` before referencing any table/column.
-2. If the column doesn't exist, write the migration first and update the skill doc.
-3. Run `supabase gen types` after migrations.
+2. If the column doesn't exist, write the migration first (in back-office-gdg-tarija), test it with `npm run db:reset` there, and update the skill doc.
+3. Regenerate types from the local stack after migrations.
 4. Run `npm test` and `npm run build` before marking done.
