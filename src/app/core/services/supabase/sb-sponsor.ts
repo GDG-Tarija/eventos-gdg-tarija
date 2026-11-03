@@ -27,7 +27,10 @@ export class SPSponsor {
   }
 
   public add(item: Sponsor): Observable<Sponsor[]> {
-    const { id, created_at, updated_at, ...payload } = item;
+    const payload = { ...item } as Partial<Sponsor>;
+    delete payload.id;
+    delete payload.created_at;
+    delete payload.updated_at;
     return from(this.supabase.from(this.TABLE_NAME).insert([payload]).select()).pipe(
       map(({ data, error }) => {
         if (error) throw error;
@@ -37,7 +40,9 @@ export class SPSponsor {
   }
 
   public update(item: Sponsor): Observable<Sponsor[]> {
-    const { created_at, updated_at, ...payload } = item;
+    const payload = { ...item } as Partial<Sponsor>;
+    delete payload.created_at;
+    delete payload.updated_at;
     return from(
       this.supabase.from(this.TABLE_NAME).update(payload).eq('id', item.id).select(),
     ).pipe(

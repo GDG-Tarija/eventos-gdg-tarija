@@ -37,7 +37,7 @@ interface NavModule {
   styleUrl: './nav-menu.scss',
 })
 export class NavMenu {
-  onClick = output();
+  menuToggle = output();
 
   readonly themeService = inject(ThemeService);
   readonly auth = inject(AuthService);
@@ -58,6 +58,6 @@ export class NavMenu {
   ];
 
   clickMenu(): void {
-    this.onClick.emit();
+    this.menuToggle.emit();
   }
 }

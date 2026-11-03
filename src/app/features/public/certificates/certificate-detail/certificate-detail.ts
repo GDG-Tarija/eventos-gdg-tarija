@@ -293,7 +293,7 @@ export class CertificateDetail implements OnInit {
       element.style.height = '636px';
 
       // Cargar dinámicamente html2pdf
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const html2pdf = await this.loadHtml2Pdf();
       const cert = this.certificate();
       const cleanName = `${cert?.userFirstName}_${cert?.userLastName}`.replace(/\s+/g, '_');

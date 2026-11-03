@@ -8,7 +8,6 @@ export class SbSessions {
   private readonly supabase = inject<SupabaseClient>(SUPABASE);
 
   async listByEvent(eventId: string): Promise<SessionWithTrack[]> {
-    console.log('[SbSessions] listByEvent - Iniciando carga para eventId:', eventId);
     
     const { data: rows, error: sessErr } = await this.supabase
       .from('sessions')
@@ -21,15 +20,12 @@ export class SbSessions {
       throw new Error(`[sessions.listByEvent] ${sessErr.message}`);
     }
     
-    console.log('[SbSessions] Filas de sesiones crudas devueltas:', rows?.length ?? 0, rows);
     if (!rows || rows.length === 0) {
-      console.warn('[SbSessions] No se encontraron sesiones para este evento.');
       return [];
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sessionIds = (rows as any[]).map((r) => r.id as string);
-    console.log('[SbSessions] IDs de sesiones a consultar registros:', sessionIds);
 
     const { data: counts, error: countErr } = await this.supabase
       .from('session_registrations')
@@ -41,7 +37,6 @@ export class SbSessions {
       throw new Error(`[sessions.listByEvent.counts] ${countErr.message}`);
     }
     
-    console.log('[SbSessions] Registros de sesión crudos devueltos:', counts?.length ?? 0, counts);
 
     const countMap = new Map<string, number>();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,12 +47,6 @@ export class SbSessions {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapped = (rows as any[]).map((r): SessionWithTrack => {
-      // Registrar en consola si la fila tiene la propiedad track_id para verificar si la columna existe en el objeto devuelto
-      if (r.track_id !== undefined) {
-        console.log(`[SbSessions] Sesión "${r.title}" tiene track_id:`, r.track_id);
-      } else {
-        console.warn(`[SbSessions] Sesión "${r.title}" no contiene la propiedad track_id en el payload devuelto por Supabase.`);
-      }
 
       return {
         id: r.id as string,
@@ -86,7 +75,6 @@ export class SbSessions {
       };
     });
 
-    console.log('[SbSessions] Sesiones mapeadas finales:', mapped);
     return mapped;
   }
 
@@ -108,7 +96,7 @@ export class SbSessions {
       throw new Error(`[sessions.getRegistrationsByRegistrationId] ${error.message}`);
     }
 
-    return (data ?? []).map((r: any) => r.session_id as string);
+    return (data ?? []).map((r: { session_id: string }) => r.session_id);
   }
 
   async updateSessionRegistrations(registrationId: string, sessionIds: string[]): Promise<void> {

@@ -28,9 +28,7 @@ export class AuthService {
   readonly loading = signal(true);
 
   constructor() {
-    console.log('[AuthService] constructor — subscribing to onAuthStateChange');
     this.supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[AuthService] onAuthStateChange event:', event, 'session userId:', session?.user?.id);
 
       if (event === 'SIGNED_IN') {
         // On explicit sign-in, hydrate profile; create it only if missing.
@@ -39,7 +37,6 @@ export class AuthService {
         // On refresh/initial load, never write. Just hydrate the profile.
         void this.hydrateProfile(session);
       } else if (event === 'SIGNED_OUT') {
-        console.log('[AuthService] SIGNED_OUT — clearing user');
         this.user.set(null);
         this.loading.set(false);
       }
@@ -50,7 +47,6 @@ export class AuthService {
     const s = session as { user?: { id: string; email?: string; user_metadata: Record<string, unknown> } } | null;
 
     if (!s?.user) {
-      console.log('[AuthService] buildPartial — no user in session');
       return null;
     }
 
@@ -60,7 +56,6 @@ export class AuthService {
     const lastName = (meta['family_name'] as string) ?? '';
     const avatarUrl = (meta['avatar_url'] as string) ?? (meta['picture'] as string) ?? null;
 
-    console.log('[AuthService] buildPartial — metadata:', { firstName, lastName, email: s.user.email, avatarUrl });
 
     return {
       id: s.user.id,
@@ -80,7 +75,6 @@ export class AuthService {
     const partial = this.buildPartial(session);
 
     if (!partial) {
-      console.log('[AuthService] handleSession — partial is null, loading=false');
       this.loading.set(false);
       return;
     }
@@ -91,7 +85,6 @@ export class AuthService {
       const row = Array.isArray(data) ? data[0] : null;
 
       if (error) {
-        console.log('[AuthService] hydrateProfile rpc error — falling back to partial:', error.message);
         this.user.set(partial);
       } else if (row) {
         this.user.set(row as unknown as Profile);
@@ -135,7 +128,6 @@ export class AuthService {
     this.syncingUserId = partial.id;
 
     try {
-      console.log('[AuthService] handleSession — calling upsert_user_profile RPC for', partial.id);
       const { data, error } = await this.supabase
         .rpc('upsert_user_profile', {
           p_id: partial.id,
@@ -146,19 +138,15 @@ export class AuthService {
         });
 
       if (error) {
-        console.log('[AuthService] RPC error:', error.code, error.message, error.details);
-        console.log('[AuthService] Falling back to partial profile');
+        console.error('[AuthService] upsert_user_profile failed:', error.code, error.message);
         this.user.set(partial);
       } else if (data && data.length > 0) {
-        console.log('[AuthService] RPC success — user profile:', data[0].id);
         this.user.set(data[0] as unknown as Profile);
       } else {
-        console.log('[AuthService] RPC returned no data — falling back to partial');
         this.user.set(partial);
       }
     } catch (err) {
-      console.log('[AuthService] RPC threw:', err);
-      console.log('[AuthService] Falling back to partial profile');
+      console.error('[AuthService] upsert_user_profile threw:', err);
       this.user.set(partial);
     } finally {
       this.syncingUserId = null;
@@ -169,18 +157,14 @@ export class AuthService {
 
   signInWithGoogle(): void {
     const currentPath = window.location.pathname;
-    console.log('[AuthService] signInWithGoogle — current path:', currentPath);
 
     const redirectTarget = currentPath === '/auth/login' ? '/' : currentPath;
     sessionStorage.setItem('redirect_to', redirectTarget);
-    console.log('[AuthService] signInWithGoogle — saved redirect_to:', redirectTarget);
 
     const base = document.querySelector('base')?.getAttribute('href') ?? '/';
     const cleanBase = base.replace(/\/$/, '');
     const redirectTo = window.location.origin + cleanBase + '/auth/callback';
-    console.log('[AuthService] signInWithGoogle — redirectTo:', redirectTo);
 
-    console.log('[AuthService] signInWithGoogle — calling signInWithOAuth...');
     this.supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },
@@ -188,7 +172,6 @@ export class AuthService {
   }
 
   async signOut(): Promise<void> {
-    console.log('[AuthService] signOut');
     this.loading.set(true);
     await this.supabase.auth.signOut();
     this.user.set(null);
@@ -197,9 +180,7 @@ export class AuthService {
   }
 
   async getSession() {
-    console.log('[AuthService] getSession');
     const { data } = await this.supabase.auth.getSession();
-    console.log('[AuthService] getSession result:', data.session?.user?.id ?? 'no session');
     return data.session;
   }
 }

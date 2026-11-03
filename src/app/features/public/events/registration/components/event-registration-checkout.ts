@@ -272,7 +272,6 @@ export class EventRegistrationCheckout implements OnInit {
   private async init(): Promise<void> {
     this.initLoading.set(true);
     try {
-      console.log('[Checkout] Initiating load for eventId:', this.event().id);
       const [tickets, sessions] = await Promise.all([
         this.ticketTypes.listByEventId(this.event().id).catch(err => {
           console.error('[Checkout] Error loading tickets:', err);
@@ -283,8 +282,6 @@ export class EventRegistrationCheckout implements OnInit {
           return [] as SessionWithTrack[];
         }),
       ]);
-      console.log('[Checkout] Loaded tickets count:', tickets.length, tickets);
-      console.log('[Checkout] Loaded sessions count:', sessions.length, sessions);
       this.tickets.set(tickets);
       this.sessions.set(sessions);
 
@@ -296,7 +293,6 @@ export class EventRegistrationCheckout implements OnInit {
           this.existingRegistrationId.set(existing.id);
           // Cargar las sesiones ya seleccionadas
           const mySessionRegs = await this.sbSessions.getRegistrationsByRegistrationId(existing.id);
-          console.log('[Checkout] Sesiones previamente registradas:', mySessionRegs);
           this.selectedSessionIds.set(mySessionRegs);
         }
       }

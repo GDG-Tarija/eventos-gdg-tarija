@@ -29,14 +29,10 @@ export class Callback implements OnInit {
   private readonly router = inject(Router);
 
   ngOnInit(): void {
-    console.log('[Callback] ngOnInit');
-    console.log('[Callback] URL hash:', window.location.hash);
 
-    this.auth.getSession().then((session) => {
-      console.log('[Callback] getSession resolved:', { hasSession: !!session, userId: session?.user?.id });
+    this.auth.getSession().then(() => {
 
       const redirectTo = sessionStorage.getItem('redirect_to') || '/';
-      console.log('[Callback] redirecting to:', redirectTo);
       sessionStorage.removeItem('redirect_to');
 
       this.router.navigateByUrl(redirectTo);
