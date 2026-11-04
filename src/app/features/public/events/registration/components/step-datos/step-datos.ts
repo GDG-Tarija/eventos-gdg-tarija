@@ -15,6 +15,7 @@ import {
 
 import { AuthService } from '../../../../../../core/auth/services/auth.service';
 import { FormField } from '../../../../../../models/field.model';
+import { EventRole } from '../../../../../../models/registration.model';
 import { TicketType } from '../../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../../data/event.model';
 import { RegistrationsService } from '../../data/registrations.service';
@@ -27,7 +28,7 @@ export interface StepDatosOutput {
   responses: Record<string, any>;
   ticket: TicketType;
   paymentProofFile: File | null;
-  appliedRole: 'ATTENDEE' | 'SPEAKER' | 'STAFF';
+  appliedRole: EventRole;
   couponId?: string | null;
 }
 
@@ -39,7 +40,7 @@ interface CheckoutFormData {
   responses: Record<string, any>;
 }
 
-type ExtraInfo = { form_fields?: FormField[] };
+interface ExtraInfo { form_fields?: FormField[] }
 
 @Component({
   selector: 'app-step-datos',
@@ -100,7 +101,7 @@ type ExtraInfo = { form_fields?: FormField[] };
                 class="flex flex-row sm:flex-col rounded-xl sm:rounded-2xl border overflow-hidden text-left transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer bg-white w-full p-2.5 sm:p-0"
                 [class.border-google-blue]="selectedTicketId() === t.id"
                 [class.shadow-md]="selectedTicketId() === t.id"
-                [class.border-black\/5]="selectedTicketId() !== t.id"
+                [class.border-black/5]="selectedTicketId() !== t.id"
                 (click)="selectTicket(t)"
               >
                 @if (t.image_url) {
@@ -275,7 +276,7 @@ export class StepDatos implements OnInit {
   // Lógica para códigos de invitación / cupones
   readonly showCouponField = signal(false);
   readonly couponCode = signal('');
-  readonly appliedRole = signal<'ATTENDEE' | 'SPEAKER' | 'STAFF'>('ATTENDEE');
+  readonly appliedRole = signal<EventRole>('ATTENDEE');
   readonly couponId = signal<string | null>(null);
   readonly couponSuccessMessage = signal<string | null>(null);
   readonly couponErrorMessage = signal<string | null>(null);
@@ -394,7 +395,7 @@ export class StepDatos implements OnInit {
       this.couponId.set(res.id ?? null);
       this.selectedTicketPrice.set(0);
 
-      const roleLabel = res.role === 'SPEAKER' ? 'Speaker' : res.role === 'STAFF' ? 'Staff' : 'Asistente';
+      const roleLabel = res.role === 'SPEAKER' ? 'Speaker' : res.role === 'STAFF' ? 'Staff' : res.role === 'SPONSOR' ? 'Sponsor' : 'Asistente';
       this.couponSuccessMessage.set(`Código de invitación de ${roleLabel} aplicado (100% de descuento).`);
       this.couponErrorMessage.set(null);
     }

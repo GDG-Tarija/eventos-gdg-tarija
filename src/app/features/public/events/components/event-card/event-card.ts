@@ -11,8 +11,8 @@ import { Event } from '../../data/event.model';
     <article
       class="gdg-card border border-black/5 overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-sm cursor-pointer sm:h-[230px]"
       [class.opacity-75]="isPast()"
-      [class.grayscale-\[50\%\]]="isPast()"
-      [class.bg-black\/\[0\.02\]]="isPast()"
+      [class.grayscale-[50%]]="isPast()"
+      [class.bg-black/[0.02]]="isPast()"
       [routerLink]="['/e', event().slug]"
     >
       <div class="p-3 sm:p-5 h-full">
@@ -53,9 +53,9 @@ import { Event } from '../../data/event.model';
                 <div
                   class="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold shrink-0"
                   [class.text-google-blue]="!isPast()"
-                  [class.bg-google-blue\/5]="!isPast()"
+                  [class.bg-google-blue/5]="!isPast()"
                   [class.text-text-muted]="isPast()"
-                  [class.bg-black\/5]="isPast()"
+                  [class.bg-black/5]="isPast()"
                 >
                   <span class="material-symbols-rounded text-sm" aria-hidden="true"
                     >calendar_month</span
@@ -150,9 +150,9 @@ import { Event } from '../../data/event.model';
                   mat-flat-button
                   type="button"
                   class="gdg-btn-filled h-8 w-full sm:w-auto px-4 rounded-full text-xs font-bold transition-all duration-300 active:scale-95 hover:shadow-sm"
-                  [class.\!bg-black\/10]="isPast()"
-                  [class.\!text-text-secondary]="isPast()"
-                  [class.\!shadow-none]="isPast()"
+                  [class.!bg-black/10]="isPast()"
+                  [class.!text-text-secondary]="isPast()"
+                  [class.!shadow-none]="isPast()"
                   [routerLink]="['/e', event().slug]"
                 >
                   <span class="flex items-center justify-center gap-1.5 w-full h-full leading-none">

@@ -1,16 +1,25 @@
 import { inject, Injectable } from '@angular/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE } from '../../../../../core/supabase/supabase.client';
-import { RegistrationInsert } from '../../../../../models/registration.model';
+import { EventRole, RegistrationInsert } from '../../../../../models/registration.model';
 
-type RegistrationRow = {
+interface RegistrationRow {
   id: string;
   event_id: string;
   user_id: string;
   ticket_type_id: string;
   status: string;
   created_at?: string;
-};
+}
+
+export type CouponRole = EventRole;
+
+export interface CouponValidation {
+  valid: boolean;
+  id?: string;
+  role?: CouponRole;
+  error?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class RegistrationsService {
@@ -68,44 +77,28 @@ export class RegistrationsService {
     return data.publicUrl;
   }
 
-  async validateCoupon(eventId: string, code: string): Promise<{ valid: boolean; id?: string; role?: 'ATTENDEE' | 'SPEAKER' | 'STAFF'; error?: string } | null> {
-    const cleanCode = code.trim().toLowerCase();
+  async validateCoupon(eventId: string, code: string): Promise<CouponValidation | null> {
+    const cleanCode = code.trim();
     if (!cleanCode) return null;
 
-    const { data: coupon, error } = await this.supabase
-      .from('event_coupons')
-      .select('id, role, max_uses')
-      .eq('event_id', eventId)
-      .ilike('code', cleanCode)
-      .maybeSingle();
+    const { data, error } = await this.supabase.rpc('validate_coupon', {
+      p_event_id: eventId,
+      p_code: cleanCode,
+    });
 
     if (error) {
-      console.error('[RegistrationsService.validateCoupon] Error al buscar cupón:', error);
       return { valid: false, error: 'Error al verificar el cupón' };
     }
 
+    const coupon = Array.isArray(data) ? data[0] : null;
     if (!coupon) {
       return { valid: false, error: 'Código de invitación no válido o expirado.' };
     }
 
-    // Contar los usos actuales del cupón de manera segura usando la función RPC
-    const { data: usedCount, error: countErr } = await this.supabase
-      .rpc('get_coupon_uses', { p_coupon_id: coupon.id });
-
-    if (countErr) {
-      console.error('[RegistrationsService.validateCoupon] Error al contar los usos del cupón:', countErr);
-      return { valid: false, error: 'Error al validar los usos del cupón' };
-    }
-
-    const used = (usedCount as number) ?? 0;
-    if (used >= coupon.max_uses) {
+    if (coupon.uses_left <= 0) {
       return { valid: false, error: 'Este código de invitación ya ha superado el límite de usos permitidos.' };
     }
 
-    return {
-      valid: true,
-      id: coupon.id as string,
-      role: coupon.role as 'ATTENDEE' | 'SPEAKER' | 'STAFF',
-    };
+    return { valid: true, id: coupon.id, role: coupon.role as CouponRole };
   }
 }

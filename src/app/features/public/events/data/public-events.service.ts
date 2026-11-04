@@ -1,7 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE } from '../../../../core/supabase/supabase.client';
-import { environment } from '../../../../../environments/environment';
 import { Event } from './event.model';
 
 type EventRow = Omit<Event, 'date_start' | 'date_end'> & {
@@ -50,10 +49,6 @@ export class PublicEventsService {
       .order('date_start', { ascending: true });
 
     if (error) {
-      if (!environment.production) {
-        // eslint-disable-next-line no-console
-        console.warn('[PublicEventsService] listPublished error', error);
-      }
       this.error.set(error.message);
       this.events.set([]);
       this.isEventLoading.set(false);
@@ -97,10 +92,6 @@ export class PublicEventsService {
       .maybeSingle();
 
     if (error || !data) {
-      if (error && !environment.production) {
-        // eslint-disable-next-line no-console
-        console.warn('[PublicEventsService] getBySlug error', error);
-      }
       return null;
     }
 

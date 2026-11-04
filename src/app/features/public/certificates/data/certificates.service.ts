@@ -4,7 +4,7 @@ import { SUPABASE } from '../../../../core/supabase/supabase.client';
 import { CertificateDetailData, CertificateItem } from './certificate.model';
 import { EventRole } from '../../../../models/registration.model';
 
-type RawRegistrationSelect = {
+interface RawRegistrationSelect {
   id: string;
   event_id: string;
   user_id: string | null;
@@ -33,7 +33,7 @@ type RawRegistrationSelect = {
     scan_type: string;
     scanned_at: string | null;
   }[] | null;
-};
+}
 
 @Injectable({ providedIn: 'root' })
 export class CertificatesService {
