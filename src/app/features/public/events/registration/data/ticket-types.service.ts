@@ -19,14 +19,12 @@ export class TicketTypesService {
     if (error) throw error;
 
     const rows =
-      (data as unknown as Array<
-        TicketTypeRow & {
+      (data as unknown as (TicketTypeRow & {
           price: unknown;
           ticket_capacity: unknown;
           payment_qr_url?: unknown;
           image_url?: unknown;
-        }
-      >) ?? [];
+        })[]) ?? [];
     return rows.map((r) => {
       let imageUrl = typeof r.image_url === 'string' ? r.image_url : undefined;
       if (imageUrl) {

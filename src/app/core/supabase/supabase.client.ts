@@ -4,9 +4,9 @@ import { environment } from '../../../environments/environment';
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export type Database = {
+export interface Database {
   __InternalSupabase: {
-    PostgrestVersion: '14.5';
+    PostgrestVersion: '14.15';
   };
   public: {
     Tables: {
@@ -41,6 +41,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'event_coupons_event_id_fkey';
+            columns: ['event_id'];
+            isOneToOne: false;
+            referencedRelation: 'events';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      event_staff_assignments: {
+        Row: {
+          assigned_at: string;
+          event_id: string;
+          id: string;
+          staff_email: string;
+        };
+        Insert: {
+          assigned_at?: string;
+          event_id: string;
+          id?: string;
+          staff_email: string;
+        };
+        Update: {
+          assigned_at?: string;
+          event_id?: string;
+          id?: string;
+          staff_email?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'event_staff_assignments_event_id_fkey';
             columns: ['event_id'];
             isOneToOne: false;
             referencedRelation: 'events';
@@ -472,6 +501,7 @@ export type Database = {
           evento_id: string;
           id: string;
           nombre: string;
+          updated_at: string;
         };
         Insert: {
           created_at?: string;
@@ -479,6 +509,7 @@ export type Database = {
           evento_id: string;
           id?: string;
           nombre: string;
+          updated_at?: string;
         };
         Update: {
           created_at?: string;
@@ -486,6 +517,7 @@ export type Database = {
           evento_id?: string;
           id?: string;
           nombre?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -531,14 +563,29 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
-      get_coupon_uses: {
-        Args: { p_coupon_id: string };
-        Returns: number;
-      };
+      get_coupon_uses: { Args: { p_coupon_id: string }; Returns: number };
       get_my_profile: {
-        Args: Record<PropertyKey, never>;
-        Returns: Database['public']['Tables']['users']['Row'][];
+        Args: never;
+        Returns: {
+          avatar_url: string | null;
+          created_at: string | null;
+          email: string;
+          extra_info: Json | null;
+          first_name: string;
+          id: string;
+          is_staff: boolean | null;
+          last_name: string;
+          phone: string | null;
+          updated_at: string | null;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'users';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
+      get_my_role: { Args: never; Returns: string };
       get_public_certificate: {
         Args: { p_registration_id: string };
         Returns: {
@@ -558,17 +605,33 @@ export type Database = {
           user_last_name: string;
         }[];
       };
-      is_staff: {
-        Args: Record<PropertyKey, never>;
-        Returns: boolean;
-      };
+      has_event_access: { Args: { p_event_id: string }; Returns: boolean };
+      is_staff: { Args: never; Returns: boolean };
+      is_superadmin: { Args: never; Returns: boolean };
       registrar_asistencia_qr: {
         Args: { p_session_id: string; p_usuario_id: string };
         Returns: string;
       };
       update_user_profile: {
         Args: { p_first_name: string; p_last_name: string; p_phone: string };
-        Returns: Database['public']['Tables']['users']['Row'][];
+        Returns: {
+          avatar_url: string | null;
+          created_at: string | null;
+          email: string;
+          extra_info: Json | null;
+          first_name: string;
+          id: string;
+          is_staff: boolean | null;
+          last_name: string;
+          phone: string | null;
+          updated_at: string | null;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'users';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       upsert_user_profile: {
         Args: {
@@ -578,7 +641,33 @@ export type Database = {
           p_id: string;
           p_last_name: string;
         };
-        Returns: Database['public']['Tables']['users']['Row'][];
+        Returns: {
+          avatar_url: string | null;
+          created_at: string | null;
+          email: string;
+          extra_info: Json | null;
+          first_name: string;
+          id: string;
+          is_staff: boolean | null;
+          last_name: string;
+          phone: string | null;
+          updated_at: string | null;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'users';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      validate_coupon: {
+        Args: { p_code: string; p_event_id: string };
+        Returns: {
+          id: string;
+          max_uses: number;
+          role: string;
+          uses_left: number;
+        }[];
       };
     };
     Enums: {
@@ -587,7 +676,7 @@ export type Database = {
     };
     CompositeTypes: Record<string, never>;
   };
-};
+}
 
 export const SUPABASE = new InjectionToken<SupabaseClient<Database>>('SUPABASE');
 

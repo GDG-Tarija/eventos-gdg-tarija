@@ -1,4 +1,4 @@
-import { Component, computed, effect, input, model, output, signal } from '@angular/core';
+import { Component, computed, effect, input, model, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { SessionWithTrack } from '../../../../../../core/models/session.model';
 import { SessionPicker } from '../session-picker/session-picker';

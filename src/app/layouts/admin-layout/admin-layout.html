@@ -6,7 +6,7 @@
       <span class="sidenav-brand">GDG Tarija</span>
     </div>
     <mat-divider />
-    <app-nav-menu (onClick)="sidenavOpen.set(!sidenavOpen())" />
+    <app-nav-menu (menuToggle)="sidenavOpen.set(!sidenavOpen())" />
   </mat-sidenav>
 
   <mat-sidenav-content>

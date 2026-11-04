@@ -136,7 +136,7 @@ export class Home implements AfterViewInit {
 
       if (sw <= vw) return;
 
-      const offenders: Array<{ el: Element; right: number; width: number }> = [];
+      const offenders: { el: Element; right: number; width: number }[] = [];
       for (const el of Array.from(document.querySelectorAll('body *'))) {
         const r = (el as HTMLElement).getBoundingClientRect();
         if (r.right > vw + 1 || r.width > vw + 1)
@@ -144,9 +144,8 @@ export class Home implements AfterViewInit {
       }
       offenders.sort((a, b) => b.right - a.right);
 
-      // eslint-disable-next-line no-console
-      console.warn('[UI] Horizontal overflow detected', { viewport: vw, scrollWidth: sw });
-      // eslint-disable-next-line no-console
+       
+       
       console.table(
         offenders.slice(0, 15).map((o) => ({
           tag: o.el.tagName.toLowerCase(),

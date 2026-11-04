@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,6 +15,7 @@ import {
 
 import { AuthService } from '../../../../../../core/auth/services/auth.service';
 import { FormField } from '../../../../../../models/field.model';
+import { EventRole } from '../../../../../../models/registration.model';
 import { TicketType } from '../../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../../data/event.model';
 import { RegistrationsService } from '../../data/registrations.service';
@@ -27,7 +28,7 @@ export interface StepDatosOutput {
   responses: Record<string, any>;
   ticket: TicketType;
   paymentProofFile: File | null;
-  appliedRole: 'ATTENDEE' | 'SPEAKER' | 'STAFF';
+  appliedRole: EventRole;
   couponId?: string | null;
 }
 
@@ -39,7 +40,7 @@ interface CheckoutFormData {
   responses: Record<string, any>;
 }
 
-type ExtraInfo = { form_fields?: FormField[] };
+interface ExtraInfo { form_fields?: FormField[] }
 
 @Component({
   selector: 'app-step-datos',
@@ -58,20 +59,24 @@ type ExtraInfo = { form_fields?: FormField[] };
       <div class="space-y-3">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Nombre</mat-label>
-            <input matInput [formField]="checkoutForm.firstName" />
+            <mat-label>Nombres</mat-label>
+            <input matInput [formField]="checkoutForm.firstName" placeholder="Ej: Juan Carlos" autocomplete="given-name" />
             @if (checkoutForm.firstName().invalid() && checkoutForm.firstName().touched()) {
               <mat-error class="text-xs">{{ checkoutForm.firstName().errors()[0]?.message }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Apellido</mat-label>
-            <input matInput [formField]="checkoutForm.lastName" />
+            <mat-label>Apellidos</mat-label>
+            <input matInput [formField]="checkoutForm.lastName" placeholder="Ej: Pérez Gutiérrez" autocomplete="family-name" />
             @if (checkoutForm.lastName().invalid() && checkoutForm.lastName().touched()) {
               <mat-error class="text-xs">{{ checkoutForm.lastName().errors()[0]?.message }}</mat-error>
             }
           </mat-form-field>
+
+          <p class="sm:col-span-2 -mt-2 mb-1 text-xs text-text-secondary">
+            Escríbelos tal como quieres que aparezcan en tu certificado.
+          </p>
 
           <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
             <mat-label>Celular</mat-label>
@@ -100,7 +105,7 @@ type ExtraInfo = { form_fields?: FormField[] };
                 class="flex flex-row sm:flex-col rounded-xl sm:rounded-2xl border overflow-hidden text-left transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer bg-white w-full p-2.5 sm:p-0"
                 [class.border-google-blue]="selectedTicketId() === t.id"
                 [class.shadow-md]="selectedTicketId() === t.id"
-                [class.border-black\/5]="selectedTicketId() !== t.id"
+                [class.border-black/5]="selectedTicketId() !== t.id"
                 (click)="selectTicket(t)"
               >
                 @if (t.image_url) {
@@ -275,7 +280,7 @@ export class StepDatos implements OnInit {
   // Lógica para códigos de invitación / cupones
   readonly showCouponField = signal(false);
   readonly couponCode = signal('');
-  readonly appliedRole = signal<'ATTENDEE' | 'SPEAKER' | 'STAFF'>('ATTENDEE');
+  readonly appliedRole = signal<EventRole>('ATTENDEE');
   readonly couponId = signal<string | null>(null);
   readonly couponSuccessMessage = signal<string | null>(null);
   readonly couponErrorMessage = signal<string | null>(null);
@@ -286,8 +291,8 @@ export class StepDatos implements OnInit {
   readonly formData = signal<CheckoutFormData>({ firstName: '', lastName: '', phone: '', responses: {} });
 
   readonly checkoutForm = form(this.formData, (path) => {
-    required(path.firstName, { message: 'El nombre es obligatorio' });
-    required(path.lastName, { message: 'El apellido es obligatorio' });
+    required(path.firstName, { message: 'Ingresa tus nombres' });
+    required(path.lastName, { message: 'Ingresa tus apellidos' });
     required(path.phone, { message: 'El celular es obligatorio' });
     minLength(path.phone, 5, { message: 'El celular debe tener al menos 5 dígitos' });
     pattern(path.phone, /^\+?[0-9\s-]+$/, { message: 'El celular solo puede contener números, espacios y el signo +' });
@@ -322,6 +327,13 @@ export class StepDatos implements OnInit {
         lastName: prev.lastName || (user.last_name ?? ''),
         phone: prev.phone || (user.phone ?? ''),
       }));
+    });
+
+    // Si el evento tiene un solo pase, se selecciona por defecto.
+    effect(() => {
+      const tickets = this.tickets();
+      if (tickets.length !== 1 || this.selectedTicketId()) return;
+      untracked(() => this.selectTicket(tickets[0]));
     });
   }
 
@@ -394,7 +406,7 @@ export class StepDatos implements OnInit {
       this.couponId.set(res.id ?? null);
       this.selectedTicketPrice.set(0);
 
-      const roleLabel = res.role === 'SPEAKER' ? 'Speaker' : res.role === 'STAFF' ? 'Staff' : 'Asistente';
+      const roleLabel = res.role === 'SPEAKER' ? 'Speaker' : res.role === 'STAFF' ? 'Staff' : res.role === 'SPONSOR' ? 'Sponsor' : 'Asistente';
       this.couponSuccessMessage.set(`Código de invitación de ${roleLabel} aplicado (100% de descuento).`);
       this.couponErrorMessage.set(null);
     }
