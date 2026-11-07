@@ -12,7 +12,8 @@ export interface RegistrationInsert {
   user_id: string;
   ticket_type_id: string;
   event_role: EventRole;
-  status: RegistrationStatus;
+  /** Opcional: el servidor fija el estado (PENDING/CONFIRMED) y la fase de precio al insertar. */
+  status?: RegistrationStatus;
   payment_proof_url: string | null;
   custom_responses: Record<string, string>;
   coupon_id?: string | null;
