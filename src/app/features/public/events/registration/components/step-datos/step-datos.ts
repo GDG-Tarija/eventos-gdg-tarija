@@ -160,6 +160,14 @@ interface ExtraInfo {
                   <div class="text-sm font-bold text-text-primary leading-tight font-google">
                     {{ t.name }}
                   </div>
+                  @if (t.description) {
+                    <p
+                      class="m-0 text-xs text-text-secondary leading-snug whitespace-pre-line"
+                      [class.line-clamp-3]="!!t.image_url"
+                    >
+                      {{ t.description }}
+                    </p>
+                  }
                   @for (p of soldOutPhases(t); track p.id) {
                     <div class="flex items-center justify-between w-full text-xs text-text-muted">
                       <span class="line-through"

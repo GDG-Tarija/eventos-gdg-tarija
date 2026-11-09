@@ -25,6 +25,8 @@ export interface TicketType {
   /** QR de pago vigente: el de la fase activa (o el del paquete si no tiene fases). */
   payment_qr_url?: string;
   image_url?: string;
+  /** Descripción de la entrada (qué incluye); se muestra en la tarjeta del pase. */
+  description?: string;
   /** Presente solo si el paquete tiene fases (ordenadas por posición). */
   phases?: TicketPhase[];
   active_phase?: TicketPhase | null;
