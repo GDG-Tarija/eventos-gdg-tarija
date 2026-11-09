@@ -12,6 +12,7 @@ export interface TicketTypeRow {
   ticket_capacity: number | string | null;
   payment_qr_url?: string | null;
   image_url?: string | null;
+  description?: string | null;
 }
 
 /** Fila de la RPC `get_ticket_availability`. */
@@ -73,6 +74,7 @@ export function buildTicketTypes(
       event_id: t.event_id,
       name: t.name,
       image_url: typeof t.image_url === 'string' ? t.image_url : undefined,
+      description: typeof t.description === 'string' && t.description.trim() ? t.description.trim() : undefined,
     };
     const rows = byType.get(t.id) ?? [];
     const phaseRows = rows.filter((r) => r.ticket_phase_id !== null).sort((a, b) => a.position - b.position);

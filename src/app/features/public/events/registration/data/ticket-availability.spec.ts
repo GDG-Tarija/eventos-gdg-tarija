@@ -49,6 +49,16 @@ describe('buildTicketTypes', () => {
     expect(t.remaining).toBe(90);
   });
 
+  it('incluye la descripción de la entrada sin espacios sobrantes y omite la vacía', () => {
+    const [withDesc, blank, missing] = buildTicketTypes(
+      [type('t1', { description: '  Incluye polera y refrigerio  ' }), type('t2', { description: '   ' }), type('t3')],
+      [],
+    );
+    expect(withDesc.description).toBe('Incluye polera y refrigerio');
+    expect(blank.description).toBeUndefined();
+    expect(missing.description).toBeUndefined();
+  });
+
   it('paquete sin fases se agota al llegar a ticket_capacity', () => {
     const [t] = buildTicketTypes(
       [type('t1', { ticket_capacity: 20 })],
