@@ -8,10 +8,9 @@ import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { AuthService } from '../../../../../core/auth/services/auth.service';
 import { SessionWithTrack } from '../../../../../core/models/session.model';
 import { SbSessions } from '../../../../../core/services/supabase/sb-sessions';
-import { RegistrationStatus } from '../../../../../models/registration.model';
 import { TicketType } from '../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../data/event.model';
-import { RegistrationsService } from '../data/registrations.service';
+import { RegistrationsService, TicketSoldOutError } from '../data/registrations.service';
 import { TicketTypesService } from '../data/ticket-types.service';
 import { UserProfileService } from '../data/user-profile.service';
 import { StepConfirmar } from './step-confirmar/step-confirmar';
@@ -329,7 +328,7 @@ export class EventRegistrationCheckout implements OnInit {
   async submit(): Promise<void> {
     const d = this.step1Data();
     const user = this.auth.user();
-    if (!d || !user || this.submitting()) return;
+    if (!d || !user || this.submitting() || this.success()) return;
 
     this.submitting.set(true);
     this.error.set(null);
@@ -359,14 +358,11 @@ export class EventRegistrationCheckout implements OnInit {
         this.auth.user.set({ ...user, ...updatedProfile });
       }
 
-      const isPromo = d.appliedRole && d.appliedRole !== 'ATTENDEE';
-      const status: RegistrationStatus = (d.ticket.price > 0 && !isPromo) ? 'PENDING' : 'CONFIRMED';
       const registrationId = await this.registrations.createRegistration({
         event_id: this.event().id,
         user_id: user.id,
         ticket_type_id: d.ticket.id,
         event_role: d.appliedRole ?? 'ATTENDEE',
-        status,
         payment_proof_url: paymentProofUrl,
         custom_responses: Object.fromEntries(
           Object.entries(d.responses).filter(([, v]) => typeof v === 'string' && (v as string).trim().length > 0),
@@ -381,12 +377,40 @@ export class EventRegistrationCheckout implements OnInit {
       this.success.set(true);
       this.snackBar.open('¡Registro completado exitosamente!', 'Cerrar', { duration: 4000 });
     } catch (e) {
+      if (e instanceof TicketSoldOutError) {
+        await this.handleSoldOut(d.ticket);
+        return;
+      }
       const msg = e instanceof Error ? e.message : 'Error al registrar';
       this.error.set(msg);
       this.snackBar.open(msg, 'Cerrar', { duration: 4000 });
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  /** El cupo de la fase (o del paquete) se agotó mientras se registraba: refresca y avisa. */
+  private async handleSoldOut(previous: TicketType): Promise<void> {
+    try {
+      this.tickets.set(await this.ticketTypes.listByEventId(this.event().id));
+    } catch (err) {
+      console.error('[Checkout] Error refreshing tickets:', err);
+    }
+    this.step1Data.set(null);
+    this.stepper.selectedIndex = 0;
+
+    const current = this.tickets().find((t) => t.id === previous.id);
+    let msg: string;
+    if (!current || current.sold_out) {
+      msg = `Los cupos de «${previous.name}» se agotaron. Elegí otro pase.`;
+    } else if (current.price !== previous.price) {
+      const label = current.price > 0 ? `Bs ${current.price}` : 'gratis';
+      msg = `La preventa se agotó, el precio ahora es ${label}. Revisá el pago y volvé a confirmar.`;
+    } else {
+      msg = 'La fase de preventa se agotó. Revisá los datos de tu pase y volvé a confirmar.';
+    }
+    this.error.set(msg);
+    this.snackBar.open(msg, 'Cerrar', { duration: 8000 });
   }
 
   async updateSessionsOnly(): Promise<void> {
