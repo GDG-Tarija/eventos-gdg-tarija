@@ -1,6 +1,17 @@
-import { Component, OnInit, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -20,6 +31,7 @@ import { TicketType } from '../../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../../data/event.model';
 import { RegistrationsService } from '../../data/registrations.service';
 import { getSoldOutPhases, lowStockRemaining } from '../../data/ticket-availability';
+import { MissingFieldsDialog } from './missing-fields-dialog';
 
 export interface StepDatosOutput {
   firstName: string;
@@ -41,7 +53,9 @@ interface CheckoutFormData {
   responses: Record<string, any>;
 }
 
-interface ExtraInfo { form_fields?: FormField[] }
+interface ExtraInfo {
+  form_fields?: FormField[];
+}
 
 @Component({
   selector: 'app-step-datos',
@@ -61,17 +75,31 @@ interface ExtraInfo { form_fields?: FormField[] }
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Nombres</mat-label>
-            <input matInput [formField]="checkoutForm.firstName" placeholder="Ej: Juan Carlos" autocomplete="given-name" />
+            <input
+              matInput
+              [formField]="checkoutForm.firstName"
+              placeholder="Ej: Juan Carlos"
+              autocomplete="given-name"
+            />
             @if (checkoutForm.firstName().invalid() && checkoutForm.firstName().touched()) {
-              <mat-error class="text-xs">{{ checkoutForm.firstName().errors()[0]?.message }}</mat-error>
+              <mat-error class="text-xs">{{
+                checkoutForm.firstName().errors()[0]?.message
+              }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Apellidos</mat-label>
-            <input matInput [formField]="checkoutForm.lastName" placeholder="Ej: Pérez Gutiérrez" autocomplete="family-name" />
+            <input
+              matInput
+              [formField]="checkoutForm.lastName"
+              placeholder="Ej: Pérez Gutiérrez"
+              autocomplete="family-name"
+            />
             @if (checkoutForm.lastName().invalid() && checkoutForm.lastName().touched()) {
-              <mat-error class="text-xs">{{ checkoutForm.lastName().errors()[0]?.message }}</mat-error>
+              <mat-error class="text-xs">{{
+                checkoutForm.lastName().errors()[0]?.message
+              }}</mat-error>
             }
           </mat-form-field>
 
@@ -104,7 +132,11 @@ interface ExtraInfo { form_fields?: FormField[] }
               <button
                 type="button"
                 class="flex flex-row sm:flex-col rounded-xl sm:rounded-2xl border overflow-hidden text-left transition-all duration-300 bg-white w-full p-2.5 sm:p-0"
-                [class]="t.sold_out ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:-translate-y-0.5 active:scale-[0.98]'"
+                [class]="
+                  t.sold_out
+                    ? 'cursor-not-allowed opacity-60'
+                    : 'cursor-pointer hover:-translate-y-0.5 active:scale-[0.98]'
+                "
                 [class.border-google-blue]="selectedTicketId() === t.id"
                 [class.shadow-md]="selectedTicketId() === t.id"
                 [class.border-black/5]="selectedTicketId() !== t.id"
@@ -113,36 +145,62 @@ interface ExtraInfo { form_fields?: FormField[] }
                 (click)="selectTicket(t)"
               >
                 @if (t.image_url) {
-                  <div class="hidden sm:block w-full aspect-square overflow-hidden bg-black/[0.02] shrink-0 border-b border-black/5">
+                  <div
+                    class="hidden sm:block w-full aspect-square overflow-hidden bg-black/[0.02] shrink-0 border-b border-black/5"
+                  >
                     <img [src]="t.image_url" [alt]="t.name" class="w-full h-full object-contain" />
                   </div>
-                  <div class="sm:hidden w-28 h-28 rounded-xl overflow-hidden shrink-0 bg-black/[0.02] border border-black/5">
+                  <div
+                    class="sm:hidden w-28 h-28 rounded-xl overflow-hidden shrink-0 bg-black/[0.02] border border-black/5"
+                  >
                     <img [src]="t.image_url" [alt]="t.name" class="w-full h-full object-contain" />
                   </div>
                 }
                 <div class="flex-grow flex flex-col justify-between w-full sm:p-3 space-y-2 pl-3">
-                  <div class="text-sm font-bold text-text-primary leading-tight font-google">{{ t.name }}</div>
+                  <div class="text-sm font-bold text-text-primary leading-tight font-google">
+                    {{ t.name }}
+                  </div>
                   @if (t.description) {
                     <p
                       class="m-0 text-xs text-text-secondary leading-snug whitespace-pre-line"
                       [class.line-clamp-3]="!!t.image_url"
-                    >{{ t.description }}</p>
+                    >
+                      {{ t.description }}
+                    </p>
                   }
                   @for (p of soldOutPhases(t); track p.id) {
                     <div class="flex items-center justify-between w-full text-xs text-text-muted">
-                      <span class="line-through">{{ p.name }} · @if (p.price > 0) { Bs {{ p.price }} } @else { Gratis }</span>
+                      <span class="line-through"
+                        >{{ p.name }} ·
+                        @if (p.price > 0) {
+                          Bs {{ p.price }}
+                        } @else {
+                          Gratis
+                        }
+                      </span>
                       <span class="font-bold text-google-red">Agotada</span>
                     </div>
                   }
-                  <div class="flex items-center justify-between border-t border-black/5 pt-1.5 w-full gap-2">
+                  <div
+                    class="flex items-center justify-between border-t border-black/5 pt-1.5 w-full gap-2"
+                  >
                     <span class="text-xs text-text-secondary">
                       {{ t.active_phase ? t.active_phase.name : 'Precio' }}
                     </span>
                     @if (t.sold_out) {
-                      <span class="text-google-red font-extrabold text-xs bg-google-red/5 px-2 py-0.5 rounded-full">Agotado</span>
+                      <span
+                        class="text-google-red font-extrabold text-xs bg-google-red/5 px-2 py-0.5 rounded-full"
+                        >Agotado</span
+                      >
                     } @else {
-                      <span class="text-google-blue font-extrabold text-xs bg-google-blue/5 px-2 py-0.5 rounded-full">
-                        @if (t.price > 0) { Bs {{ t.price }} } @else { Gratis }
+                      <span
+                        class="text-google-blue font-extrabold text-xs bg-google-blue/5 px-2 py-0.5 rounded-full"
+                      >
+                        @if (t.price > 0) {
+                          Bs {{ t.price }}
+                        } @else {
+                          Gratis
+                        }
                       </span>
                     }
                   </div>
@@ -201,11 +259,18 @@ interface ExtraInfo { form_fields?: FormField[] }
             @for (f of fields(); track f.key) {
               @if (f.type === 'checkbox') {
                 <div class="sm:col-span-2 space-y-1.5 py-1">
-                  <div class="text-xs sm:text-sm font-semibold text-text-primary">{{ getLabel(f) }}</div>
+                  <div class="text-xs sm:text-sm font-semibold text-text-primary">
+                    {{ getLabel(f) }}
+                  </div>
                   <mat-checkbox [formField]="checkoutForm.responses[f.key]">
-                    <span class="text-xs sm:text-sm text-text-secondary select-none font-medium">Sí, confirmo</span>
+                    <span class="text-xs sm:text-sm text-text-secondary select-none font-medium"
+                      >Sí, confirmo</span
+                    >
                   </mat-checkbox>
-                  @if (checkoutForm.responses[f.key]().invalid() && checkoutForm.responses[f.key]().touched()) {
+                  @if (
+                    checkoutForm.responses[f.key]().invalid() &&
+                    checkoutForm.responses[f.key]().touched()
+                  ) {
                     <div class="text-xs text-google-red mt-1 pl-6 font-semibold">
                       {{ checkoutForm.responses[f.key]().errors()[0]?.message }}
                     </div>
@@ -219,17 +284,31 @@ interface ExtraInfo { form_fields?: FormField[] }
                       <mat-option [value]="opt">{{ opt }}</mat-option>
                     }
                   </mat-select>
-                  @if (checkoutForm.responses[f.key]().invalid() && checkoutForm.responses[f.key]().touched()) {
-                    <mat-error class="text-xs">{{ checkoutForm.responses[f.key]().errors()[0]?.message }}</mat-error>
+                  @if (
+                    checkoutForm.responses[f.key]().invalid() &&
+                    checkoutForm.responses[f.key]().touched()
+                  ) {
+                    <mat-error class="text-xs">{{
+                      checkoutForm.responses[f.key]().errors()[0]?.message
+                    }}</mat-error>
                   }
                 </mat-form-field>
               } @else {
                 <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
                   <mat-label>{{ getLabel(f) }}</mat-label>
-                  <input matInput [type]="f.type === 'number' ? 'number' : 'text'"
-                    [formField]="checkoutForm.responses[f.key]" [placeholder]="f.placeholder ?? ''" />
-                  @if (checkoutForm.responses[f.key]().invalid() && checkoutForm.responses[f.key]().touched()) {
-                    <mat-error class="text-xs">{{ checkoutForm.responses[f.key]().errors()[0]?.message }}</mat-error>
+                  <input
+                    matInput
+                    [type]="f.type === 'number' ? 'number' : 'text'"
+                    [formField]="checkoutForm.responses[f.key]"
+                    [placeholder]="f.placeholder ?? ''"
+                  />
+                  @if (
+                    checkoutForm.responses[f.key]().invalid() &&
+                    checkoutForm.responses[f.key]().touched()
+                  ) {
+                    <mat-error class="text-xs">{{
+                      checkoutForm.responses[f.key]().errors()[0]?.message
+                    }}</mat-error>
                   }
                 </mat-form-field>
               }
@@ -246,21 +325,35 @@ interface ExtraInfo { form_fields?: FormField[] }
             Comprobante de pago
           </p>
           @if (selectedTicketQrUrl()) {
-            <div class="rounded-2xl border border-black/5 p-4 flex flex-col items-center gap-3 bg-white">
-              <img class="w-full max-w-[220px] rounded-xl border border-black/5 object-contain"
-                [src]="selectedTicketQrUrl()!" alt="QR de pago" />
-              <a [href]="selectedTicketQrUrl()!" download="qr-pago.png" target="_blank"
-                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-google-blue text-google-blue hover:bg-google-blue/5 transition-all text-xs font-bold cursor-pointer no-underline active:scale-95">
+            <div
+              class="rounded-2xl border border-black/5 p-4 flex flex-col items-center gap-3 bg-white"
+            >
+              <img
+                class="w-full max-w-[220px] rounded-xl border border-black/5 object-contain"
+                [src]="selectedTicketQrUrl()!"
+                alt="QR de pago"
+              />
+              <a
+                [href]="selectedTicketQrUrl()!"
+                download="qr-pago.png"
+                target="_blank"
+                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-google-blue text-google-blue hover:bg-google-blue/5 transition-all text-xs font-bold cursor-pointer no-underline active:scale-95"
+              >
                 <span class="material-symbols-rounded text-sm" aria-hidden="true">download</span>
                 Descargar QR
               </a>
             </div>
           }
-          <input type="file" accept="image/*"
+          <input
+            type="file"
+            accept="image/*"
             class="text-xs w-full cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-google-blue/10 file:text-google-blue hover:file:bg-google-blue/20 bg-white border border-black/5 rounded-2xl p-2.5"
-            (change)="onFileChange($event)" />
+            (change)="onFileChange($event)"
+          />
           @if (paymentProofName()) {
-            <p class="text-xs text-text-secondary m-0">Archivo: <strong>{{ paymentProofName() }}</strong></p>
+            <p class="text-xs text-text-secondary m-0">
+              Archivo: <strong>{{ paymentProofName() }}</strong>
+            </p>
           }
           @if (proofError()) {
             <p class="text-xs text-google-red font-semibold m-0">{{ proofError() }}</p>
@@ -293,13 +386,16 @@ export class StepDatos implements OnInit {
 
   private readonly auth = inject(AuthService);
   private readonly registrationsService = inject(RegistrationsService);
+  private readonly dialog = inject(MatDialog);
   private lastValidatedCode = '';
   private lastTicketKey: string | null = null;
 
   readonly fields = signal<FormField[]>([]);
   readonly selectedTicketId = signal<string | null>(null);
   // Precio/QR salen del paquete elegido (fase activa); se recalculan si cambia la disponibilidad.
-  readonly selectedTicket = computed(() => this.tickets().find((t) => t.id === this.selectedTicketId()) ?? null);
+  readonly selectedTicket = computed(
+    () => this.tickets().find((t) => t.id === this.selectedTicketId()) ?? null,
+  );
   readonly originalTicketPrice = computed(() => Number(this.selectedTicket()?.price ?? 0));
   readonly selectedTicketPrice = computed(() => (this.couponId() ? 0 : this.originalTicketPrice()));
   readonly selectedTicketQrUrl = computed(() => this.selectedTicket()?.payment_qr_url ?? null);
@@ -316,14 +412,21 @@ export class StepDatos implements OnInit {
   readonly ticketError = signal<string | null>(null);
   readonly proofError = signal<string | null>(null);
 
-  readonly formData = signal<CheckoutFormData>({ firstName: '', lastName: '', phone: '', responses: {} });
+  readonly formData = signal<CheckoutFormData>({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    responses: {},
+  });
 
   readonly checkoutForm = form(this.formData, (path) => {
     required(path.firstName, { message: 'Ingresa tus nombres' });
     required(path.lastName, { message: 'Ingresa tus apellidos' });
     required(path.phone, { message: 'El celular es obligatorio' });
     minLength(path.phone, 5, { message: 'El celular debe tener al menos 5 dígitos' });
-    pattern(path.phone, /^\+?[0-9\s-]+$/, { message: 'El celular solo puede contener números, espacios y el signo +' });
+    pattern(path.phone, /^\+?[0-9\s-]+$/, {
+      message: 'El celular solo puede contener números, espacios y el signo +',
+    });
     validateTree(path.responses, (ctx) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const errors: any[] = [];
@@ -335,10 +438,18 @@ export class StepDatos implements OnInit {
         const fieldTree = (ctx.fieldTree as Record<string, any>)[f.key];
         if (f.type === 'checkbox') {
           if (val !== true)
-            errors.push({ kind: 'required', message: `Debes marcar la casilla "${f.label}"`, fieldTree });
+            errors.push({
+              kind: 'required',
+              message: `Debes marcar la casilla "${f.label}"`,
+              fieldTree,
+            });
         } else {
           if (val === null || val === undefined || String(val).trim() === '')
-            errors.push({ kind: 'required', message: `El campo "${f.label}" es obligatorio`, fieldTree });
+            errors.push({
+              kind: 'required',
+              message: `El campo "${f.label}" es obligatorio`,
+              fieldTree,
+            });
         }
       }
       return errors;
@@ -420,11 +531,11 @@ export class StepDatos implements OnInit {
     }
 
     // Debounce de 250ms
-    await new Promise(resolve => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, 250));
     if (this.lastValidatedCode !== code) return;
 
     const res = await this.registrationsService.validateCoupon(this.event().id, code);
-    
+
     // Evitar condición de carrera si el usuario continuó escribiendo durante la petición HTTP
     if (this.lastValidatedCode !== code) return;
 
@@ -445,8 +556,17 @@ export class StepDatos implements OnInit {
       this.appliedRole.set(res.role ?? 'ATTENDEE');
       this.couponId.set(res.id ?? null);
 
-      const roleLabel = res.role === 'SPEAKER' ? 'Speaker' : res.role === 'STAFF' ? 'Staff' : res.role === 'SPONSOR' ? 'Sponsor' : 'Asistente';
-      this.couponSuccessMessage.set(`Código de invitación de ${roleLabel} aplicado (100% de descuento).`);
+      const roleLabel =
+        res.role === 'SPEAKER'
+          ? 'Speaker'
+          : res.role === 'STAFF'
+            ? 'Staff'
+            : res.role === 'SPONSOR'
+              ? 'Sponsor'
+              : 'Asistente';
+      this.couponSuccessMessage.set(
+        `Código de invitación de ${roleLabel} aplicado (100% de descuento).`,
+      );
       this.couponErrorMessage.set(null);
     }
   }
@@ -457,17 +577,45 @@ export class StepDatos implements OnInit {
     this.proofError.set(null);
   }
 
-  onContinuar(): void {
-    if (this.checkoutForm().invalid()) {
-      this.checkoutForm().markAsTouched();
-      return;
+  /**
+   * Marca todos los campos como tocados (así cada uno muestra su error) y devuelve los mensajes
+   * de lo que falta. markAsTouched() sobre la raíz no alcanza a los campos hijos.
+   */
+  private collectMissing(): string[] {
+    const messages: string[] = [];
+    const form = this.checkoutForm;
+    for (const field of [form.firstName, form.lastName, form.phone]) {
+      field().markAsTouched();
+      if (field().invalid()) messages.push(field().errors()[0]?.message ?? 'Revisa este campo');
     }
+    for (const f of this.fields()) {
+      const state = form.responses[f.key]();
+      state.markAsTouched();
+      if (state.invalid()) messages.push(state.errors()[0]?.message ?? `Revisa "${f.label}"`);
+    }
+    return messages;
+  }
+
+  private showMissing(messages: string[]): void {
+    this.dialog.open(MissingFieldsDialog, {
+      data: { messages },
+      autoFocus: 'dialog',
+      width: 'min(92vw, 28rem)',
+    });
+  }
+
+  onContinuar(): void {
+    const messages = this.collectMissing();
     if (!this.selectedTicketId()) {
       this.ticketError.set('Por favor, seleccioná un pase para continuar.');
-      return;
+      messages.push('Elige un pase (entrada).');
     }
-    if (this.selectedTicketPrice() > 0 && !this.paymentProofFile()) {
+    if (this.selectedTicketId() && this.selectedTicketPrice() > 0 && !this.paymentProofFile()) {
       this.proofError.set('Por favor, subí el comprobante de pago.');
+      messages.push('Sube el comprobante de pago.');
+    }
+    if (messages.length > 0) {
+      this.showMissing(messages);
       return;
     }
     const ticket = this.tickets().find((t) => t.id === this.selectedTicketId())!;
@@ -486,13 +634,19 @@ export class StepDatos implements OnInit {
 
   getLabel(field: FormField): string {
     if (field.required) return field.label.endsWith(' *') ? field.label : `${field.label} *`;
-    return field.label.toLowerCase().includes('opcional') ? field.label : `${field.label} (opcional)`;
+    return field.label.toLowerCase().includes('opcional')
+      ? field.label
+      : `${field.label} (opcional)`;
   }
 
   private parseFields(extraInfo: unknown): FormField[] {
     let normalized = extraInfo;
     if (typeof normalized === 'string') {
-      try { normalized = JSON.parse(normalized); } catch { return []; }
+      try {
+        normalized = JSON.parse(normalized);
+      } catch {
+        return [];
+      }
     }
     const fields = (normalized as ExtraInfo | null)?.form_fields;
     if (!Array.isArray(fields)) return [];
