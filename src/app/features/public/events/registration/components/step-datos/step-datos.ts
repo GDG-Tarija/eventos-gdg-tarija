@@ -19,6 +19,7 @@ import { EventRole } from '../../../../../../models/registration.model';
 import { TicketType } from '../../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../../data/event.model';
 import { RegistrationsService } from '../../data/registrations.service';
+import { getSoldOutPhases, lowStockRemaining } from '../../data/ticket-availability';
 
 export interface StepDatosOutput {
   firstName: string;
@@ -102,10 +103,13 @@ interface ExtraInfo { form_fields?: FormField[] }
             @for (t of tickets(); track t.id) {
               <button
                 type="button"
-                class="flex flex-row sm:flex-col rounded-xl sm:rounded-2xl border overflow-hidden text-left transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer bg-white w-full p-2.5 sm:p-0"
+                class="flex flex-row sm:flex-col rounded-xl sm:rounded-2xl border overflow-hidden text-left transition-all duration-300 bg-white w-full p-2.5 sm:p-0"
+                [class]="t.sold_out ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:-translate-y-0.5 active:scale-[0.98]'"
                 [class.border-google-blue]="selectedTicketId() === t.id"
                 [class.shadow-md]="selectedTicketId() === t.id"
                 [class.border-black/5]="selectedTicketId() !== t.id"
+                [disabled]="t.sold_out"
+                [attr.aria-disabled]="t.sold_out ? 'true' : null"
                 (click)="selectTicket(t)"
               >
                 @if (t.image_url) {
@@ -118,12 +122,27 @@ interface ExtraInfo { form_fields?: FormField[] }
                 }
                 <div class="flex-grow flex flex-col justify-between w-full sm:p-3 space-y-2 pl-3">
                   <div class="text-sm font-bold text-text-primary leading-tight font-google">{{ t.name }}</div>
-                  <div class="flex items-center justify-between border-t border-black/5 pt-1.5 w-full">
-                    <span class="text-xs text-text-secondary">Precio</span>
-                    <span class="text-google-blue font-extrabold text-xs bg-google-blue/5 px-2 py-0.5 rounded-full">
-                      @if (t.price > 0) { Bs {{ t.price }} } @else { Gratis }
+                  @for (p of soldOutPhases(t); track p.id) {
+                    <div class="flex items-center justify-between w-full text-xs text-text-muted">
+                      <span class="line-through">{{ p.name }} · @if (p.price > 0) { Bs {{ p.price }} } @else { Gratis }</span>
+                      <span class="font-bold text-google-red">Agotada</span>
+                    </div>
+                  }
+                  <div class="flex items-center justify-between border-t border-black/5 pt-1.5 w-full gap-2">
+                    <span class="text-xs text-text-secondary">
+                      {{ t.active_phase ? t.active_phase.name : 'Precio' }}
                     </span>
+                    @if (t.sold_out) {
+                      <span class="text-google-red font-extrabold text-xs bg-google-red/5 px-2 py-0.5 rounded-full">Agotado</span>
+                    } @else {
+                      <span class="text-google-blue font-extrabold text-xs bg-google-blue/5 px-2 py-0.5 rounded-full">
+                        @if (t.price > 0) { Bs {{ t.price }} } @else { Gratis }
+                      </span>
+                    }
                   </div>
+                  @if (lowStock(t); as left) {
+                    <p class="m-0 text-xs font-bold text-google-red">¡Quedan {{ left }}!</p>
+                  }
                 </div>
               </button>
             }
@@ -269,11 +288,15 @@ export class StepDatos implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly registrationsService = inject(RegistrationsService);
   private lastValidatedCode = '';
+  private lastTicketKey: string | null = null;
 
   readonly fields = signal<FormField[]>([]);
   readonly selectedTicketId = signal<string | null>(null);
-  readonly selectedTicketPrice = signal(0);
-  readonly selectedTicketQrUrl = signal<string | null>(null);
+  // Precio/QR salen del paquete elegido (fase activa); se recalculan si cambia la disponibilidad.
+  readonly selectedTicket = computed(() => this.tickets().find((t) => t.id === this.selectedTicketId()) ?? null);
+  readonly originalTicketPrice = computed(() => Number(this.selectedTicket()?.price ?? 0));
+  readonly selectedTicketPrice = computed(() => (this.couponId() ? 0 : this.originalTicketPrice()));
+  readonly selectedTicketQrUrl = computed(() => this.selectedTicket()?.payment_qr_url ?? null);
   readonly paymentProofFile = signal<File | null>(null);
   readonly paymentProofName = computed(() => this.paymentProofFile()?.name ?? '');
 
@@ -284,7 +307,6 @@ export class StepDatos implements OnInit {
   readonly couponId = signal<string | null>(null);
   readonly couponSuccessMessage = signal<string | null>(null);
   readonly couponErrorMessage = signal<string | null>(null);
-  readonly originalTicketPrice = signal(0);
   readonly ticketError = signal<string | null>(null);
   readonly proofError = signal<string | null>(null);
 
@@ -329,11 +351,28 @@ export class StepDatos implements OnInit {
       }));
     });
 
-    // Si el evento tiene un solo pase, se selecciona por defecto.
+    // Si el evento tiene un solo pase disponible, se selecciona por defecto.
     effect(() => {
       const tickets = this.tickets();
-      if (tickets.length !== 1 || this.selectedTicketId()) return;
+      if (tickets.length !== 1 || this.selectedTicketId() || tickets[0].sold_out) return;
       untracked(() => this.selectTicket(tickets[0]));
+    });
+
+    // Si la disponibilidad cambia (se agotó la fase elegida), el comprobante ya no corresponde.
+    effect(() => {
+      const ticket = this.selectedTicket();
+      const key = ticket ? `${ticket.id}:${ticket.active_phase?.id ?? ''}:${ticket.price}` : null;
+      untracked(() => {
+        if (ticket?.sold_out) {
+          this.selectedTicketId.set(null);
+          this.ticketError.set(`«${ticket.name}» se agotó. Elegí otro pase.`);
+        }
+        if (key !== this.lastTicketKey) {
+          this.lastTicketKey = key;
+          this.paymentProofFile.set(null);
+          this.proofError.set(null);
+        }
+      });
     });
   }
 
@@ -345,19 +384,17 @@ export class StepDatos implements OnInit {
     this.formData.update((prev) => ({ ...prev, responses: initialResponses }));
   }
 
+  soldOutPhases(t: TicketType) {
+    return t.sold_out ? [] : getSoldOutPhases(t);
+  }
+
+  lowStock(t: TicketType): number | null {
+    return lowStockRemaining(t);
+  }
+
   selectTicket(t: TicketType): void {
-    const price = Number(t.price ?? 0);
+    if (t.sold_out) return;
     this.selectedTicketId.set(t.id);
-    this.originalTicketPrice.set(price);
-    
-    // Si ya se aplicó un cupón válido, el costo del pase es cero
-    if (this.couponId()) {
-      this.selectedTicketPrice.set(0);
-    } else {
-      this.selectedTicketPrice.set(price);
-    }
-    
-    this.selectedTicketQrUrl.set(t.payment_qr_url ?? null);
     this.paymentProofFile.set(null);
     this.ticketError.set(null);
     this.proofError.set(null);
@@ -371,7 +408,6 @@ export class StepDatos implements OnInit {
     if (!code) {
       this.appliedRole.set('ATTENDEE');
       this.couponId.set(null);
-      this.selectedTicketPrice.set(this.originalTicketPrice());
       this.couponSuccessMessage.set(null);
       this.couponErrorMessage.set(null);
       return;
@@ -389,7 +425,6 @@ export class StepDatos implements OnInit {
     if (!res) {
       this.appliedRole.set('ATTENDEE');
       this.couponId.set(null);
-      this.selectedTicketPrice.set(this.originalTicketPrice());
       this.couponSuccessMessage.set(null);
       this.couponErrorMessage.set('Código de invitación no válido o expirado.');
       return;
@@ -398,13 +433,11 @@ export class StepDatos implements OnInit {
     if (!res.valid) {
       this.appliedRole.set('ATTENDEE');
       this.couponId.set(null);
-      this.selectedTicketPrice.set(this.originalTicketPrice());
       this.couponSuccessMessage.set(null);
       this.couponErrorMessage.set(res.error ?? 'Código de invitación no válido o expirado.');
     } else {
       this.appliedRole.set(res.role ?? 'ATTENDEE');
       this.couponId.set(res.id ?? null);
-      this.selectedTicketPrice.set(0);
 
       const roleLabel = res.role === 'SPEAKER' ? 'Speaker' : res.role === 'STAFF' ? 'Staff' : res.role === 'SPONSOR' ? 'Sponsor' : 'Asistente';
       this.couponSuccessMessage.set(`Código de invitación de ${roleLabel} aplicado (100% de descuento).`);

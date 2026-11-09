@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 import { SUPABASE } from '../../../../../core/supabase/supabase.client';
-import { RegistrationsService } from './registrations.service';
+import { RegistrationsService, TicketSoldOutError } from './registrations.service';
 
 describe('RegistrationsService.validateCoupon', () => {
   const rpc = vi.fn();
@@ -44,5 +44,36 @@ describe('RegistrationsService.validateCoupon', () => {
   it('devuelve null con código vacío sin llamar al RPC', async () => {
     expect(await service.validateCoupon('e1', '  ')).toBeNull();
     expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe('RegistrationsService.createRegistration', () => {
+  const single = vi.fn();
+  const from = vi.fn(() => ({ insert: () => ({ select: () => ({ single }) }) }));
+  let service: RegistrationsService;
+
+  beforeEach(() => {
+    single.mockReset();
+    TestBed.configureTestingModule({ providers: [{ provide: SUPABASE, useValue: { from } }] });
+    service = TestBed.inject(RegistrationsService);
+  });
+
+  const payload = { event_id: 'e', user_id: 'u', ticket_type_id: 't', event_role: 'ATTENDEE' as const, payment_proof_url: null, custom_responses: {} };
+
+  it('devuelve el id creado', async () => {
+    single.mockResolvedValue({ data: { id: 'r1' }, error: null });
+    expect(await service.createRegistration(payload)).toBe('r1');
+  });
+
+  it('P0010 se traduce a TicketSoldOutError', async () => {
+    single.mockResolvedValue({ data: null, error: { code: 'P0010', message: 'agotado' } });
+    await expect(service.createRegistration(payload)).rejects.toBeInstanceOf(TicketSoldOutError);
+  });
+
+  it('otros errores siguen siendo Error genérico', async () => {
+    single.mockResolvedValue({ data: null, error: { code: 'P0011', message: 'fase ajena' } });
+    const err = await service.createRegistration(payload).catch((e) => e);
+    expect(err).not.toBeInstanceOf(TicketSoldOutError);
+    expect(err.message).toContain('P0011');
   });
 });

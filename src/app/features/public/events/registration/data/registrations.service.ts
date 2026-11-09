@@ -12,6 +12,16 @@ interface RegistrationRow {
   created_at?: string;
 }
 
+/** Código de error del trigger cuando el paquete o todas sus fases se quedaron sin cupo. */
+export const TICKET_SOLD_OUT_CODE = 'P0010';
+
+export class TicketSoldOutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TicketSoldOutError';
+  }
+}
+
 export type CouponRole = EventRole;
 
 export interface CouponValidation {
@@ -46,6 +56,7 @@ export class RegistrationsService {
       .select('id')
       .single();
     if (error) {
+      if (error.code === TICKET_SOLD_OUT_CODE) throw new TicketSoldOutError(error.message);
       throw new Error(`[registrations.insert] ${error.code ?? ''} ${error.message} ${error.details ?? ''}`.trim());
     }
     return (data as unknown as { id: string }).id;

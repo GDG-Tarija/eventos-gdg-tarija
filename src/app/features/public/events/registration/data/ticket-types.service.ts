@@ -2,44 +2,27 @@ import { inject, Injectable } from '@angular/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE } from '../../../../../core/supabase/supabase.client';
 import { TicketType } from '../../../../../models/ticket.model';
-
-type TicketTypeRow = TicketType;
+import { AvailabilityRow, buildTicketTypes, TicketTypeRow } from './ticket-availability';
 
 @Injectable({ providedIn: 'root' })
 export class TicketTypesService {
   private readonly supabase = inject<SupabaseClient>(SUPABASE);
 
   async listByEventId(eventId: string): Promise<TicketType[]> {
-    const { data, error } = await this.supabase
-      .from('ticket_types')
-      .select('id,event_id,name,price,ticket_capacity,payment_qr_url,image_url')
-      .eq('event_id', eventId)
-      .order('price', { ascending: true });
+    const [typesRes, availabilityRes] = await Promise.all([
+      this.supabase
+        .from('ticket_types')
+        .select('id,event_id,name,price,ticket_capacity,payment_qr_url,image_url')
+        .eq('event_id', eventId),
+      this.supabase.rpc('get_ticket_availability', { p_event_id: eventId }),
+    ]);
 
-    if (error) throw error;
+    if (typesRes.error) throw typesRes.error;
+    if (availabilityRes.error) throw availabilityRes.error;
 
-    const rows =
-      (data as unknown as (TicketTypeRow & {
-          price: unknown;
-          ticket_capacity: unknown;
-          payment_qr_url?: unknown;
-          image_url?: unknown;
-        })[]) ?? [];
-    return rows.map((r) => {
-      let imageUrl = typeof r.image_url === 'string' ? r.image_url : undefined;
-      if (imageUrl) {
-        // Cache-busting dinámico agregando un parámetro de tiempo único
-        const separator = imageUrl.includes('?') ? '&' : '?';
-        imageUrl = `${imageUrl}${separator}t=${new Date().getTime()}`;
-      }
-
-      return {
-        ...r,
-        price: Number(r.price ?? 0),
-        ticket_capacity: Number(r.ticket_capacity ?? 0),
-        payment_qr_url: typeof r.payment_qr_url === 'string' ? r.payment_qr_url : undefined,
-        image_url: imageUrl,
-      };
-    });
+    return buildTicketTypes(
+      (typesRes.data as unknown as TicketTypeRow[]) ?? [],
+      (availabilityRes.data as unknown as AvailabilityRow[]) ?? [],
+    );
   }
 }
