@@ -31,13 +31,13 @@ La home pública reemplazó el hero anterior y ahora es una **landing de próxim
 - Layout horizontal: `flex flex-col sm:flex-row` con imagen a la izquierda (sm:w-72).
 - Imagen `aspect-video` en mobile, altura completa en desktop.
 - Placeholder si no hay imagen: `event-image-placeholder` (bloques con acentos Google sin degradados).
-- Fecha en `text-google-blue` con icono `calendar_month`.
+- Fecha en `text-google-blue-dark` con icono `calendar_month`.
 - Título `text-2xl font-bold` con `leading-tight`.
-- Botón “Registrarse” `gdg-btn-filled`, alineado a la derecha en desktop.
-- Click en body (menos botón) navega a `/e/:slug`.
+- CTA “Registrarme” `gdg-btn-filled`, alineado a la derecha en desktop. Es solo visual.
+- Modelo de click: **stretched link**. El título es un `<a>` con `after:absolute after:inset-0` (la card es `relative`); el CTA no tiene handler propio.
 
 ### 1.5. Skeleton
-- Usar componente `event-card-skeleton` con `animate-pulse`.
+- Usar componente `event-card-skeleton` con `animate-pulse` (único uso permitido del pulso: carga).
 - Misma estructura exacta que `event-card` para evitar layout shift.
 
 ### 1.6. Ruta de detalle
@@ -123,7 +123,8 @@ Uso en template:
 
 ### 7.1. Tailwind colors
 Definidos en `tailwind.config.js`:
-- `google-blue` `#4285F4`
+- `google-blue` `#4285F4` (iconos, acentos, tintes claros; no para texto ni relleno con texto blanco)
+- `google-blue-dark` `#1A73E8` (texto azul y rellenos con texto blanco; blanco sobre él = 4.51:1)
 - `google-red` `#EA4335`
 - `google-yellow` `#FBBC05`
 - `google-green` `#34A853`
@@ -132,6 +133,7 @@ Definidos en `tailwind.config.js`:
 - `surface-paper` `#FFFFFF`
 - `text-primary` `#202124`
 - `text-secondary` `#5F6368`
+- `text-muted` `#63676C` (≥4.5:1 sobre `#FFFFFF` y `#F8F9FA`: 5.70 / 5.40)
 
 ### 7.2. CSS variables
 En `src/styles/_variables.scss`:
@@ -161,8 +163,12 @@ En `src/styles/_variables.scss`:
 
 ## 10. Motion
 
-- Transiciones: `duration-300 ease-in-out`.
-- Boton active: `active:scale-[0.98]`.
+- Duración 150–200ms, easing `ease-out-strong` (`cubic-bezier(0.23, 1, 0.32, 1)`). Nunca `duration-300 ease-in-out`.
+- Transiciones con propiedades explícitas (`transition-[transform,background-color,color,box-shadow]` o `transition-colors`); nunca `transition-all`.
+- Feedback de press: `motion-safe:active:scale-[0.97]` (ya incluido en `.gdg-btn`).
+- `hover:` está filtrado por `future.hoverOnlyWhenSupported` (solo punteros con hover), así no se quedan pegados tras un tap en móvil.
+- Todo movimiento (transform, translate, scale) va con `motion-safe:`.
+- Sin `animate-pulse`/`animate-bounce` infinitos en estados o empty states; el pulso solo en skeletons de carga.
 
 ---
 
@@ -196,7 +202,9 @@ Archivo:
 
 ## 13. Convenciones de Diseño y Estilo
 
-- No activar Tailwind preflight (`preflight: false`) para no romper Material.
+- No activar Tailwind preflight (`preflight: false`) para no romper Material. Solo se restaura su reset de bordes en `@layer base` de `src/styles.scss` (`border-width: 0; border-style: solid`), para que `border`/`border-t` se vean.
+- Botones Material (`mat-flat-button`, etc.) con `.gdg-btn-*` toman el color de los tokens `--mat-button-*` definidos en esas clases.
+- Voz: español con “tú” (nunca voseo). Terminología: “entrada” (no “pase”), “cupos” (no “lugares”). Sentence case, sin títulos en MAYÚSCULAS.
 - Preferir clases Tailwind en templates nuevos. SCSS por componente solo para casos puntuales.
 - Accesibilidad: iconos sin texto con `aria-label`.
 - No usar degradados como background en contenedores, secciones o cards. Si se necesita, debe pedirse explicitamente.

@@ -34,7 +34,7 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
               class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-google-blue hover:underline cursor-pointer no-underline font-google"
             >
               <span class="material-symbols-rounded text-lg" aria-hidden="true">arrow_back</span>
-              <span>Volver a Mis Certificados</span>
+              <span>Volver a mis certificados</span>
             </a>
           </div>
 

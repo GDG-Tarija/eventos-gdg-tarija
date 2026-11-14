@@ -1,14 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE } from '../../../../../core/supabase/supabase.client';
-import { EventRole, RegistrationInsert } from '../../../../../models/registration.model';
+import { EventRole, RegistrationInsert, RegistrationStatus } from '../../../../../models/registration.model';
 
 interface RegistrationRow {
   id: string;
   event_id: string;
   user_id: string;
   ticket_type_id: string;
-  status: string;
+  status: RegistrationStatus;
   created_at?: string;
 }
 
@@ -49,17 +49,19 @@ export class RegistrationsService {
     return (data as unknown as RegistrationRow) ?? null;
   }
 
-  async createRegistration(registration: RegistrationInsert): Promise<string> {
+  async createRegistration(
+    registration: RegistrationInsert,
+  ): Promise<{ id: string; status: RegistrationStatus }> {
     const { data, error } = await this.supabase
       .from('registrations')
       .insert(registration)
-      .select('id')
+      .select('id,status')
       .single();
     if (error) {
       if (error.code === TICKET_SOLD_OUT_CODE) throw new TicketSoldOutError(error.message);
       throw new Error(`[registrations.insert] ${error.code ?? ''} ${error.message} ${error.details ?? ''}`.trim());
     }
-    return (data as unknown as { id: string }).id;
+    return data as unknown as { id: string; status: RegistrationStatus };
   }
 
   async uploadPaymentProof(file: File, eventId: string, userId: string): Promise<string> {

@@ -91,9 +91,8 @@ export class PublicEventsService {
       .eq('slug', slug)
       .maybeSingle();
 
-    if (error || !data) {
-      return null;
-    }
+    if (error) throw error;
+    if (!data) return null;
 
     const row = data as unknown as EventRow;
     return {

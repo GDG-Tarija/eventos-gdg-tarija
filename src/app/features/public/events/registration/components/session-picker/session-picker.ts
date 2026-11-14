@@ -51,7 +51,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
               <div class="sm:hidden flex rounded-full bg-black/5 p-1 mb-2">
                 <button
                   type="button"
-                  class="flex-1 py-1.5 text-center text-[10px] font-bold rounded-full transition-all duration-200"
+                  class="flex-1 py-1.5 text-center text-xs font-bold rounded-full transition-[background-color,color,box-shadow] duration-200 ease-out-strong"
                   [class.bg-white]="activeMobileTrack() === 'ALL'"
                   [class.shadow-sm]="activeMobileTrack() === 'ALL'"
                   [class.text-google-blue]="activeMobileTrack() === 'ALL'"
@@ -63,7 +63,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                 @for (trackName of availableTracks(); track trackName) {
                   <button
                     type="button"
-                    class="flex-1 py-1.5 text-center text-[10px] font-bold rounded-full transition-all duration-200"
+                    class="flex-1 py-1.5 text-center text-xs font-bold rounded-full transition-[background-color,color,box-shadow] duration-200 ease-out-strong"
                     [class.bg-white]="activeMobileTrack() === trackName"
                     [class.shadow-sm]="activeMobileTrack() === trackName"
                     [class.text-google-blue]="activeMobileTrack() === trackName"
@@ -80,7 +80,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
             @if (availableTracks().length > 1) {
               <div class="hidden sm:grid grid-cols-2 gap-3 pl-6 border-b border-black/5 pb-2 mb-1 text-center">
                 @for (trackName of availableTracks(); track trackName) {
-                  <span class="text-xs font-bold tracking-widest uppercase text-text-secondary">
+                  <span class="text-xs font-bold text-text-secondary">
                     {{ trackName }}
                   </span>
                 }
@@ -107,8 +107,8 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                   </div>
 
                   @if (tg.sessions.length > 1) {
-                    <span class="text-[10px] font-semibold text-text-secondary bg-black/5 px-2 py-0.5 rounded-full">
-                      Paralelas · elegí una
+                    <span class="text-xs font-semibold text-text-secondary bg-black/5 px-2 py-0.5 rounded-full">
+                      Paralelas · elige una
                     </span>
                   }
                 </div>
@@ -126,7 +126,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
 
                       <button
                         type="button"
-                        class="flex flex-col rounded-2xl border text-left transition-all duration-200 active:scale-[0.98] w-full p-5 space-y-3.5 bg-white sm:col-span-2"
+                        class="flex flex-col rounded-2xl border text-left transition-[transform,border-color,box-shadow,background-color] duration-200 ease-out-strong motion-safe:active:scale-[0.97] w-full p-5 space-y-3.5 bg-white sm:col-span-2"
                         [class.border-google-blue]="isSelected"
                         [class.bg-google-blue/[0.02]]="isSelected"
                         [class.shadow-md]="isSelected"
@@ -142,7 +142,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                         [attr.aria-label]="session.title + (isFull ? ' (sin cupos)' : '')"
                       >
                         <div class="flex items-center justify-between w-full">
-                          <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-black/5 text-text-secondary uppercase tracking-wider">
+                          <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-black/5 text-text-secondary">
                             General
                           </span>
                         </div>
@@ -196,7 +196,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
 
                         <button
                           type="button"
-                          class="hidden sm:flex flex-col rounded-2xl border text-left transition-all duration-200 active:scale-[0.98] w-full p-5 space-y-3.5 bg-white"
+                          class="hidden sm:flex flex-col rounded-2xl border text-left transition-[transform,border-color,box-shadow,background-color] duration-200 ease-out-strong motion-safe:active:scale-[0.97] w-full p-5 space-y-3.5 bg-white"
                           [class.border-google-blue]="isSelected"
                           [class.bg-google-blue/[0.02]]="isSelected"
                           [class.shadow-md]="isSelected"
@@ -212,7 +212,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                           [attr.aria-label]="session.title + (isFull ? ' (sin cupos)' : '')"
                         >
                           @if (session.track_name) {
-                            <span class="self-start text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider sm:hidden" [ngClass]="[color.bg, color.text]">
+                            <span class="self-start text-xs font-bold px-2.5 py-0.5 rounded-full sm:hidden" [ngClass]="[color.bg, color.text]">
                               {{ session.track_name }}
                             </span>
                           }
@@ -255,7 +255,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                             </span>
                             <span class="text-xs font-semibold" [class.text-google-green]="!isFull" [class.text-google-red]="isFull">
                               @if (isFull) { Sin cupos }
-                              @else { {{ session.capacity - session.enrolled_count }} lugares disponibles }
+                              @else { {{ session.capacity - session.enrolled_count }} cupos disponibles }
                             </span>
                           </div>
                         </button>
@@ -264,7 +264,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                         <div class="hidden sm:flex flex-col justify-center items-center rounded-2xl border border-dashed border-black/10 text-center w-full p-4 min-h-[120px] bg-black/[0.01] text-text-muted space-y-1">
                           <span class="material-symbols-rounded text-lg text-text-muted/50" aria-hidden="true">coffee</span>
                           <div class="text-xs font-bold font-google text-text-secondary">Espacio libre</div>
-                          <div class="text-[9px] font-medium leading-relaxed">Break / Networking</div>
+                          <div class="text-xs font-medium leading-relaxed">Break / Networking</div>
                         </div>
                       }
                     }
@@ -283,7 +283,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
 
                           <button
                             type="button"
-                            class="flex sm:hidden flex-col rounded-2xl border text-left transition-all duration-200 active:scale-[0.98] w-full p-5 space-y-3.5 bg-white"
+                            class="flex sm:hidden flex-col rounded-2xl border text-left transition-[transform,border-color,box-shadow,background-color] duration-200 ease-out-strong motion-safe:active:scale-[0.97] w-full p-5 space-y-3.5 bg-white"
                             [class.border-google-blue]="isSelected"
                             [class.bg-google-blue/[0.02]]="isSelected"
                             [class.shadow-md]="isSelected"
@@ -299,7 +299,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                             [attr.aria-label]="session.title + (isFull ? ' (sin cupos)' : '')"
                           >
                             @if (session.track_name) {
-                              <span class="self-start text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider" [ngClass]="[color.bg, color.text]">
+                              <span class="self-start text-xs font-bold px-2.5 py-0.5 rounded-full" [ngClass]="[color.bg, color.text]">
                                 {{ session.track_name }}
                               </span>
                             }
@@ -342,7 +342,7 @@ const LEVEL_STYLES: Record<SessionLevel, { bg: string; text: string; label: stri
                               </span>
                               <span class="text-xs font-semibold" [class.text-google-green]="!isFull" [class.text-google-red]="isFull">
                                 @if (isFull) { Sin cupos }
-                                @else { {{ session.capacity - session.enrolled_count }} lugares disponibles }
+                                @else { {{ session.capacity - session.enrolled_count }} cupos disponibles }
                               </span>
                             </div>
                           </button>

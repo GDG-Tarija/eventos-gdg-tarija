@@ -14,7 +14,7 @@ import { SessionPicker } from '../session-picker/session-picker';
         <div class="rounded-2xl border border-google-blue/10 bg-google-blue/5 px-4 py-3 flex items-start gap-2.5">
           <span class="material-symbols-rounded text-base text-google-blue mt-0.5 shrink-0" aria-hidden="true">info</span>
           <p class="text-xs text-google-blue font-medium leading-relaxed m-0">
-            Elegí las sesiones a las que querés asistir. Solo podés seleccionar
+            Elige las sesiones a las que quieres asistir. Solo puedes seleccionar
             <strong>una sesión por bloque horario</strong>.
           </p>
         </div>
@@ -29,7 +29,7 @@ import { SessionPicker } from '../session-picker/session-picker';
       <!-- Resumen de selección (cuando hay más de 1 bloque con sesiones) -->
       @if (selectedIds().length > 0 && totalSlots() > 1) {
         <div class="rounded-xl border border-black/5 bg-white px-4 py-3 space-y-1.5">
-          <p class="text-[10px] font-bold text-text-secondary uppercase tracking-wider m-0">
+          <p class="text-xs font-bold text-text-secondary m-0">
             Seleccionadas ({{ selectedIds().length }} de {{ totalSlots() }} bloques)
           </p>
           @for (s of selectedSessions(); track s.id) {
@@ -47,7 +47,7 @@ import { SessionPicker } from '../session-picker/session-picker';
           <button
             mat-stroked-button
             type="button"
-            class="gdg-btn-outlined flex-1 text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
+            class="gdg-btn-outlined flex-1 text-xs font-bold py-3.5 sm:py-5 rounded-full"
             (click)="back.emit()"
           >
             <span class="flex items-center justify-center gap-1">
@@ -58,7 +58,7 @@ import { SessionPicker } from '../session-picker/session-picker';
           <button
             mat-flat-button
             type="button"
-            class="gdg-btn-filled flex-[2] text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
+            class="gdg-btn-filled flex-[2] text-xs font-bold py-3.5 sm:py-5 rounded-full"
             (click)="next.emit()"
           >
             <span class="flex items-center justify-center gap-1.5">
