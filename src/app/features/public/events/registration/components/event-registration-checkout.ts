@@ -15,6 +15,7 @@ import { RegistrationStatus } from '../../../../../models/registration.model';
 import { TicketType } from '../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../data/event.model';
 import { isPast as isEventPast } from '../../data/event-timing';
+import { compressImage } from '../data/compress-image';
 import { toCustomResponses } from '../data/custom-responses';
 import { friendlyError } from '../data/friendly-error';
 import { priceSummary } from '../data/price-summary';
@@ -442,7 +443,7 @@ export class EventRegistrationCheckout implements OnInit {
       let paymentProofUrl: string | null = null;
       if (d.ticket.price > 0 && d.paymentProofFile) {
         paymentProofUrl = await this.registrations.uploadPaymentProof(
-          d.paymentProofFile,
+          await compressImage(d.paymentProofFile),
           this.event().id,
           user.id,
         );

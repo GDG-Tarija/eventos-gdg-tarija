@@ -70,12 +70,12 @@ export class CertificatesService {
       `)
       .eq('user_id', userId);
 
-    if (error || !data) {
+    if (error) {
       console.error('[CertificatesService.listMyCertificates] Error:', error);
-      return [];
+      throw error;
     }
 
-    const rows = data as unknown as RawRegistrationSelect[];
+    const rows = (data ?? []) as unknown as RawRegistrationSelect[];
     const items: CertificateItem[] = [];
 
     for (const reg of rows) {
@@ -115,10 +115,11 @@ export class CertificatesService {
       .rpc('get_public_certificate', { p_registration_id: registrationId })
       .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
       console.error('[CertificatesService.getCertificateById] Error:', error);
-      return null;
+      throw error;
     }
+    if (!data) return null;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const row = data as any;

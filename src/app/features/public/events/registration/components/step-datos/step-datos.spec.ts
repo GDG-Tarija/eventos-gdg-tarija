@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AuthService } from '../../../../../../core/auth/services/auth.service';
@@ -17,8 +18,12 @@ const ticket: TicketType = {
   ticket_capacity: 10,
 };
 
+// jsdom no implementa scrollIntoView ni matchMedia.
+Element.prototype.scrollIntoView = vi.fn();
+window.matchMedia = vi.fn(() => ({ matches: false })) as unknown as typeof window.matchMedia;
+
 function setup(tickets: TicketType[] = [ticket]) {
-  const open = vi.fn();
+  const open = vi.fn(() => ({ afterClosed: () => of(undefined) }));
   TestBed.configureTestingModule({
     providers: [
       { provide: AuthService, useValue: { user: signal(null) } },
@@ -65,12 +70,14 @@ describe('StepDatos.onContinuar', () => {
 
     expect(emitted).not.toHaveBeenCalled();
     expect(open).toHaveBeenCalledTimes(1);
-    const messages: string[] = open.mock.calls[0][1].data.messages;
+    const messages: string[] = (
+      open.mock.calls[0] as unknown as [unknown, { data: { messages: string[] } }]
+    )[1].data.messages;
     expect(messages).toEqual(
       expect.arrayContaining([
-        'Ingresa tus nombres',
-        'Ingresa tus apellidos',
-        'El celular es obligatorio',
+        'Escribe tus nombres',
+        'Escribe tus apellidos',
+        'Ingresa tu celular',
         'El campo "Universidad" es obligatorio',
         'Debes marcar la casilla "Términos"',
         'Sube el comprobante de pago.',
@@ -83,7 +90,9 @@ describe('StepDatos.onContinuar', () => {
 
     component.onContinuar();
 
-    const messages: string[] = open.mock.calls[0][1].data.messages;
+    const messages: string[] = (
+      open.mock.calls[0] as unknown as [unknown, { data: { messages: string[] } }]
+    )[1].data.messages;
     expect(messages).toContain('Elige una entrada.');
   });
 
@@ -108,7 +117,37 @@ describe('StepDatos.onContinuar', () => {
 
     component.onContinuar();
 
-    const messages: string[] = open.mock.calls[0][1].data.messages;
+    const messages: string[] = (
+      open.mock.calls[0] as unknown as [unknown, { data: { messages: string[] } }]
+    )[1].data.messages;
     expect(messages).toEqual(['Sube el comprobante de pago.']);
+  });
+
+  it('rechaza nombres en blanco o largos y celulares inválidos', () => {
+    const { component } = setup();
+    component.formData.update((d) => ({
+      ...d,
+      firstName: '   ',
+      lastName: 'x'.repeat(61),
+      phone: '12345',
+    }));
+
+    expect(component.checkoutForm.firstName().errors()[0]?.message).toBe('Escribe tus nombres');
+    expect(component.checkoutForm.lastName().errors()[0]?.message).toBe('Máximo 60 caracteres');
+    expect(component.checkoutForm.phone().errors()[0]?.message).toContain('8 dígitos');
+  });
+
+  it('emite el celular normalizado', () => {
+    const { component, emitted } = setup([{ ...ticket, price: 0 }]);
+    component.formData.set({
+      firstName: ' Ana ',
+      lastName: 'Pérez',
+      phone: '+591 7123-4567',
+      responses: { uni: 'UCB', terms: true },
+    });
+
+    component.onContinuar();
+
+    expect(emitted.mock.calls[0][0].phone).toBe('+59171234567');
   });
 });
