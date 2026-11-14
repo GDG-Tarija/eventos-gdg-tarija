@@ -1,5 +1,7 @@
 import {
   Component,
+  DestroyRef,
+  ElementRef,
   OnInit,
   computed,
   effect,
@@ -9,6 +11,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -18,9 +21,9 @@ import { MatSelectModule } from '@angular/material/select';
 import {
   form,
   FormField as SignalFormField,
+  maxLength,
   required,
-  minLength,
-  pattern,
+  validate,
   validateTree,
 } from '@angular/forms/signals';
 
@@ -29,6 +32,7 @@ import { FormField } from '../../../../../../models/field.model';
 import { EventRole } from '../../../../../../models/registration.model';
 import { TicketType } from '../../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../../data/event.model';
+import { isValidPhone, normalizePhone } from '../../data/phone';
 import { RegistrationsService } from '../../data/registrations.service';
 import { getSoldOutPhases, lowStockRemaining } from '../../data/ticket-availability';
 import { MissingFieldsDialog } from './missing-fields-dialog';
@@ -78,6 +82,7 @@ interface ExtraInfo {
             <input
               matInput
               [formField]="checkoutForm.firstName"
+              data-field="firstName"
               placeholder="Ej: Juan Carlos"
               autocomplete="given-name"
             />
@@ -93,6 +98,7 @@ interface ExtraInfo {
             <input
               matInput
               [formField]="checkoutForm.lastName"
+              data-field="lastName"
               placeholder="Ej: Pérez Gutiérrez"
               autocomplete="family-name"
             />
@@ -109,7 +115,15 @@ interface ExtraInfo {
 
           <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
             <mat-label>Celular</mat-label>
-            <input matInput [formField]="checkoutForm.phone" />
+            <input
+              matInput
+              [formField]="checkoutForm.phone"
+              data-field="phone"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+            />
+            <mat-hint>Ej. 71234567</mat-hint>
             @if (checkoutForm.phone().invalid() && checkoutForm.phone().touched()) {
               <mat-error class="text-xs">{{ checkoutForm.phone().errors()[0]?.message }}</mat-error>
             }
@@ -120,17 +134,21 @@ interface ExtraInfo {
       <hr class="border-t border-black/5" />
 
       <!-- Tickets -->
-      <div class="space-y-3">
-        <p class="text-sm font-bold text-text-primary m-0">
-          Elige tu entrada
-        </p>
+      <div class="space-y-3" data-field="ticket" tabindex="-1">
+        <p class="text-sm font-bold text-text-primary m-0">Elige tu entrada</p>
         @if (tickets().length === 0) {
           <p class="text-sm text-text-secondary m-0">No hay entradas disponibles por el momento.</p>
         } @else {
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
+          <div
+            class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5"
+            role="radiogroup"
+            aria-label="Entradas"
+          >
             @for (t of tickets(); track t.id) {
               <button
                 type="button"
+                role="radio"
+                [attr.aria-checked]="selectedTicketId() === t.id"
                 class="flex flex-row sm:flex-col rounded-xl sm:rounded-2xl border overflow-hidden text-left transition-[transform,box-shadow,border-color] duration-200 ease-out-strong bg-white w-full p-2.5 sm:p-0"
                 [class]="
                   t.sold_out
@@ -232,18 +250,27 @@ interface ExtraInfo {
         <div class="space-y-3">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Código de invitación / Cupón</mat-label>
-            <input matInput placeholder="XXX-XXXX" (input)="onCouponInput($event)" />
-            @if (couponSuccessMessage()) {
-              <mat-hint class="text-google-green font-bold text-xs flex items-center gap-1 mt-1">
-                <span class="material-symbols-rounded text-sm" aria-hidden="true">verified</span>
-                <span>{{ couponSuccessMessage() }}</span>
-              </mat-hint>
-            } @else if (couponErrorMessage()) {
-              <mat-hint class="text-google-red font-semibold text-xs flex items-center gap-1 mt-1">
-                <span class="material-symbols-rounded text-sm" aria-hidden="true">error</span>
-                <span>{{ couponErrorMessage() }}</span>
-              </mat-hint>
-            }
+            <input
+              matInput
+              class="uppercase"
+              placeholder="XXX-XXXX"
+              (input)="onCouponInput($event)"
+            />
+            <mat-hint role="status">
+              @if (couponChecking()) {
+                <span class="text-text-secondary text-xs mt-1">Verificando código…</span>
+              } @else if (couponSuccessMessage()) {
+                <span class="text-google-green font-bold text-xs flex items-center gap-1 mt-1">
+                  <span class="material-symbols-rounded text-sm" aria-hidden="true">verified</span>
+                  <span>{{ couponSuccessMessage() }}</span>
+                </span>
+              } @else if (couponErrorMessage()) {
+                <span class="text-google-red font-semibold text-xs flex items-center gap-1 mt-1">
+                  <span class="material-symbols-rounded text-sm" aria-hidden="true">error</span>
+                  <span>{{ couponErrorMessage() }}</span>
+                </span>
+              }
+            </mat-hint>
           </mat-form-field>
         </div>
       }
@@ -252,13 +279,15 @@ interface ExtraInfo {
       @if (fields().length > 0) {
         <hr class="border-t border-black/5" />
         <div class="space-y-3">
-          <p class="text-sm font-bold text-text-primary m-0">
-            Información adicional
-          </p>
+          <p class="text-sm font-bold text-text-primary m-0">Información adicional</p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             @for (f of fields(); track f.key) {
               @if (f.type === 'checkbox') {
-                <div class="sm:col-span-2 space-y-1.5 py-1">
+                <div
+                  class="sm:col-span-2 space-y-1.5 py-1"
+                  [attr.data-field]="'r-' + f.key"
+                  tabindex="-1"
+                >
                   <div class="text-xs sm:text-sm font-semibold text-text-primary">
                     {{ getLabel(f) }}
                   </div>
@@ -279,7 +308,10 @@ interface ExtraInfo {
               } @else if (f.type === 'select') {
                 <mat-form-field appearance="outline" class="sm:col-span-2 w-full">
                   <mat-label>{{ getLabel(f) }}</mat-label>
-                  <mat-select [formField]="checkoutForm.responses[f.key]">
+                  <mat-select
+                    [formField]="checkoutForm.responses[f.key]"
+                    [attr.data-field]="'r-' + f.key"
+                  >
                     @for (opt of f.options ?? []; track opt) {
                       <mat-option [value]="opt">{{ opt }}</mat-option>
                     }
@@ -298,7 +330,9 @@ interface ExtraInfo {
                   <mat-label>{{ getLabel(f) }}</mat-label>
                   <input
                     matInput
-                    [type]="f.type === 'number' ? 'number' : 'text'"
+                    type="text"
+                    [attr.inputmode]="f.type === 'number' ? 'numeric' : null"
+                    [attr.data-field]="'r-' + f.key"
                     [formField]="checkoutForm.responses[f.key]"
                     [placeholder]="f.placeholder ?? ''"
                   />
@@ -321,9 +355,7 @@ interface ExtraInfo {
       @if (selectedTicketPrice() > 0) {
         <hr class="border-t border-black/5" />
         <div class="space-y-3">
-          <p class="text-sm font-bold text-text-primary m-0">
-            Comprobante de pago
-          </p>
+          <p class="text-sm font-bold text-text-primary m-0">Comprobante de pago</p>
           @if (selectedTicketQrUrl()) {
             <div
               class="rounded-2xl border border-black/5 p-4 flex flex-col items-center gap-3 bg-white"
@@ -344,8 +376,11 @@ interface ExtraInfo {
               </a>
             </div>
           }
+          <p class="text-xs text-text-secondary m-0">Foto o captura del comprobante</p>
           <input
             type="file"
+            data-field="proof"
+            aria-label="Comprobante de pago (imagen)"
             accept="image/*"
             class="text-xs w-full cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-google-blue/10 file:text-google-blue hover:file:bg-google-blue/20 bg-white border border-black/5 rounded-2xl p-2.5"
             (change)="onFileChange($event)"
@@ -387,6 +422,8 @@ export class StepDatos implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly registrationsService = inject(RegistrationsService);
   private readonly dialog = inject(MatDialog);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private lastValidatedCode = '';
   private lastTicketKey: string | null = null;
 
@@ -409,6 +446,7 @@ export class StepDatos implements OnInit {
   readonly couponId = signal<string | null>(null);
   readonly couponSuccessMessage = signal<string | null>(null);
   readonly couponErrorMessage = signal<string | null>(null);
+  readonly couponChecking = signal(false);
   readonly ticketError = signal<string | null>(null);
   readonly proofError = signal<string | null>(null);
 
@@ -420,22 +458,34 @@ export class StepDatos implements OnInit {
   });
 
   readonly checkoutForm = form(this.formData, (path) => {
-    required(path.firstName, { message: 'Ingresa tus nombres' });
-    required(path.lastName, { message: 'Ingresa tus apellidos' });
-    required(path.phone, { message: 'El celular es obligatorio' });
-    minLength(path.phone, 5, { message: 'El celular debe tener al menos 5 dígitos' });
-    pattern(path.phone, /^\+?[0-9\s-]+$/, {
-      message: 'El celular solo puede contener números, espacios y el signo +',
-    });
+    // required() deja pasar "   ", por eso el nombre se valida recortado.
+    const name = (empty: string) => (ctx: { value: () => string }) =>
+      ctx.value().trim().length < 2 ? { kind: 'required', message: empty } : undefined;
+    validate(path.firstName, name('Escribe tus nombres'));
+    validate(path.lastName, name('Escribe tus apellidos'));
+    maxLength(path.firstName, 60, { message: 'Máximo 60 caracteres' });
+    maxLength(path.lastName, 60, { message: 'Máximo 60 caracteres' });
+    required(path.phone, { message: 'Ingresa tu celular' });
+    validate(path.phone, (ctx) =>
+      ctx.value() && !isValidPhone(ctx.value())
+        ? {
+            kind: 'phone',
+            message:
+              'Ingresa un celular de 8 dígitos, ej. 71234567. Si es de otro país, empieza con + y el código.',
+          }
+        : undefined,
+    );
     validateTree(path.responses, (ctx) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const errors: any[] = [];
       const vals = ctx.value() ?? {};
       for (const f of this.fields()) {
-        if (!f.required) continue;
         const val = (vals as Record<string, unknown>)[f.key];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fieldTree = (ctx.fieldTree as Record<string, any>)[f.key];
+        if (f.type === 'number' && val && !/^\d+$/.test(String(val)))
+          errors.push({ kind: 'pattern', message: 'Solo números', fieldTree });
+        if (!f.required) continue;
         if (f.type === 'checkbox') {
           if (val !== true)
             errors.push({
@@ -523,6 +573,7 @@ export class StepDatos implements OnInit {
     this.lastValidatedCode = code;
 
     if (!code) {
+      this.couponChecking.set(false);
       this.appliedRole.set('ATTENDEE');
       this.couponId.set(null);
       this.couponSuccessMessage.set(null);
@@ -534,10 +585,12 @@ export class StepDatos implements OnInit {
     await new Promise((resolve) => setTimeout(resolve, 250));
     if (this.lastValidatedCode !== code) return;
 
+    this.couponChecking.set(true);
     const res = await this.registrationsService.validateCoupon(this.event().id, code);
 
     // Evitar condición de carrera si el usuario continuó escribiendo durante la petición HTTP
     if (this.lastValidatedCode !== code) return;
+    this.couponChecking.set(false);
 
     if (!res) {
       this.appliedRole.set('ATTENDEE');
@@ -597,11 +650,37 @@ export class StepDatos implements OnInit {
   }
 
   private showMissing(messages: string[]): void {
-    this.dialog.open(MissingFieldsDialog, {
-      data: { messages },
-      autoFocus: 'dialog',
-      width: 'min(92vw, 28rem)',
-    });
+    this.dialog
+      .open(MissingFieldsDialog, {
+        data: { messages },
+        autoFocus: 'dialog',
+        width: 'min(92vw, 28rem)',
+      })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.focusFirstInvalid());
+  }
+
+  /** Primer dato pendiente en orden visual: personales, entrada, extras, comprobante. */
+  private focusFirstInvalid(): void {
+    const form = this.checkoutForm;
+    const key =
+      (['firstName', 'lastName', 'phone'] as const).find((k) => form[k]().invalid()) ??
+      (this.ticketError() ? 'ticket' : null) ??
+      null;
+    const target =
+      key ??
+      (() => {
+        const extra = this.fields().find((f) => form.responses[f.key]().invalid());
+        if (extra) return `r-${extra.key}`;
+        return this.proofError() ? 'proof' : null;
+      })();
+    if (!target) return;
+    const el = this.host.nativeElement.querySelector<HTMLElement>(`[data-field="${target}"]`);
+    if (!el) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+    el.focus({ preventScroll: true });
   }
 
   onContinuar(): void {
@@ -623,7 +702,7 @@ export class StepDatos implements OnInit {
     this.stepComplete.emit({
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
-      phone: data.phone.trim(),
+      phone: normalizePhone(data.phone),
       responses: data.responses,
       ticket,
       paymentProofFile: this.paymentProofFile(),

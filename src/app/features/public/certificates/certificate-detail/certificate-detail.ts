@@ -30,11 +30,11 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
         >
           <div class="flex items-center">
             <a
-              routerLink="/certificados"
-              class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-google-blue hover:underline cursor-pointer no-underline font-google"
+              [routerLink]="auth.user() ? '/certificados' : '/'"
+              class="inline-flex items-center gap-2 min-h-11 text-sm font-bold text-google-blue-dark hover:underline cursor-pointer no-underline font-google"
             >
               <span class="material-symbols-rounded text-lg" aria-hidden="true">arrow_back</span>
-              <span>Volver a mis certificados</span>
+              <span>{{ auth.user() ? 'Volver a mis certificados' : 'Ver eventos' }}</span>
             </a>
           </div>
 
@@ -43,7 +43,7 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
               @if (isOwner()) {
                 <button
                   type="button"
-                  class="h-10 px-5 rounded-full text-xs font-bold bg-google-blue text-white hover:bg-google-blue/90 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="gdg-btn-filled min-h-11 text-sm flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
                   [disabled]="downloadingPdf()"
                   (click)="downloadPdf()"
                 >
@@ -53,7 +53,7 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
 
                 <button
                   type="button"
-                  class="h-10 px-5 rounded-full text-xs font-bold border-2 border-google-blue text-google-blue hover:bg-google-blue/10 active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer bg-transparent"
+                  class="gdg-btn-outlined min-h-11 text-sm flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer bg-transparent"
                   (click)="shareOnLinkedIn()"
                 >
                   <span class="material-symbols-rounded text-lg" aria-hidden="true">share</span>
@@ -62,16 +62,38 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
               } @else {
                 <button
                   type="button"
-                  class="h-10 px-5 rounded-full text-xs font-bold border-2 border-google-blue text-google-blue hover:bg-google-blue/10 active:scale-95 transition-all flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer bg-transparent"
+                  class="gdg-btn-outlined min-h-11 text-sm flex items-center justify-center gap-2 w-full sm:w-auto cursor-pointer bg-transparent"
                   (click)="copyValidationLink()"
                 >
-                  <span class="material-symbols-rounded text-lg" aria-hidden="true">link</span>
-                  <span>Copiar enlace de validación</span>
+                  <span class="material-symbols-rounded text-lg" aria-hidden="true">{{
+                    copied() ? 'check' : 'link'
+                  }}</span>
+                  <span>{{ copied() ? '¡Enlace copiado!' : 'Copiar enlace de validación' }}</span>
                 </button>
               }
             </div>
           }
         </div>
+
+        <div aria-live="polite" class="sr-only">{{ copied() ? 'Enlace copiado' : '' }}</div>
+
+        @if (manualUrl()) {
+          <input
+            #manualInput
+            type="text"
+            readonly
+            aria-label="Enlace de validación"
+            class="w-full rounded-xl border border-black/10 bg-surface-paper px-4 min-h-11 text-sm"
+            [value]="manualUrl()"
+            (focus)="manualInput.select()"
+          />
+        }
+
+        @if (pdfError()) {
+          <p role="alert" class="m-0 rounded-xl bg-google-red/10 px-4 py-3 text-sm text-text-primary">
+            No pudimos generar el PDF. Usa Imprimir y elige 'Guardar como PDF'.
+          </p>
+        }
 
         @if (loading()) {
           <div class="flex items-center justify-center py-20 text-text-secondary gap-3">
@@ -82,6 +104,19 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
             />
             <span class="text-sm font-medium">Cargando datos del certificado...</span>
           </div>
+        } @else if (loadError()) {
+          <div class="gdg-card p-10 text-center space-y-4" role="alert">
+            <span class="material-symbols-rounded text-6xl text-google-red block" aria-hidden="true"
+              >error_outline</span
+            >
+            <h2 class="text-xl font-bold text-text-primary font-google">
+              No pudimos cargar el certificado
+            </h2>
+            <p class="text-text-secondary text-sm">Revisa tu conexión e inténtalo de nuevo.</p>
+            <button type="button" class="gdg-btn-filled min-h-11 text-sm" (click)="load()">
+              Reintentar
+            </button>
+          </div>
         } @else if (!certificate()) {
           <div class="gdg-card p-10 text-center space-y-4">
             <span class="material-symbols-rounded text-6xl text-google-red block" aria-hidden="true"
@@ -91,14 +126,14 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
               Certificado no encontrado
             </h2>
             <p class="text-text-secondary text-sm">
-              No se encontró un certificado válido o no cuentas con registro de check-in para esta
+              No encontramos un certificado válido o no hay un check-in registrado para esta
               inscripción.
             </p>
             <a
-              routerLink="/certificados"
-              class="inline-flex items-center gap-2 mt-2 px-5 py-2.5 rounded-full bg-google-blue text-white text-xs font-bold no-underline"
+              [routerLink]="auth.user() ? '/certificados' : '/'"
+              class="gdg-btn-filled inline-flex items-center justify-center mt-2 min-h-11 text-sm no-underline"
             >
-              Ver mis certificados
+              {{ auth.user() ? 'Ver mis certificados' : 'Ver eventos' }}
             </a>
           </div>
         } @else {
@@ -106,7 +141,7 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
           <div class="w-full flex justify-center py-2">
             <div
               #certificateElement
-              class="relative w-full max-w-[900px] aspect-[900/636] bg-surface-paper rounded-2xl overflow-hidden shadow-2xl border border-black/10 select-none flex flex-col justify-between"
+              class="relative w-full max-w-[900px] aspect-[900/636] bg-surface-paper rounded-2xl overflow-hidden shadow-2xl border border-black/10 flex flex-col justify-between"
               style="container-type: inline-size; font-family: 'Google Sans', 'Outfit', sans-serif;"
             >
               <!-- Imagen de Plantilla Oficial -->
@@ -210,6 +245,10 @@ export class CertificateDetail implements OnInit {
   readonly loading = signal(true);
   readonly downloadingPdf = signal(false);
   readonly certificate = signal<CertificateDetailData | null>(null);
+  readonly loadError = signal(false);
+  readonly pdfError = signal(false);
+  readonly copied = signal(false);
+  readonly manualUrl = signal('');
 
   // toObservable DEBE declararse en el contexto de inyección (inicialización de campos de clase)
   private readonly authLoading$ = toObservable(this.auth.loading);
@@ -219,8 +258,6 @@ export class CertificateDetail implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.loading.set(true);
-
     // Esperar de manera reactiva a que termine auth.loading
     await firstValueFrom(
       this.authLoading$.pipe(
@@ -228,7 +265,18 @@ export class CertificateDetail implements OnInit {
       )
     );
 
-    const data = await this.certsService.getCertificateById(this.id);
+    await this.load();
+  }
+
+  async load(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(false);
+    let data: CertificateDetailData | null = null;
+    try {
+      data = await this.certsService.getCertificateById(this.id);
+    } catch {
+      this.loadError.set(true);
+    }
     this.certificate.set(data);
     this.loading.set(false);
 
@@ -283,17 +331,20 @@ export class CertificateDetail implements OnInit {
     if (this.downloadingPdf() || !this.certificateElement?.nativeElement) return;
     this.downloadingPdf.set(true);
 
-    const element = this.certificateElement.nativeElement;
-    const originalStyle = element.getAttribute('style') || '';
+    this.pdfError.set(false);
+
+    // Se captura un clon fuera de pantalla para no redimensionar el certificado visible.
+    const clone = this.certificateElement.nativeElement.cloneNode(true) as HTMLDivElement;
+    clone.style.width = '900px';
+    clone.style.maxWidth = '900px';
+    clone.style.height = '636px';
+    const host = document.createElement('div');
+    host.setAttribute('aria-hidden', 'true');
+    host.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px;';
+    host.appendChild(clone);
+    document.body.appendChild(host);
 
     try {
-      // Fijar temporalmente dimensiones absolutas a 900x636 para la captura PDF
-      element.style.width = '900px';
-      element.style.maxWidth = '900px';
-      element.style.height = '636px';
-
-      // Cargar dinámicamente html2pdf
-       
       const html2pdf = await this.loadHtml2Pdf();
       const cert = this.certificate();
       const cleanName = `${cert?.userFirstName}_${cert?.userLastName}`.replace(/\s+/g, '_');
@@ -308,12 +359,13 @@ export class CertificateDetail implements OnInit {
         jsPDF: { unit: 'px', format: [900, 636], orientation: 'landscape' },
       };
 
-      await html2pdf().set(opt).from(element).save();
+      await html2pdf().set(opt).from(clone).save();
     } catch (err) {
       console.error('[CertificateDetail] Error al generar el PDF:', err);
+      this.pdfError.set(true);
       window.print();
     } finally {
-      element.setAttribute('style', originalStyle);
+      host.remove();
       this.downloadingPdf.set(false);
     }
   }
@@ -329,11 +381,14 @@ export class CertificateDetail implements OnInit {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(
       () => {
-        alert('Enlace de validación copiado al portapapeles.');
+        this.manualUrl.set('');
+        this.copied.set(true);
+        setTimeout(() => this.copied.set(false), 2000);
       },
       (err) => {
         console.error('Error al copiar el enlace:', err);
-      }
+        this.manualUrl.set(url);
+      },
     );
   }
 
