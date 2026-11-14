@@ -8,7 +8,7 @@ import { AuthService } from '../../../core/auth/services/auth.service';
   standalone: true,
   template: `
     <!-- Footer -->
-    <footer class="mt-12 pt-4 border-t border-color-border bg-transparent w-full">
+    <footer class="mt-12 pt-4 border-t border-black/5 bg-transparent w-full">
       <div
         class="gdg-container flex flex-col md:flex-row items-center justify-between gap-4 pb-4 md:px-0"
       >
@@ -29,7 +29,7 @@ import { AuthService } from '../../../core/auth/services/auth.service';
               href="https://gdgtarija.com/code-of-conduct/"
               target="_blank"
               rel="noopener noreferrer"
-              class="hover:text-google-blue transition-colors duration-200 text-decoration-none"
+              class="inline-flex items-center min-h-11 no-underline text-text-secondary hover:text-google-blue-dark transition-colors duration-150"
             >
               Código de conducta
             </a>
@@ -38,7 +38,7 @@ import { AuthService } from '../../../core/auth/services/auth.service';
               href="https://gdgtarija.com/"
               target="_blank"
               rel="noopener noreferrer"
-              class="hover:text-google-blue transition-colors duration-200 text-decoration-none"
+              class="inline-flex items-center min-h-11 no-underline text-text-secondary hover:text-google-blue-dark transition-colors duration-150"
             >
               Comunidad
             </a>
@@ -47,7 +47,7 @@ import { AuthService } from '../../../core/auth/services/auth.service';
               [href]="whatsappSupportUrl"
               target="_blank"
               rel="noopener noreferrer"
-              class="hover:text-google-blue transition-colors duration-200 text-decoration-none"
+              class="inline-flex items-center min-h-11 no-underline text-text-secondary hover:text-google-blue-dark transition-colors duration-150"
             >
               Soporte
             </a>
@@ -60,7 +60,7 @@ import { AuthService } from '../../../core/auth/services/auth.service';
                 [href]="social.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="p-1.5 rounded-full hover:bg-black/[0.03] text-text-secondary hover:text-google-blue transition-all duration-200 flex items-center justify-center hover:scale-105"
+                class="size-11 no-underline rounded-full hover:bg-black/[0.03] text-text-secondary hover:text-google-blue-dark transition-colors duration-150 flex items-center justify-center"
                 [aria-label]="social.name"
               >
                 @switch (social.name.toLowerCase()) {

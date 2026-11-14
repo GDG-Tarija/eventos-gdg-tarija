@@ -32,6 +32,13 @@ import { CertificateItem } from '../data/certificate.model';
             <mat-progress-spinner mode="indeterminate" diameter="32" aria-label="Cargando certificados" />
             <span class="text-sm font-medium">Cargando tus certificados...</span>
           </div>
+        } @else if (error()) {
+          <div class="gdg-card p-8 sm:p-12 text-center space-y-4 max-w-xl mx-auto" role="alert">
+            <span class="material-symbols-rounded text-6xl text-google-red block" aria-hidden="true">error_outline</span>
+            <h2 class="text-xl font-bold text-text-primary font-google">No pudimos cargar tus certificados</h2>
+            <p class="text-text-secondary text-sm">Revisa tu conexión e inténtalo de nuevo.</p>
+            <button type="button" class="gdg-btn-filled min-h-11 text-sm" (click)="load()">Reintentar</button>
+          </div>
         } @else if (!auth.user()) {
           <div class="gdg-card p-8 sm:p-12 text-center space-y-4 max-w-xl mx-auto">
             <span class="material-symbols-rounded text-6xl text-google-blue block" aria-hidden="true">
@@ -44,7 +51,7 @@ import { CertificateItem } from '../data/certificate.model';
             <button
               mat-flat-button
               type="button"
-              class="gdg-btn-filled px-6 py-2.5 rounded-full text-xs font-bold"
+              class="gdg-btn-filled min-h-11 text-sm"
               (click)="auth.signInWithGoogle()"
             >
               Iniciar sesión con Google
@@ -61,16 +68,16 @@ import { CertificateItem } from '../data/certificate.model';
             </p>
             <a
               routerLink="/"
-              class="inline-flex items-center gap-2 mt-2 px-5 py-2.5 rounded-full bg-google-blue text-white text-xs font-bold hover:bg-blue-600 transition-colors no-underline"
+              class="gdg-btn-filled inline-flex items-center justify-center gap-2 mt-2 min-h-11 text-sm no-underline"
             >
               <span class="material-symbols-rounded text-base" aria-hidden="true">explore</span>
-              Explorar próximos eventos
+              Explora los próximos eventos
             </a>
           </div>
         } @else {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @for (cert of certificates(); track cert.registrationId) {
-              <div class="gdg-card border border-black/5 overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-300">
+              <div class="gdg-card border border-black/5 overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow duration-200">
                 <div class="space-y-4">
                   <!-- Banner / Miniatura -->
                   <div class="h-36 w-full bg-black/5 relative overflow-hidden">
@@ -83,7 +90,7 @@ import { CertificateItem } from '../data/certificate.model';
                         class="w-full h-full object-cover"
                       />
                     }
-                    <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-google-blue shadow-sm border border-black/5">
+                    <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-google-blue-dark shadow-sm border border-black/5">
                       {{ getRoleLabel(cert.eventRole) }}
                     </div>
                   </div>
@@ -104,7 +111,7 @@ import { CertificateItem } from '../data/certificate.model';
                 <div class="p-5 pt-0">
                   <a
                     [routerLink]="['/certificados', cert.registrationId]"
-                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-google-blue/10 text-google-blue hover:bg-google-blue hover:text-white transition-all duration-200 text-xs font-bold no-underline active:scale-95"
+                    class="gdg-btn w-full inline-flex items-center justify-center gap-2 px-4 min-h-11 bg-google-blue/10 text-google-blue-dark hover:bg-google-blue-dark hover:text-white text-sm no-underline"
                   >
                     <span class="material-symbols-rounded text-base" aria-hidden="true">workspace_premium</span>
                     <span>Ver certificado</span>
@@ -126,6 +133,7 @@ export class CertificatesList implements OnInit {
 
   readonly loading = signal(true);
   readonly certificates = signal<CertificateItem[]>([]);
+  readonly error = signal(false);
 
   // toObservable DEBE llamarse en un contexto de inyección (inicialización de campos de la clase)
   private readonly authLoading$ = toObservable(this.auth.loading);
@@ -163,12 +171,20 @@ export class CertificatesList implements OnInit {
       )
     );
 
-    const user = this.auth.user();
-    if (user) {
-      const list = await this.certsService.listMyCertificates(user.id);
-      this.certificates.set(list);
+    await this.load();
+  }
+
+  async load(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(false);
+    try {
+      const user = this.auth.user();
+      if (user) this.certificates.set(await this.certsService.listMyCertificates(user.id));
+    } catch {
+      this.error.set(true);
+    } finally {
+      this.loading.set(false);
     }
-    this.loading.set(false);
   }
 
   formatDate(date: Date): string {
