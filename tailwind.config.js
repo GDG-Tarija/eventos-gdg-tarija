@@ -10,7 +10,7 @@ module.exports = {
       colors: {
         google: {
           blue: '#4285F4',
-          'blue-dark': '#1A73E8',
+          'blue-dark': '#1967D2',
           red: '#EA4335',
           yellow: '#FBBC05',
           green: '#34A853',

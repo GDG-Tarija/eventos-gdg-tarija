@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl, Title, Meta } from '@angular/platform-browser';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -12,10 +12,23 @@ import { LOGOS } from '../../../../core/config/logos';
   selector: 'app-event-detail',
   standalone: true,
   imports: [RouterLink, MatProgressSpinnerModule, EventRegistrationCheckout],
+  styles: [`
+    .cta-bar {
+      transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+      @starting-style {
+        transform: translateY(100%);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .cta-bar {
+        transition: none;
+      }
+    }
+  `],
   template: `
     <section class="gdg-page flex flex-col justify-between min-h-[calc(100vh-64px)] bg-transparent">
       <!-- Contenido Principal -->
-      <div class="flex-grow w-full pb-16">
+      <div class="flex-grow w-full pb-16" [class.pb-28]="showCtaBar()">
         <div class="gdg-container md:px-0">
           @if (loading()) {
             <!-- Skeleton de carga sin caja pesada -->
@@ -121,7 +134,7 @@ import { LOGOS } from '../../../../core/config/logos';
                   <div class="space-y-4">
                     <div class="min-w-0 flex-1 space-y-2">
                       <!-- Fecha superior -->
-                      <div class="flex items-center gap-2 text-google-blue text-sm font-semibold">
+                      <div class="flex items-center gap-2 text-google-blue-dark text-sm font-semibold">
                         <span class="material-symbols-rounded text-base" aria-hidden="true"
                           >calendar_month</span
                         >
@@ -138,26 +151,41 @@ import { LOGOS } from '../../../../core/config/logos';
                       <!-- Badges Compactos -->
                       <div class="flex flex-wrap gap-2 text-sm pt-1">
                         <span
-                          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold {{
-                            typeBadgeClass()
-                          }}"
+                          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold bg-black/5 text-text-primary"
                         >
-                          <span class="material-symbols-rounded text-base" aria-hidden="true"
+                          <span
+                            class="material-symbols-rounded text-base"
+                            [class]="iconColors().type"
+                            aria-hidden="true"
                             >category</span
                           >
                           <span>{{ typeLabel() }}</span>
                         </span>
 
                         <span
-                          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold {{
-                            modalityBadgeClass()
-                          }}"
+                          class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold bg-black/5 text-text-primary"
                         >
-                          <span class="material-symbols-rounded text-base" aria-hidden="true"
+                          <span
+                            class="material-symbols-rounded text-base"
+                            [class]="iconColors().location"
+                            aria-hidden="true"
                             >place</span
                           >
                           <span>{{ locationText() }}</span>
                         </span>
+
+                        @if (priceChip(); as price) {
+                          <span
+                            class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold bg-black/5 text-text-primary"
+                          >
+                            <span
+                              class="material-symbols-rounded text-base text-google-blue-dark"
+                              aria-hidden="true"
+                              >confirmation_number</span
+                            >
+                            <span>{{ price.label }}</span>
+                          </span>
+                        }
                       </div>
                     </div>
                   </div>
@@ -242,10 +270,16 @@ import { LOGOS } from '../../../../core/config/logos';
                 <!-- Columna Lateral Sticky: Registro e Información de Cupos (Rediseñada y más compacta) -->
                 <div class="md:col-span-2 space-y-4 md:sticky md:top-24">
                   <div
-                    class="gdg-card border border-black/5 shadow-google-card p-4 sm:p-5 space-y-4"
+                    #panel
+                    id="registro"
+                    class="gdg-card border border-black/5 shadow-google-card p-4 sm:p-5 space-y-4 scroll-mt-24"
                   >
                     <div class="space-y-1">
-                      <h2 class="text-base font-bold text-text-primary m-0 py-2 leading-tight">
+                      <h2
+                        #panelHeading
+                        tabindex="-1"
+                        class="text-base font-bold text-text-primary m-0 py-2 leading-tight outline-none"
+                      >
                         {{ isPast() ? 'Registro' : 'Inscríbete' }}
                       </h2>
 
@@ -273,11 +307,34 @@ import { LOGOS } from '../../../../core/config/logos';
           }
         </div>
       </div>
+
+      @if (showCtaBar()) {
+        <div
+          class="cta-bar md:hidden fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 px-4 pt-3 bg-white/95 backdrop-blur border-t border-black/5"
+          style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom))"
+        >
+          <div class="min-w-0">
+            <p class="m-0 text-base font-bold text-text-primary leading-tight">
+              {{ summary()!.price!.label }}
+            </p>
+            <p class="m-0 text-xs text-text-secondary truncate">{{ dateLabel() }}</p>
+          </div>
+          <button
+            type="button"
+            (click)="goToPanel()"
+            class="inline-flex items-center gap-1.5 min-h-11 px-5 rounded-full border-0 bg-google-blue-dark text-white text-sm font-bold cursor-pointer transition-transform duration-150 motion-safe:active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-google-blue-dark"
+          >
+            Inscríbete
+            <span class="material-symbols-rounded text-lg" aria-hidden="true">arrow_forward</span>
+          </button>
+        </div>
+      }
     </section>
   `,
 })
 export class EventDetail implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly injector = inject(Injector);
   private readonly events = inject(PublicEventsService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly titleService = inject(Title);
@@ -288,6 +345,32 @@ export class EventDetail implements OnInit {
   readonly event = signal<Event | null>(null);
 
   readonly logoIcon = LOGOS.icon;
+
+  private readonly checkout = viewChild(EventRegistrationCheckout);
+  private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private readonly panelHeading = viewChild<ElementRef<HTMLElement>>('panelHeading');
+  readonly summary = computed(() => this.checkout()?.summary());
+
+  /** El panel de registro está por debajo del viewport (no se ha llegado a él). */
+  private readonly panelBelow = signal(false);
+
+  readonly priceChip = computed(() => {
+    const s = this.summary();
+    return s?.ready && !this.isPast() ? s.price : null;
+  });
+
+  readonly showCtaBar = computed(() => {
+    const s = this.summary();
+    return (
+      !!this.event() &&
+      !this.isPast() &&
+      !!s?.ready &&
+      !s.registered &&
+      !!s.price &&
+      !s.price.soldOut &&
+      this.panelBelow()
+    );
+  });
 
   // Estado para la visualización del texto extendido
   readonly showFullDescription = signal(false);
@@ -363,21 +446,24 @@ export class EventDetail implements OnInit {
     return null;
   });
 
-  /** Badge de color de marca para el tipo de evento */
-  readonly typeBadgeClass = computed((): string => {
-    const type = this.event()?.event_type;
-    switch (type) {
-      case 'MEETUP':
-        return 'bg-google-blue/10 text-google-blue';
-      case 'CONFERENCE':
-        return 'bg-google-red/10 text-google-red';
-      case 'WORKSHOP':
-        return 'bg-google-yellow/10 text-google-yellow';
-      case 'HACKATHON':
-        return 'bg-google-green/10 text-google-green';
-      default:
-        return 'bg-black/5 text-text-secondary';
-    }
+  /** El color de marca va solo en el icono decorativo: texto sobre tinte no cumple contraste. */
+  readonly iconColors = computed(() => {
+    const e = this.event();
+    const type: Record<string, string> = {
+      MEETUP: 'text-google-blue',
+      CONFERENCE: 'text-google-red',
+      WORKSHOP: 'text-google-yellow',
+      HACKATHON: 'text-google-green',
+    };
+    const location: Record<string, string> = {
+      PHYSICAL: 'text-google-green',
+      VIRTUAL: 'text-google-red',
+      HYBRID: 'text-google-yellow',
+    };
+    return {
+      type: type[e?.event_type ?? ''] ?? 'text-text-secondary',
+      location: location[e?.location_type ?? ''] ?? 'text-text-secondary',
+    };
   });
 
   /** Etiqueta legible del tipo de evento */
@@ -391,26 +477,53 @@ export class EventDetail implements OnInit {
       case 'WORKSHOP':
         return 'Taller';
       case 'HACKATHON':
-        return 'Hackathon';
+        return 'Hackatón';
       default:
         return type ?? '';
     }
   });
 
-  /** Badge de color de marca para la modalidad */
-  readonly modalityBadgeClass = computed((): string => {
-    const type = this.event()?.location_type;
-    switch (type) {
-      case 'PHYSICAL':
-        return 'bg-google-green/10 text-google-green';
-      case 'VIRTUAL':
-        return 'bg-google-red/10 text-google-red';
-      case 'HYBRID':
-        return 'bg-google-yellow/10 text-google-yellow';
-      default:
-        return 'bg-black/5 text-text-secondary';
-    }
-  });
+  constructor() {
+    // IntersectionObserver no dispara tras un salto instantáneo más allá del panel (End, scroll restore).
+    effect((onCleanup) => {
+      const el = this.panel()?.nativeElement;
+      if (!el) return;
+      let frame = 0;
+      const update = () => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() =>
+          this.panelBelow.set(el.getBoundingClientRect().top > window.innerHeight),
+        );
+      };
+      update();
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update, { passive: true });
+      onCleanup(() => {
+        cancelAnimationFrame(frame);
+        window.removeEventListener('scroll', update);
+        window.removeEventListener('resize', update);
+      });
+    });
+
+    // El hash solo alcanza el panel cuando el checkout ya terminó de cargar y la página tiene su altura final.
+    let handledFragment = false;
+    effect(() => {
+      if (handledFragment || !this.summary()?.ready) return;
+      handledFragment = true;
+      if (this.route.snapshot.fragment === 'registro') {
+        afterNextRender(() => this.goToPanel(false), { injector: this.injector });
+      }
+    });
+  }
+
+  goToPanel(focus = true): void {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.panel()?.nativeElement.scrollIntoView({
+      block: 'start',
+      behavior: reduced ? 'auto' : 'smooth',
+    });
+    if (focus) this.panelHeading()?.nativeElement.focus({ preventScroll: true });
+  }
 
   get slug(): string {
     return this.route.snapshot.paramMap.get('slug') ?? '';
