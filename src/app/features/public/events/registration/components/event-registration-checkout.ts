@@ -14,6 +14,7 @@ import { SbSessions } from '../../../../../core/services/supabase/sb-sessions';
 import { RegistrationStatus } from '../../../../../models/registration.model';
 import { TicketType } from '../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../data/event.model';
+import { googleCalendarUrl } from '../../data/calendar-link';
 import { isPast as isEventPast } from '../../data/event-timing';
 import { compressImage } from '../data/compress-image';
 import { toCustomResponses } from '../data/custom-responses';
@@ -25,6 +26,7 @@ import { UserProfileService } from '../data/user-profile.service';
 import { StepConfirmar } from './step-confirmar/step-confirmar';
 import { StepDatos, StepDatosOutput } from './step-datos/step-datos';
 import { StepSesiones } from './step-sesiones/step-sesiones';
+import { TicketQr } from './ticket-qr/ticket-qr';
 
 @Component({
   selector: 'app-event-registration-checkout',
@@ -38,6 +40,7 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
     StepDatos,
     StepSesiones,
     StepConfirmar,
+    TicketQr,
   ],
   styles: [`
     /* Remueve fondos del stepper por defecto */
@@ -154,6 +157,27 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
             </p>
           </div>
 
+          @if (!isPast()) {
+            @if (reg.status === 'CONFIRMED' && existingRegistrationId(); as regId) {
+              <div class="flex flex-col items-start gap-1">
+                <app-ticket-qr [registrationId]="regId" [eventTitle]="event().title" />
+                <a
+                [href]="calendarUrl()"
+                target="_blank"
+                rel="noopener"
+                class="inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-google-blue-dark no-underline hover:underline"
+              >
+                <span class="material-symbols-rounded text-lg" aria-hidden="true">event</span>
+                Agregar a Google Calendar
+              </a>
+              </div>
+            } @else if (reg.status === 'PENDING') {
+              <p class="text-xs text-text-secondary leading-relaxed m-0">
+                Cuando confirmemos tu pago verás aquí tu código QR de acceso.
+              </p>
+            }
+          }
+
           @if (isPast()) {
             @if (reg.status !== 'CANCELLED') {
               <a
@@ -269,6 +293,8 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
               [selectedSessionIds]="selectedSessionIds()"
               [submitting]="submitting()"
               [status]="createdStatus()"
+              [registrationId]="createdId()"
+              [event]="event()"
               (confirm)="submit()"
               (back)="onStep3Back()"
             />
@@ -302,6 +328,7 @@ export class EventRegistrationCheckout implements OnInit {
   readonly initLoading = signal(true);
   readonly submitting = signal(false);
   readonly createdStatus = signal<RegistrationStatus | null>(null);
+  readonly createdId = signal<string | null>(null);
   readonly success = computed(() => this.createdStatus() !== null);
   readonly initFailed = signal(false);
   readonly registeredStatus = signal<RegistrationStatus>('CONFIRMED');
@@ -344,6 +371,8 @@ export class EventRegistrationCheckout implements OnInit {
         };
     }
   });
+
+  readonly calendarUrl = computed(() => googleCalendarUrl(this.event()));
 
   readonly tickets = signal<TicketType[]>([]);
 
@@ -472,6 +501,7 @@ export class EventRegistrationCheckout implements OnInit {
         await this.sbSessions.saveSessionRegistrations(created.id, this.selectedSessionIds());
       }
 
+      this.createdId.set(created.id);
       this.createdStatus.set(created.status);
     } catch (e) {
       if (e instanceof TicketSoldOutError) {
