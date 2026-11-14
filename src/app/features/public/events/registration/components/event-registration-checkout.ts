@@ -1,10 +1,12 @@
 import { ChangeDetectorRef, Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { input } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { RouterLink } from '@angular/router';
+import { filter, firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../../../core/auth/services/auth.service';
 import { SessionWithTrack } from '../../../../../core/models/session.model';
@@ -15,6 +17,7 @@ import type { Event as EventModel } from '../../data/event.model';
 import { isPast as isEventPast } from '../../data/event-timing';
 import { toCustomResponses } from '../data/custom-responses';
 import { friendlyError } from '../data/friendly-error';
+import { priceSummary } from '../data/price-summary';
 import { RegistrationsService, TicketSoldOutError } from '../data/registrations.service';
 import { TicketTypesService } from '../data/ticket-types.service';
 import { UserProfileService } from '../data/user-profile.service';
@@ -203,23 +206,33 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
                 mat-flat-button
                 type="button"
                 class="gdg-btn-filled w-full text-xs font-bold"
-                (click)="auth.signInWithGoogle()"
+                (click)="auth.signInWithGoogle('registro')"
               >
                 Inicia sesión para ver tu registro
               </button>
             </div>
           }
         </div>
+      } @else if (auth.loading()) {
+        <div class="flex items-center gap-3 text-text-secondary">
+          <mat-progress-spinner mode="indeterminate" diameter="22" aria-label="Verificando sesión" />
+          <span class="text-sm">Verificando tu sesión…</span>
+        </div>
       } @else if (!auth.user()) {
         <div class="space-y-3">
-          <p class="text-text-secondary text-sm">Inicia sesión para registrarte al evento.</p>
+          @if (summary().price; as price) {
+            <p class="text-text-primary text-sm font-semibold m-0">{{ price.label }}</p>
+          }
+          <p class="text-text-secondary text-sm m-0">
+            Inicia sesión con Google para elegir tu entrada e inscribirte.
+          </p>
           <button
             mat-flat-button
             type="button"
             class="gdg-btn-filled w-full"
-            (click)="auth.signInWithGoogle()"
+            (click)="auth.signInWithGoogle('registro')"
           >
-            Iniciar sesión con Google
+            Continuar con Google
           </button>
         </div>
       } @else {
@@ -275,6 +288,9 @@ export class EventRegistrationCheckout implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly cdr = inject(ChangeDetectorRef);
 
+  // toObservable requiere contexto de inyección
+  private readonly authLoading$ = toObservable(this.auth.loading);
+
   @ViewChild('stepper') private stepper!: MatStepper;
 
   readonly isPast = computed(() => {
@@ -329,6 +345,13 @@ export class EventRegistrationCheckout implements OnInit {
   });
 
   readonly tickets = signal<TicketType[]>([]);
+
+  /** Lo lee la página de detalle (chip de precio y barra móvil). */
+  readonly summary = computed(() => ({
+    ready: !this.initLoading(),
+    price: priceSummary(this.tickets()),
+    registered: this.alreadyRegistered(),
+  }));
   readonly sessions = signal<SessionWithTrack[]>([]);
   readonly step1Data = signal<StepDatosOutput | null>(null);
   readonly selectedSessionIds = signal<string[]>([]);
@@ -354,6 +377,8 @@ export class EventRegistrationCheckout implements OnInit {
       this.tickets.set(tickets);
       this.sessions.set(sessions);
 
+      // Sin esperar a auth se vería el login (o el formulario) a un usuario ya inscrito.
+      await firstValueFrom(this.authLoading$.pipe(filter((loading) => !loading)));
       const user = this.auth.user();
       if (user) await this.loadExisting(user.id);
     } catch (e) {
