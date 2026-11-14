@@ -124,7 +124,7 @@ Uso en template:
 ### 7.1. Tailwind colors
 Definidos en `tailwind.config.js`:
 - `google-blue` `#4285F4` (iconos, acentos, tintes claros; no para texto ni relleno con texto blanco)
-- `google-blue-dark` `#1A73E8` (texto azul y rellenos con texto blanco; blanco sobre él = 4.51:1)
+- `google-blue-dark` `#1967D2` (texto azul y rellenos con texto blanco; blanco sobre él = 5.37:1; sobre `#F8F9FA` y sobre el tinte `google-blue/5` = 5.09:1)
 - `google-red` `#EA4335`
 - `google-yellow` `#FBBC05`
 - `google-green` `#34A853`

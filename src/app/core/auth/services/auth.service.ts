@@ -155,11 +155,11 @@ export class AuthService {
     }
   }
 
-  signInWithGoogle(): void {
+  signInWithGoogle(fragment?: string): void {
     const currentPath = window.location.pathname;
 
     const redirectTarget = currentPath === '/auth/login' ? '/' : currentPath;
-    sessionStorage.setItem('redirect_to', redirectTarget);
+    sessionStorage.setItem('redirect_to', redirectTarget + (fragment ? '#' + fragment : ''));
 
     const base = document.querySelector('base')?.getAttribute('href') ?? '/';
     const cleanBase = base.replace(/\/$/, '');
