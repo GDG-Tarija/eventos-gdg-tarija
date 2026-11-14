@@ -4,11 +4,13 @@ module.exports = {
   corePlugins: {
     preflight: false,
   },
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {
         google: {
           blue: '#4285F4',
+          'blue-dark': '#1A73E8',
           red: '#EA4335',
           yellow: '#FBBC05',
           green: '#34A853',
@@ -24,10 +26,14 @@ module.exports = {
         text: {
           primary: '#202124',
           secondary: '#5F6368',
+          muted: '#63676C',
         },
       },
       fontFamily: {
         google: ['Google Sans', 'system-ui', 'sans-serif'],
+      },
+      transitionTimingFunction: {
+        'out-strong': 'cubic-bezier(0.23, 1, 0.32, 1)',
       },
       borderRadius: {
         '2xl': '1rem',

@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { SessionWithTrack } from '../../../../../../core/models/session.model';
+import type { RegistrationStatus } from '../../../../../../models/registration.model';
 import type { StepDatosOutput } from '../step-datos/step-datos';
 
 @Component({
@@ -13,7 +14,7 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
       <div class="rounded-2xl border border-black/5 bg-white p-4 space-y-4">
         <!-- Datos personales -->
         <div class="space-y-1.5">
-          <p class="text-[10px] font-bold text-text-secondary uppercase tracking-wider m-0">Asistente</p>
+          <p class="text-xs font-bold text-text-secondary m-0">Asistente</p>
           @if (step1Data(); as d) {
             <p class="text-sm font-bold text-text-primary m-0">{{ d.firstName }} {{ d.lastName }}</p>
           }
@@ -21,14 +22,14 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
 
         <hr class="border-black/5" />
 
-        <!-- Pase -->
+        <!-- Entrada -->
         <div class="space-y-1.5">
-          <p class="text-[10px] font-bold text-text-secondary uppercase tracking-wider m-0">Pase</p>
+          <p class="text-xs font-bold text-text-secondary m-0">Entrada</p>
           @if (step1Data()?.ticket; as t) {
             <div class="flex items-center justify-between">
               <span class="text-sm font-semibold text-text-primary">{{ t.name }}</span>
               <span class="text-xs font-bold text-google-blue bg-google-blue/5 px-2.5 py-0.5 rounded-full">
-                @if (t.price > 0) { Bs {{ t.price }} } @else { Gratis }
+                @if (step1Data()?.couponId) { Gratis · código aplicado } @else if (t.price > 0) { Bs {{ t.price }} } @else { Gratis }
               </span>
             </div>
           }
@@ -38,7 +39,7 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
         @if (selectedSessions().length > 0) {
           <hr class="border-black/5" />
           <div class="space-y-2">
-            <p class="text-[10px] font-bold text-text-secondary uppercase tracking-wider m-0">Sesiones</p>
+            <p class="text-xs font-bold text-text-secondary m-0">Sesiones</p>
             <div class="space-y-1.5">
               @for (s of selectedSessions(); track s.id) {
                 <div class="flex items-start gap-2">
@@ -46,7 +47,7 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
                   <div class="min-w-0">
                     <p class="text-xs font-semibold text-text-primary m-0 leading-snug">{{ s.title }}</p>
                     @if (s.track_name) {
-                      <p class="text-[10px] text-text-secondary m-0">{{ s.track_name }}</p>
+                      <p class="text-xs text-text-secondary m-0">{{ s.track_name }}</p>
                     }
                   </div>
                 </div>
@@ -76,10 +77,14 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
         <div class="rounded-2xl border border-google-green/20 bg-google-green/5 p-5 space-y-2">
           <div class="flex items-center gap-2 text-google-green font-bold text-sm">
             <span class="material-symbols-rounded text-lg" aria-hidden="true">check_circle</span>
-            <span>¡Registro completado!</span>
+            <span>{{ status() === 'PENDING' ? '¡Recibimos tu inscripción!' : '¡Listo, estás inscrito!' }}</span>
           </div>
           <p class="text-xs text-text-secondary leading-relaxed">
-            Tu inscripción se guardó correctamente. Próximamente verás aquí tu QR de acceso.
+            {{
+              status() === 'PENDING'
+                ? 'Tu pago está en revisión; te avisaremos cuando lo validemos.'
+                : 'Te esperamos el día del evento.'
+            }}
           </p>
         </div>
       }
@@ -90,7 +95,7 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
           <button
             mat-stroked-button
             type="button"
-            class="gdg-btn-outlined flex-1 text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
+            class="gdg-btn-outlined flex-1 text-xs font-bold py-3.5 sm:py-5 rounded-full"
             [disabled]="submitting()"
             (click)="back.emit()"
           >
@@ -102,7 +107,7 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
           <button
             mat-flat-button
             type="button"
-            class="gdg-btn-filled flex-[2] text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
+            class="gdg-btn-filled flex-[2] text-xs font-bold py-3.5 sm:py-5 rounded-full"
             [disabled]="submitting()"
             (click)="confirm.emit()"
           >
@@ -124,7 +129,9 @@ export class StepConfirmar {
   readonly sessions = input<SessionWithTrack[]>([]);
   readonly selectedSessionIds = input<string[]>([]);
   readonly submitting = input<boolean>(false);
-  readonly success = input<boolean>(false);
+  /** Estado de la inscripción recién creada; null mientras no se ha enviado. */
+  readonly status = input<RegistrationStatus | null>(null);
+  readonly success = computed(() => this.status() !== null);
 
   readonly confirm = output<void>();
   readonly back = output<void>();

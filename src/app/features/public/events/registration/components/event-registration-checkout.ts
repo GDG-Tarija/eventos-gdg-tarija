@@ -1,15 +1,20 @@
-import { Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatStepper, MatStepperModule } from '@angular/material/stepper';
+import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../../../core/auth/services/auth.service';
 import { SessionWithTrack } from '../../../../../core/models/session.model';
 import { SbSessions } from '../../../../../core/services/supabase/sb-sessions';
+import { RegistrationStatus } from '../../../../../models/registration.model';
 import { TicketType } from '../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../data/event.model';
+import { isPast as isEventPast } from '../../data/event-timing';
+import { toCustomResponses } from '../data/custom-responses';
+import { friendlyError } from '../data/friendly-error';
 import { RegistrationsService, TicketSoldOutError } from '../data/registrations.service';
 import { TicketTypesService } from '../data/ticket-types.service';
 import { UserProfileService } from '../data/user-profile.service';
@@ -25,6 +30,7 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatStepperModule,
+    RouterLink,
     StepDatos,
     StepSesiones,
     StepConfirmar,
@@ -39,7 +45,7 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
     ::ng-deep .mat-stepper-vertical .mat-step-header {
       padding: 14px 8px !important;
       border-radius: 14px;
-      transition: background-color 0.2s ease;
+      transition: background-color 150ms cubic-bezier(0.23, 1, 0.32, 1);
     }
     ::ng-deep .mat-stepper-vertical .mat-step-header:hover {
       background-color: rgba(66, 133, 244, 0.03) !important;
@@ -51,7 +57,6 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
       color: #5f6368 !important;
       font-weight: 700 !important;
       font-family: 'Google Sans', 'Outfit', sans-serif !important;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
       border: 1px solid rgba(0, 0, 0, 0.04) !important;
     }
 
@@ -61,7 +66,6 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
       color: #ffffff !important;
       border-color: #4285F4 !important;
       box-shadow: 0 4px 10px rgba(66, 133, 244, 0.2) !important;
-      transform: scale(1.05);
     }
 
     /* Estado completado: Verde Google */
@@ -94,7 +98,7 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
       color: #5f6368 !important;
       font-size: 13.5px !important;
       font-weight: 500 !important;
-      transition: color 0.2s ease;
+      transition: color 150ms cubic-bezier(0.23, 1, 0.32, 1);
     }
     ::ng-deep .mat-step-label-selected {
       color: #202124 !important;
@@ -103,25 +107,59 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
   `],
   template: `
     <div class="space-y-6 bg-transparent p-0">
+      @if (error(); as message) {
+        <div
+          role="alert"
+          class="flex items-start gap-2 rounded-2xl border border-google-red/20 bg-google-red/5 p-4 text-sm text-google-red"
+        >
+          <span class="material-symbols-rounded text-lg shrink-0" aria-hidden="true">error</span>
+          <span>{{ message }}</span>
+        </div>
+      }
+
       @if (initLoading()) {
         <div class="flex items-center gap-3 text-text-secondary">
           <mat-progress-spinner mode="indeterminate" diameter="22" aria-label="Cargando registro" />
           <span class="text-sm">Cargando opciones de registro...</span>
         </div>
+      } @else if (initFailed()) {
+        <div class="rounded-2xl border border-black/10 bg-black/[0.02] p-5 space-y-3">
+          <p class="text-sm font-bold text-text-primary m-0">No pudimos cargar las entradas</p>
+          <p class="text-xs text-text-secondary leading-relaxed m-0">
+            Revisa tu conexión e inténtalo de nuevo.
+          </p>
+          <button
+            mat-flat-button
+            type="button"
+            class="gdg-btn-filled text-xs font-bold"
+            (click)="init()"
+          >
+            Reintentar
+          </button>
+        </div>
       } @else if (alreadyRegistered()) {
-        @if (sessions().length > 0) {
-          <!-- Si el usuario ya está registrado pero el evento tiene sesiones/agenda -->
-          <div class="space-y-4">
-            <div class="rounded-2xl border border-google-blue/20 bg-google-blue/5 p-5 space-y-1">
-              <div class="flex items-center gap-2 text-google-blue font-bold text-sm">
-                <span class="material-symbols-rounded text-lg" aria-hidden="true">event_available</span>
-                <span>Inscripción confirmada</span>
-              </div>
-              <p class="text-xs text-text-secondary leading-relaxed">
-                Ya estás registrado para este evento. A continuación podés modificar o elegir tus sesiones de la agenda.
-              </p>
+        @let reg = registeredCopy();
+        <div class="space-y-4">
+          <div [class]="'rounded-2xl border p-5 space-y-1 ' + reg.box">
+            <div [class]="'flex items-center gap-2 font-bold text-sm ' + reg.text">
+              <span class="material-symbols-rounded text-lg" aria-hidden="true">{{ reg.icon }}</span>
+              <span>{{ isPast() && reg.status !== 'CANCELLED' ? 'Este evento ya terminó' : reg.title }}</span>
             </div>
+            <p class="text-xs text-text-secondary leading-relaxed m-0">
+              {{ reg.body }}
+            </p>
+          </div>
 
+          @if (isPast()) {
+            @if (reg.status !== 'CANCELLED') {
+              <a
+                routerLink="/certificados"
+                class="gdg-btn-outlined inline-flex items-center justify-center px-6 py-2.5 text-xs font-bold no-underline"
+              >
+                Ver mis certificados
+              </a>
+            }
+          } @else if (sessions().length > 0 && reg.status !== 'CANCELLED') {
             <app-step-sesiones
               [sessions]="sessions()"
               [(selectedIds)]="selectedSessionIds"
@@ -146,19 +184,8 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
                 }
               </button>
             </div>
-          </div>
-        } @else {
-          <!-- Mensaje simple de ya registrado si el evento no tiene sesiones -->
-          <div class="rounded-2xl border border-google-green/20 bg-google-green/5 p-5 space-y-2">
-            <div class="flex items-center gap-2 text-google-green font-bold text-sm">
-              <span class="material-symbols-rounded text-lg" aria-hidden="true">check_circle</span>
-              <span>Ya estás registrado</span>
-            </div>
-            <p class="text-xs text-text-secondary leading-relaxed">
-              Tu inscripción ya existe para este evento. Próximamente verás aquí tu QR.
-            </p>
-          </div>
-        }
+          }
+        </div>
       } @else if (isPast()) {
         <!-- Si el evento ya pasó y el usuario no está registrado -->
         <div class="rounded-2xl border border-black/10 bg-black/[0.02] p-5 space-y-3">
@@ -167,25 +194,25 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
             <span>Evento finalizado</span>
           </div>
           <p class="text-xs text-text-secondary leading-relaxed m-0">
-            El registro para este evento ya no se encuentra disponible porque el evento ha concluido.
+            El registro para este evento ya no está disponible porque el evento concluyó.
           </p>
           @if (!auth.user()) {
             <div class="pt-2 border-t border-black/5 space-y-2">
-              <p class="text-xs text-text-muted m-0">¿Ya te habías registrado anteriormente?</p>
+              <p class="text-xs text-text-muted m-0">¿Ya te habías registrado antes?</p>
               <button
                 mat-flat-button
                 type="button"
                 class="gdg-btn-filled w-full text-xs font-bold"
                 (click)="auth.signInWithGoogle()"
               >
-                Iniciar sesión para ver tu registro
+                Inicia sesión para ver tu registro
               </button>
             </div>
           }
         </div>
       } @else if (!auth.user()) {
         <div class="space-y-3">
-          <p class="text-text-secondary text-sm">Iniciá sesión para registrarte al evento.</p>
+          <p class="text-text-secondary text-sm">Inicia sesión para registrarte al evento.</p>
           <button
             mat-flat-button
             type="button"
@@ -196,8 +223,13 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
           </button>
         </div>
       } @else {
-        <mat-stepper #stepper [linear]="false" orientation="vertical">
-          <mat-step label="Tus datos">
+        <mat-stepper
+          #stepper
+          [linear]="true"
+          orientation="vertical"
+          (selectionChange)="onStepChange($event.selectedIndex)"
+        >
+          <mat-step label="Tus datos" [completed]="!!step1Data()">
             <app-step-datos
               [event]="event()"
               [tickets]="tickets()"
@@ -206,7 +238,7 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
           </mat-step>
 
           @if (sessions().length > 0) {
-            <mat-step label="Sesiones">
+            <mat-step label="Sesiones" [completed]="!!step1Data()">
               <app-step-sesiones
                 [sessions]="sessions()"
                 [(selectedIds)]="selectedSessionIds"
@@ -216,13 +248,13 @@ import { StepSesiones } from './step-sesiones/step-sesiones';
             </mat-step>
           }
 
-          <mat-step label="Confirmar">
+          <mat-step label="Confirmar" [completed]="success()">
             <app-step-confirmar
               [step1Data]="step1Data()"
               [sessions]="sessions()"
               [selectedSessionIds]="selectedSessionIds()"
               [submitting]="submitting()"
-              [success]="success()"
+              [status]="createdStatus()"
               (confirm)="submit()"
               (back)="onStep3Back()"
             />
@@ -241,23 +273,60 @@ export class EventRegistrationCheckout implements OnInit {
   private readonly profiles = inject(UserProfileService);
   private readonly sbSessions = inject(SbSessions);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   @ViewChild('stepper') private stepper!: MatStepper;
 
   readonly isPast = computed(() => {
     const e = this.event();
-    if (!e) return false;
-    const now = new Date();
-    const endDate = e.date_end ?? e.date_start;
-    return now > endDate;
+    return !!e && isEventPast(e);
   });
 
   readonly initLoading = signal(true);
   readonly submitting = signal(false);
-  readonly success = signal(false);
+  readonly createdStatus = signal<RegistrationStatus | null>(null);
+  readonly success = computed(() => this.createdStatus() !== null);
+  readonly initFailed = signal(false);
+  readonly registeredStatus = signal<RegistrationStatus>('CONFIRMED');
   readonly error = signal<string | null>(null);
   readonly alreadyRegistered = signal(false);
   readonly existingRegistrationId = signal<string | null>(null);
+
+  readonly registeredCopy = computed(() => {
+    const status = this.registeredStatus();
+    const hasSessions = this.sessions().length > 0;
+    switch (status) {
+      case 'PENDING':
+        return {
+          status,
+          icon: 'hourglass_top',
+          title: 'Inscripción en revisión',
+          body: 'Tu inscripción está registrada y tu pago está en revisión. Te avisaremos cuando lo validemos.',
+          box: 'border-google-yellow/30 bg-google-yellow/5',
+          text: 'text-text-primary',
+        };
+      case 'CANCELLED':
+        return {
+          status,
+          icon: 'cancel',
+          title: 'Inscripción anulada',
+          body: 'Tu inscripción fue anulada. Si crees que es un error, escríbenos por Soporte.',
+          box: 'border-google-red/20 bg-google-red/5',
+          text: 'text-google-red',
+        };
+      default:
+        return {
+          status,
+          icon: 'check_circle',
+          title: 'Ya estás inscrito',
+          body: hasSessions
+            ? 'Puedes modificar o elegir tus sesiones de la agenda.'
+            : 'Te esperamos el día del evento.',
+          box: 'border-google-green/20 bg-google-green/5',
+          text: 'text-google-green',
+        };
+    }
+  });
 
   readonly tickets = signal<TicketType[]>([]);
   readonly sessions = signal<SessionWithTrack[]>([]);
@@ -268,8 +337,9 @@ export class EventRegistrationCheckout implements OnInit {
     void this.init();
   }
 
-  private async init(): Promise<void> {
+  async init(): Promise<void> {
     this.initLoading.set(true);
+    this.initFailed.set(false);
     try {
       const [tickets, sessions] = await Promise.all([
         this.ticketTypes.listByEventId(this.event().id).catch(err => {
@@ -285,28 +355,36 @@ export class EventRegistrationCheckout implements OnInit {
       this.sessions.set(sessions);
 
       const user = this.auth.user();
-      if (user) {
-        const existing = await this.registrations.getByEventAndUser(this.event().id, user.id);
-        this.alreadyRegistered.set(!!existing);
-        if (existing) {
-          this.existingRegistrationId.set(existing.id);
-          // Cargar las sesiones ya seleccionadas
-          const mySessionRegs = await this.sbSessions.getRegistrationsByRegistrationId(existing.id);
-          this.selectedSessionIds.set(mySessionRegs);
-        }
-      }
+      if (user) await this.loadExisting(user.id);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error al cargar el registro';
       console.error('[Checkout] Error during init:', e);
-      this.snackBar.open(msg, 'Cerrar', { duration: 4000 });
+      this.initFailed.set(true);
     } finally {
       this.initLoading.set(false);
     }
   }
 
+  /** Carga la inscripción existente (si hay) y sus sesiones. Devuelve si el usuario ya está inscrito. */
+  private async loadExisting(userId: string): Promise<boolean> {
+    const existing = await this.registrations.getByEventAndUser(this.event().id, userId);
+    this.alreadyRegistered.set(!!existing);
+    if (!existing) return false;
+    this.existingRegistrationId.set(existing.id);
+    this.registeredStatus.set(existing.status);
+    this.selectedSessionIds.set(await this.sbSessions.getRegistrationsByRegistrationId(existing.id));
+    return true;
+  }
+
   onStep1Complete(data: StepDatosOutput): void {
     this.step1Data.set(data);
+    // En modo lineal next() exige el paso completado: aplicar el [completed] antes de avanzar.
+    this.cdr.detectChanges();
     this.stepper.next();
+  }
+
+  /** Volver al paso 1 invalida los datos: nunca se envía información desactualizada. */
+  onStepChange(index: number): void {
+    if (index === 0 && !this.success()) this.step1Data.set(null);
   }
 
   onStep2SelectionChange(ids: string[]): void {
@@ -334,11 +412,7 @@ export class EventRegistrationCheckout implements OnInit {
     this.error.set(null);
 
     try {
-      const existing = await this.registrations.getByEventAndUser(this.event().id, user.id);
-      if (existing) {
-        this.alreadyRegistered.set(true);
-        return;
-      }
+      if (await this.loadExisting(user.id)) return;
 
       let paymentProofUrl: string | null = null;
       if (d.ticket.price > 0 && d.paymentProofFile) {
@@ -358,32 +432,36 @@ export class EventRegistrationCheckout implements OnInit {
         this.auth.user.set({ ...user, ...updatedProfile });
       }
 
-      const registrationId = await this.registrations.createRegistration({
+      const created = await this.registrations.createRegistration({
         event_id: this.event().id,
         user_id: user.id,
         ticket_type_id: d.ticket.id,
         event_role: d.appliedRole ?? 'ATTENDEE',
         payment_proof_url: paymentProofUrl,
-        custom_responses: Object.fromEntries(
-          Object.entries(d.responses).filter(([, v]) => typeof v === 'string' && (v as string).trim().length > 0),
-        ) as Record<string, string>,
+        custom_responses: toCustomResponses(d.responses),
         coupon_id: d.couponId || null,
       });
 
       if (this.selectedSessionIds().length > 0) {
-        await this.sbSessions.saveSessionRegistrations(registrationId, this.selectedSessionIds());
+        await this.sbSessions.saveSessionRegistrations(created.id, this.selectedSessionIds());
       }
 
-      this.success.set(true);
-      this.snackBar.open('¡Registro completado exitosamente!', 'Cerrar', { duration: 4000 });
+      this.createdStatus.set(created.status);
     } catch (e) {
       if (e instanceof TicketSoldOutError) {
         await this.handleSoldOut(d.ticket);
         return;
       }
-      const msg = e instanceof Error ? e.message : 'Error al registrar';
-      this.error.set(msg);
-      this.snackBar.open(msg, 'Cerrar', { duration: 4000 });
+      console.error('[Checkout] Error registering:', e);
+      // 23505: ya existía una inscripción (p. ej. otra pestaña); mostrar su estado en vez de un error.
+      if (e instanceof Error && e.message.includes('23505')) {
+        try {
+          if (await this.loadExisting(user.id)) return;
+        } catch (err) {
+          console.error('[Checkout] Error loading existing registration:', err);
+        }
+      }
+      this.error.set(friendlyError(e));
     } finally {
       this.submitting.set(false);
     }
@@ -402,15 +480,14 @@ export class EventRegistrationCheckout implements OnInit {
     const current = this.tickets().find((t) => t.id === previous.id);
     let msg: string;
     if (!current || current.sold_out) {
-      msg = `Los cupos de «${previous.name}» se agotaron. Elegí otro pase.`;
+      msg = `Los cupos de «${previous.name}» se agotaron. Elige otra entrada.`;
     } else if (current.price !== previous.price) {
       const label = current.price > 0 ? `Bs ${current.price}` : 'gratis';
-      msg = `La preventa se agotó, el precio ahora es ${label}. Revisá el pago y volvé a confirmar.`;
+      msg = `La preventa se agotó, el precio ahora es ${label}. Revisa el pago y vuelve a confirmar.`;
     } else {
-      msg = 'La fase de preventa se agotó. Revisá los datos de tu pase y volvé a confirmar.';
+      msg = 'La fase de preventa se agotó. Revisa los datos de tu entrada y vuelve a confirmar.';
     }
     this.error.set(msg);
-    this.snackBar.open(msg, 'Cerrar', { duration: 8000 });
   }
 
   async updateSessionsOnly(): Promise<void> {
@@ -418,13 +495,13 @@ export class EventRegistrationCheckout implements OnInit {
     if (!regId || this.submitting()) return;
 
     this.submitting.set(true);
+    this.error.set(null);
     try {
       await this.sbSessions.updateSessionRegistrations(regId, this.selectedSessionIds());
       this.snackBar.open('¡Sesiones actualizadas exitosamente!', 'Cerrar', { duration: 4000 });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error al actualizar sesiones';
       console.error('[Checkout] Error updating sessions:', e);
-      this.snackBar.open(msg, 'Cerrar', { duration: 4000 });
+      this.error.set(friendlyError(e));
     } finally {
       this.submitting.set(false);
     }

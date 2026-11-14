@@ -4,6 +4,7 @@ import { DomSanitizer, SafeResourceUrl, Title, Meta } from '@angular/platform-br
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PublicEventsService } from '../data/public-events.service';
 import { Event } from '../data/event.model';
+import { formatEventDate, isPast as isEventPast } from '../data/event-timing';
 import { EventRegistrationCheckout } from '../registration/components/event-registration-checkout';
 import { LOGOS } from '../../../../core/config/logos';
 
@@ -35,11 +36,28 @@ import { LOGOS } from '../../../../core/config/logos';
                 </div>
               </div>
             </div>
+          } @else if (loadError()) {
+            <div class="p-10 sm:p-14 max-w-3xl mx-auto text-center space-y-4 mt-12">
+              <span
+                class="material-symbols-rounded text-6xl text-text-muted block"
+                aria-hidden="true"
+                >cloud_off</span
+              >
+              <h1 class="text-2xl font-bold text-text-primary">No pudimos cargar el evento</h1>
+              <p class="text-text-secondary">Revisa tu conexión e inténtalo de nuevo.</p>
+              <button
+                type="button"
+                (click)="load()"
+                class="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full bg-google-blue text-white text-sm font-bold hover:bg-google-blue-dark active:scale-[0.97] transition-[background-color,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-google-blue cursor-pointer border-0"
+              >
+                Reintentar
+              </button>
+            </div>
           } @else if (!event()) {
             <!-- Estado vacío sin caja pesada -->
             <div class="p-10 sm:p-14 max-w-3xl mx-auto text-center space-y-4 mt-12">
               <span
-                class="material-symbols-rounded text-6xl text-text-muted/60 animate-bounce block"
+                class="material-symbols-rounded text-6xl text-text-muted block"
                 aria-hidden="true"
                 >event_busy</span
               >
@@ -49,7 +67,7 @@ import { LOGOS } from '../../../../core/config/logos';
               </p>
               <a
                 routerLink="/"
-                class="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full bg-google-blue text-white text-sm font-bold hover:bg-blue-600 transition-colors duration-200"
+                class="inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-full bg-google-blue text-white text-sm font-bold hover:bg-google-blue-dark transition-colors duration-200"
               >
                 <span class="material-symbols-rounded text-base" aria-hidden="true"
                   >arrow_back</span
@@ -83,7 +101,7 @@ import { LOGOS } from '../../../../core/config/logos';
                 <!-- Botón de ir atrás flotante en el banner, super minimalista y elegante (estilo Airbnb/Viajes) -->
                 <a
                   [routerLink]="['/']"
-                  class="hidden sm:flex absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm border border-black/5 text-text-primary hover:text-google-blue hover:scale-105 active:scale-95 transition-all duration-200 items-center justify-center shadow-md group cursor-pointer no-underline"
+                  class="hidden sm:flex absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 hover:bg-white backdrop-blur-sm border border-black/5 text-text-primary hover:text-google-blue hover:scale-105 active:scale-95 transition-[background-color,color,transform] duration-200 items-center justify-center shadow-md group cursor-pointer no-underline"
                   aria-label="Volver a eventos"
                   title="Volver a eventos"
                 >
@@ -107,11 +125,7 @@ import { LOGOS } from '../../../../core/config/logos';
                         <span class="material-symbols-rounded text-base" aria-hidden="true"
                           >calendar_month</span
                         >
-                        <span>{{ startDateLabel() }}</span>
-                        @if (endDateLabel()) {
-                          <span class="text-text-muted font-normal">—</span>
-                          <span>{{ endDateLabel() }}</span>
-                        }
+                        <span>{{ dateLabel() }}</span>
                       </div>
 
                       <!-- Título del Evento -->
@@ -172,8 +186,9 @@ import { LOGOS } from '../../../../core/config/logos';
                         @if (isDescriptionLong()) {
                           <button
                             type="button"
+                            [attr.aria-expanded]="showFullDescription()"
                             (click)="showFullDescription.set(!showFullDescription())"
-                            class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-google-blue hover:text-blue-600 underline transition-colors duration-200 focus:outline-none cursor-pointer border-0 bg-transparent p-0"
+                            class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-google-blue hover:text-google-blue-dark underline transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-google-blue rounded-sm cursor-pointer border-0 bg-transparent p-0"
                           >
                             <span>{{ showFullDescription() ? 'Ver menos' : 'Ver más' }}</span>
                             <span class="material-symbols-rounded text-sm" aria-hidden="true">
@@ -212,7 +227,7 @@ import { LOGOS } from '../../../../core/config/logos';
                           [href]="event()!.address_link"
                           target="_blank"
                           rel="noopener noreferrer"
-                          class="inline-flex items-center gap-1.5 text-xs font-semibold text-google-blue hover:underline transition-all duration-200"
+                          class="inline-flex items-center gap-1.5 text-xs font-semibold text-google-blue hover:underline transition-colors duration-200"
                         >
                           <span class="material-symbols-rounded text-sm" aria-hidden="true"
                             >open_in_new</span
@@ -230,9 +245,9 @@ import { LOGOS } from '../../../../core/config/logos';
                     class="gdg-card border border-black/5 shadow-google-card p-4 sm:p-5 space-y-4"
                   >
                     <div class="space-y-1">
-                      <h3 class="text-base font-bold text-text-primary m-0 py-2 leading-tight">
-                        REGISTRO DE ASISTENCIA
-                      </h3>
+                      <h2 class="text-base font-bold text-text-primary m-0 py-2 leading-tight">
+                        {{ isPast() ? 'Registro' : 'Inscríbete' }}
+                      </h2>
 
                       <!-- Estado de cupos -->
                       @if (isPast()) {
@@ -244,35 +259,6 @@ import { LOGOS } from '../../../../core/config/logos';
                           >
                           <span>Evento finalizado</span>
                         </div>
-                      } @else if (event()!.available_spots !== undefined) {
-                        @if (event()!.is_full) {
-                          <div
-                            class="inline-flex items-center gap-1.5 rounded-full bg-google-red/10 text-google-red px-3 py-1 text-xs font-semibold"
-                          >
-                            <span class="material-symbols-rounded text-base" aria-hidden="true"
-                              >block</span
-                            >
-                            <span>Entradas agotadas</span>
-                          </div>
-                        } @else if (event()!.available_spots! <= 10) {
-                          <div
-                            class="inline-flex items-center gap-1.5 rounded-full bg-google-red/10 text-google-red px-3 py-1 text-xs font-semibold animate-pulse"
-                          >
-                            <span class="material-symbols-rounded text-base" aria-hidden="true"
-                              >warning</span
-                            >
-                            <span>¡Solo quedan {{ event()!.available_spots }} lugares!</span>
-                          </div>
-                        } @else {
-                          <div
-                            class="inline-flex items-center gap-1.5 rounded-full bg-google-green/10 text-google-green px-3 py-1 text-xs font-semibold"
-                          >
-                            <span class="material-symbols-rounded text-base" aria-hidden="true"
-                              >confirmation_number</span
-                            >
-                            <span>{{ event()!.available_spots }} disponibles</span>
-                          </div>
-                        }
                       }
                     </div>
 
@@ -298,6 +284,7 @@ export class EventDetail implements OnInit {
   private readonly metaService = inject(Meta);
 
   readonly loading = signal(true);
+  readonly loadError = signal(false);
   readonly event = signal<Event | null>(null);
 
   readonly logoIcon = LOGOS.icon;
@@ -308,10 +295,7 @@ export class EventDetail implements OnInit {
   // Computa si el evento ya finalizó
   readonly isPast = computed(() => {
     const e = this.event();
-    if (!e) return false;
-    const now = new Date();
-    const endDate = e.date_end ?? e.date_start;
-    return now > endDate;
+    return !!e && isEventPast(e);
   });
 
   // Computa si la descripción del evento es extensa (más de 300 caracteres o 5 líneas)
@@ -321,14 +305,9 @@ export class EventDetail implements OnInit {
     return desc.length > 300 || desc.split('\n').length > 5;
   });
 
-  readonly startDateLabel = computed(() => {
+  readonly dateLabel = computed(() => {
     const e = this.event();
-    return e ? this.dateLabelFormat(e.date_start) : '';
-  });
-
-  readonly endDateLabel = computed(() => {
-    const e = this.event();
-    return e && e.date_end ? this.dateLabelFormat(e.date_end) : '';
+    return e ? formatEventDate(e, this.isPast() ? 'past' : 'upcoming') : '';
   });
 
   readonly locationText = computed(() => {
@@ -437,14 +416,21 @@ export class EventDetail implements OnInit {
     return this.route.snapshot.paramMap.get('slug') ?? '';
   }
 
-  async ngOnInit(): Promise<void> {
-    this.loading.set(true);
-    const eventData = await this.events.getBySlug(this.slug);
-    this.event.set(eventData);
-    this.loading.set(false);
+  ngOnInit(): Promise<void> {
+    return this.load();
+  }
 
-    if (eventData) {
-      this.updateSeoTags(eventData);
+  async load(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(false);
+    try {
+      const eventData = await this.events.getBySlug(this.slug);
+      this.event.set(eventData);
+      if (eventData) this.updateSeoTags(eventData);
+    } catch {
+      this.loadError.set(true);
+    } finally {
+      this.loading.set(false);
     }
   }
 
@@ -454,7 +440,7 @@ export class EventDetail implements OnInit {
 
     const desc = event.description 
       ? event.description.substring(0, 160).trim() + '...'
-      : 'Únete a este increíble evento de tecnología organizado por la comunidad de Google Developer Groups Tarija. ¡Regístrate gratis ahora!';
+      : 'Inscríbete en este evento de la comunidad GDG Tarija.';
     
     const banner = event.banner_url || 'https://res.cloudinary.com/dopkch3x9/image/upload/v1779579233/GDG_Bevy_DefaultEventBanner_VKOwYjb_c913np.webp';
     const pageUrl = `https://eventos.gdgtarija.com/e/${event.slug}`;
@@ -476,11 +462,4 @@ export class EventDetail implements OnInit {
     this.metaService.updateTag({ name: 'twitter:image', content: banner });
   }
 
-  private dateLabelFormat(date: Date): string {
-    return new Intl.DateTimeFormat('es-BO', {
-      year: 'numeric',
-      month: 'long',
-      day: '2-digit',
-    }).format(date);
-  }
 }

@@ -16,8 +16,6 @@ export interface Event {
   location_name?: string;
   address_link?: string;
   category?: string;
-  available_spots?: number;
-  is_full?: boolean;
 
   // JSONB from Supabase. We only care about extra_info.form_fields for now.
   extra_info?: {

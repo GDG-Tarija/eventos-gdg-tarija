@@ -60,9 +60,9 @@ describe('RegistrationsService.createRegistration', () => {
 
   const payload = { event_id: 'e', user_id: 'u', ticket_type_id: 't', event_role: 'ATTENDEE' as const, payment_proof_url: null, custom_responses: {} };
 
-  it('devuelve el id creado', async () => {
-    single.mockResolvedValue({ data: { id: 'r1' }, error: null });
-    expect(await service.createRegistration(payload)).toBe('r1');
+  it('devuelve el id y el estado creados', async () => {
+    single.mockResolvedValue({ data: { id: 'r1', status: 'PENDING' }, error: null });
+    expect(await service.createRegistration(payload)).toEqual({ id: 'r1', status: 'PENDING' });
   });
 
   it('P0010 se traduce a TicketSoldOutError', async () => {

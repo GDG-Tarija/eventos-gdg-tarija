@@ -121,21 +121,21 @@ interface ExtraInfo {
 
       <!-- Tickets -->
       <div class="space-y-3">
-        <p class="text-xs font-bold text-text-primary uppercase tracking-wider m-0">
-          Elegí tu pase
+        <p class="text-sm font-bold text-text-primary m-0">
+          Elige tu entrada
         </p>
         @if (tickets().length === 0) {
-          <p class="text-sm text-text-secondary m-0">No hay pases disponibles por el momento.</p>
+          <p class="text-sm text-text-secondary m-0">No hay entradas disponibles por el momento.</p>
         } @else {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
             @for (t of tickets(); track t.id) {
               <button
                 type="button"
-                class="flex flex-row sm:flex-col rounded-xl sm:rounded-2xl border overflow-hidden text-left transition-all duration-300 bg-white w-full p-2.5 sm:p-0"
+                class="flex flex-row sm:flex-col rounded-xl sm:rounded-2xl border overflow-hidden text-left transition-[transform,box-shadow,border-color] duration-200 ease-out-strong bg-white w-full p-2.5 sm:p-0"
                 [class]="
                   t.sold_out
                     ? 'cursor-not-allowed opacity-60'
-                    : 'cursor-pointer hover:-translate-y-0.5 active:scale-[0.98]'
+                    : 'cursor-pointer hover:-translate-y-0.5 motion-safe:active:scale-[0.97]'
                 "
                 [class.border-google-blue]="selectedTicketId() === t.id"
                 [class.shadow-md]="selectedTicketId() === t.id"
@@ -225,7 +225,7 @@ interface ExtraInfo {
             class="text-xs text-google-blue font-bold hover:underline cursor-pointer bg-transparent border-0 p-0 text-left font-google"
             (click)="showCouponField.set(true)"
           >
-            ¿Tenés un código de descuento o invitación?
+            ¿Tienes un código de descuento o invitación?
           </button>
         </div>
       } @else {
@@ -252,7 +252,7 @@ interface ExtraInfo {
       @if (fields().length > 0) {
         <hr class="border-t border-black/5" />
         <div class="space-y-3">
-          <p class="text-xs font-bold text-text-primary uppercase tracking-wider m-0">
+          <p class="text-sm font-bold text-text-primary m-0">
             Información adicional
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -317,11 +317,11 @@ interface ExtraInfo {
         </div>
       }
 
-      <!-- Comprobante (solo pases de pago) -->
+      <!-- Comprobante (solo entradas de pago) -->
       @if (selectedTicketPrice() > 0) {
         <hr class="border-t border-black/5" />
         <div class="space-y-3">
-          <p class="text-xs font-bold text-text-primary uppercase tracking-wider m-0">
+          <p class="text-sm font-bold text-text-primary m-0">
             Comprobante de pago
           </p>
           @if (selectedTicketQrUrl()) {
@@ -337,7 +337,7 @@ interface ExtraInfo {
                 [href]="selectedTicketQrUrl()!"
                 download="qr-pago.png"
                 target="_blank"
-                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-google-blue text-google-blue hover:bg-google-blue/5 transition-all text-xs font-bold cursor-pointer no-underline active:scale-95"
+                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-google-blue text-google-blue hover:bg-google-blue/5 transition-[background-color,transform] duration-150 ease-out-strong text-xs font-bold cursor-pointer no-underline motion-safe:active:scale-[0.97]"
               >
                 <span class="material-symbols-rounded text-sm" aria-hidden="true">download</span>
                 Descargar QR
@@ -366,7 +366,7 @@ interface ExtraInfo {
         <button
           mat-flat-button
           type="button"
-          class="gdg-btn-filled w-full text-xs font-bold py-3.5 sm:py-5 rounded-xl sm:rounded-2xl"
+          class="gdg-btn-filled w-full text-xs font-bold py-3.5 sm:py-5 rounded-full"
           (click)="onContinuar()"
         >
           <span class="flex items-center justify-center gap-1.5">
@@ -468,7 +468,7 @@ export class StepDatos implements OnInit {
       }));
     });
 
-    // Si el evento tiene un solo pase disponible, se selecciona por defecto.
+    // Si el evento tiene una sola entrada disponible, se selecciona por defecto.
     effect(() => {
       const tickets = this.tickets();
       if (tickets.length !== 1 || this.selectedTicketId() || tickets[0].sold_out) return;
@@ -482,7 +482,7 @@ export class StepDatos implements OnInit {
       untracked(() => {
         if (ticket?.sold_out) {
           this.selectedTicketId.set(null);
-          this.ticketError.set(`«${ticket.name}» se agotó. Elegí otro pase.`);
+          this.ticketError.set(`«${ticket.name}» se agotó. Elige otra entrada.`);
         }
         if (key !== this.lastTicketKey) {
           this.lastTicketKey = key;
@@ -607,11 +607,11 @@ export class StepDatos implements OnInit {
   onContinuar(): void {
     const messages = this.collectMissing();
     if (!this.selectedTicketId()) {
-      this.ticketError.set('Por favor, seleccioná un pase para continuar.');
-      messages.push('Elige un pase (entrada).');
+      this.ticketError.set('Selecciona una entrada para continuar.');
+      messages.push('Elige una entrada.');
     }
     if (this.selectedTicketId() && this.selectedTicketPrice() > 0 && !this.paymentProofFile()) {
-      this.proofError.set('Por favor, subí el comprobante de pago.');
+      this.proofError.set('Sube el comprobante de pago.');
       messages.push('Sube el comprobante de pago.');
     }
     if (messages.length > 0) {

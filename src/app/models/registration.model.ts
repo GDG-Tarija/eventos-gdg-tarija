@@ -1,5 +1,5 @@
 export type EventRole = 'ATTENDEE' | 'SPEAKER' | 'SPONSOR' | 'STAFF';
-export type RegistrationStatus = 'CONFIRMED' | 'PENDING';
+export type RegistrationStatus = 'CONFIRMED' | 'PENDING' | 'CANCELLED';
 
 export interface UserUpdate {
   first_name: string;

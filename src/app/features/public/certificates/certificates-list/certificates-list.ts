@@ -20,7 +20,7 @@ import { CertificateItem } from '../data/certificate.model';
         <!-- Encabezado -->
         <div class="space-y-2">
           <h1 class="text-3xl sm:text-4xl font-extrabold text-text-primary tracking-tight font-google">
-            Mis Certificados
+            Mis certificados
           </h1>
           <p class="text-text-secondary text-sm sm:text-base max-w-2xl">
             Aquí encontrarás los certificados de asistencia correspondientes a los eventos en los que registraste tu check-in.
@@ -131,7 +131,7 @@ export class CertificatesList implements OnInit {
   private readonly authLoading$ = toObservable(this.auth.loading);
 
   constructor() {
-    const pageTitle = 'Mis Certificados | GDG Tarija';
+    const pageTitle = 'Mis certificados | GDG Tarija';
     const description = 'Consulta, valida y descarga tus certificados oficiales de participación en los eventos de la comunidad Google Developer Groups Tarija.';
     const defaultImage = 'https://res.cloudinary.com/dopkch3x9/image/upload/v1779579233/GDG_Bevy_DefaultEventBanner_VKOwYjb_c913np.webp';
 
