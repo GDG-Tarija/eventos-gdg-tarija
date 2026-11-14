@@ -1,5 +1,8 @@
 import { Component, computed, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { googleCalendarUrl } from '../../../data/calendar-link';
+import type { Event as EventModel } from '../../../data/event.model';
+import { TicketQr } from '../ticket-qr/ticket-qr';
 import { SessionWithTrack } from '../../../../../../core/models/session.model';
 import type { RegistrationStatus } from '../../../../../../models/registration.model';
 import type { StepDatosOutput } from '../step-datos/step-datos';
@@ -7,7 +10,7 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
 @Component({
   selector: 'app-step-confirmar',
   standalone: true,
-  imports: [MatButtonModule],
+  imports: [MatButtonModule, TicketQr],
   template: `
     <div class="space-y-5 pt-2">
       <!-- Resumen -->
@@ -86,6 +89,24 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
                 : 'Te esperamos el día del evento.'
             }}
           </p>
+          @if (status() === 'CONFIRMED' && registrationId(); as regId) {
+            <div class="flex flex-col items-start gap-1 pt-2">
+              <app-ticket-qr [registrationId]="regId" [eventTitle]="event().title" />
+              <a
+                  [href]="calendarUrl()"
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-google-blue-dark no-underline hover:underline"
+                >
+                  <span class="material-symbols-rounded text-lg" aria-hidden="true">event</span>
+                  Agregar a Google Calendar
+                </a>
+            </div>
+          } @else if (status() === 'PENDING') {
+            <p class="text-xs text-text-secondary leading-relaxed m-0">
+              Cuando confirmemos tu pago verás aquí tu código QR de acceso.
+            </p>
+          }
         </div>
       }
 
@@ -131,6 +152,9 @@ export class StepConfirmar {
   readonly submitting = input<boolean>(false);
   /** Estado de la inscripción recién creada; null mientras no se ha enviado. */
   readonly status = input<RegistrationStatus | null>(null);
+  readonly registrationId = input<string | null>(null);
+  readonly event = input.required<EventModel>();
+  readonly calendarUrl = computed(() => googleCalendarUrl(this.event()));
   readonly success = computed(() => this.status() !== null);
 
   readonly confirm = output<void>();
