@@ -1,212 +1,146 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
 import { Event } from '../../data/event.model';
+import { formatEventDate, isPast, relativeLabel } from '../../data/event-timing';
+
+const DEFAULT_THUMB =
+  'https://res.cloudinary.com/dopkch3x9/image/upload/v1779579233/GDG_Bevy_DefaultEventThumbnail_2_vaeskpB_pggj5h.webp';
 
 @Component({
   selector: 'app-event-card',
   standalone: true,
-  imports: [RouterLink, MatButtonModule],
+  imports: [RouterLink],
   template: `
     <article
-      class="gdg-card border border-black/5 overflow-hidden transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-sm cursor-pointer sm:h-[230px]"
-      [class.opacity-75]="isPast()"
-      [class.grayscale-[50%]]="isPast()"
-      [class.bg-black/[0.02]]="isPast()"
-      [routerLink]="['/e', event().slug]"
+      class="gdg-card relative overflow-hidden flex gap-4 transition-transform duration-200 ease-out-strong motion-safe:hover:-translate-y-0.5 focus-within:ring-2 focus-within:ring-google-blue-dark"
+      [class.items-center]="compact()"
+      [class.p-3]="compact()"
+      [class.flex-col]="!compact()"
+      [class.sm:flex-row]="!compact()"
+      [class.sm:items-center]="!compact()"
+      [class.sm:gap-6]="!compact()"
+      [class.p-4]="!compact()"
+      [class.sm:p-5]="!compact()"
     >
-      <div class="p-3 sm:p-5 h-full">
-        <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 h-full sm:items-center">
-          <!-- Image Section with hover micro-zoom -->
-          <div
-            class="w-full aspect-square max-w-[280px] sm:w-auto sm:h-full shrink-0 overflow-hidden rounded-full relative group-card-img bg-black/5 mx-auto sm:mx-0 flex items-center justify-center"
+      <img
+        [src]="event().image_url || DEFAULT_THUMB"
+        alt=""
+        loading="lazy"
+        decoding="async"
+        [attr.width]="compact() ? 56 : 160"
+        [attr.height]="compact() ? 56 : 160"
+        class="shrink-0 rounded-full object-cover bg-black/5"
+        [class.size-14]="compact()"
+        [class.size-40]="!compact()"
+        [class.mx-auto]="!compact()"
+        [class.sm:mx-0]="!compact()"
+      />
+
+      <div class="flex flex-col gap-2.5 flex-1 min-w-0">
+        <h3
+          class="m-0 font-bold leading-tight text-text-primary break-words font-google"
+          [class.text-base]="compact()"
+          [class.text-xl]="!compact()"
+          [class.sm:text-2xl]="!compact()"
+        >
+          <a
+            [routerLink]="['/e', event().slug]"
+            class="text-inherit no-underline focus:outline-none after:absolute after:inset-0 after:content-['']"
+            >{{ event().title }}</a
           >
-            @if (event().image_url) {
-              <img
-                [src]="event().image_url"
-                [alt]="event().title"
-                class="w-full h-full object-cover rounded-full transition-transform duration-500 ease-in-out group-hover:scale-105"
-              />
-            } @else {
-              <img
-                src="https://res.cloudinary.com/dopkch3x9/image/upload/v1779579233/GDG_Bevy_DefaultEventThumbnail_2_vaeskpB_pggj5h.webp"
-                [alt]="event().title"
-                class="w-full h-full object-cover rounded-full transition-transform duration-500 ease-in-out group-hover:scale-105"
-              />
-            }
-          </div>
+        </h3>
 
-          <!-- Content Section -->
-          <div class="flex flex-col justify-between gap-2.5 flex-1 min-w-0 h-full">
-            <!-- Bloque Superior: Título, Metadata y Descripción -->
-            <div class="space-y-2 min-w-0">
-              <!-- Título del Evento sin padding ni margen vertical -->
-              <h3
-                class="text-xl sm:text-2xl font-bold leading-tight text-text-primary break-words font-google hover:text-google-blue transition-colors duration-300 m-0 p-0"
+        <div class="flex flex-wrap items-center gap-2 text-xs font-medium">
+          <span
+            class="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+            [class.bg-google-blue/10]="!compact()"
+            [class.text-google-blue-dark]="!compact()"
+            [class.bg-black/5]="compact()"
+            [class.text-text-secondary]="compact()"
+          >
+            <span class="material-symbols-rounded text-sm" aria-hidden="true">calendar_month</span>
+            {{ dateLabel() }}
+          </span>
+
+          @if (compact()) {
+            <span class="px-2.5 py-1 rounded-full bg-black/5 text-text-secondary">Finalizado</span>
+          } @else {
+            @if (relative(); as label) {
+              <span
+                class="px-2.5 py-1 rounded-full font-semibold"
+                [class.bg-google-blue-dark]="label === 'En curso'"
+                [class.text-white]="label === 'En curso'"
+                [class.bg-black/5]="label !== 'En curso'"
+                [class.text-text-primary]="label !== 'En curso'"
+                >{{ label }}</span
               >
-                {{ event().title }}
-              </h3>
-
-              <!-- Metadata Row con Chips Premium -->
-              <div class="flex flex-wrap items-center gap-2 text-xs">
-                <!-- Fecha -->
-                <div
-                  class="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold shrink-0"
-                  [class.text-google-blue]="!isPast()"
-                  [class.bg-google-blue/5]="!isPast()"
-                  [class.text-text-muted]="isPast()"
-                  [class.bg-black/5]="isPast()"
-                >
-                  <span class="material-symbols-rounded text-sm" aria-hidden="true"
-                    >calendar_month</span
-                  >
-                  <span>{{ dateLabel() }}</span>
-                </div>
-
-                <!-- Modalidad Virtual (solo si aplica) -->
-                @if (event().location_type === 'VIRTUAL') {
-                  <div
-                    class="flex items-center gap-1.5 px-2.5 py-1 rounded-full font-semibold bg-google-red/10 text-google-red shrink-0"
-                  >
-                    <span class="material-symbols-rounded text-sm" aria-hidden="true"
-                      >videocam</span
-                    >
-                    <span>Virtual</span>
-                  </div>
-                }
-
-                <!-- Dirección Breve como Tag -->
-                @if (event().location_name) {
-                  <div
-                    class="flex items-center gap-1.5 bg-black/5 px-2.5 py-1 rounded-full font-medium text-text-secondary min-w-0"
-                  >
-                    <span
-                      class="material-symbols-rounded text-sm text-text-muted shrink-0"
-                      aria-hidden="true"
-                      >location_on</span
-                    >
-                    <span class="truncate max-w-[200px]">{{ event().location_name }}</span>
-                  </div>
-                }
-
-                <!-- Capacidad de Asistentes -->
-                <div
-                  class="flex items-center gap-1.5 bg-black/5 px-2.5 py-1 rounded-full font-medium text-text-secondary shrink-0"
-                >
-                  <span
-                    class="material-symbols-rounded text-sm text-text-muted shrink-0"
-                    aria-hidden="true"
-                    >group</span
-                  >
-                  <span>{{ event().capacity }} asistentes</span>
-                </div>
-              </div>
-
-              <!-- Descripción -->
-              @if (event().description) {
-                <p class="text-xs sm:text-sm text-text-secondary line-clamp-2 leading-relaxed">
-                  {{ event().description }}
-                </p>
-              }
-            </div>
-
-            <!-- Bloque Inferior: Barra de Estado y Acción -->
-            <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full border-t border-black/5 pt-2.5 mt-0.5 shrink-0"
-            >
-              <!-- Alertas de Cupo / Estado -->
-              <div class="flex items-center gap-3 text-xs font-semibold text-text-secondary">
-                @if (isPast()) {
-                  <div
-                    class="flex items-center gap-1 text-text-muted bg-black/5 px-2 py-0.5 rounded"
-                  >
-                    <span class="material-symbols-rounded text-sm" aria-hidden="true">event_busy</span>
-                    <span>Finalizado</span>
-                  </div>
-                } @else if (
-                  event().available_spots !== undefined &&
-                  event().available_spots! <= 10 &&
-                  event().available_spots! > 0
-                ) {
-                  <div
-                    class="flex items-center gap-1 text-google-red bg-google-red/5 px-2 py-0.5 rounded animate-pulse"
-                  >
-                    <span class="material-symbols-rounded text-sm" aria-hidden="true">alarm</span>
-                    <span>¡Solo {{ event().available_spots }} cupos!</span>
-                  </div>
-                } @else if (event().available_spots === 0 || event().is_full) {
-                  <div
-                    class="flex items-center gap-1 text-text-muted bg-black/5 px-2 py-0.5 rounded"
-                  >
-                    <span class="material-symbols-rounded text-sm" aria-hidden="true">block</span>
-                    <span>Agotado</span>
-                  </div>
-                }
-              </div>
-
-              <!-- Acción: Registrarse / Ver evento -->
-              <div class="w-full sm:w-auto">
-                <button
-                  mat-flat-button
-                  type="button"
-                  class="gdg-btn-filled h-8 w-full sm:w-auto px-4 rounded-full text-xs font-bold transition-all duration-300 active:scale-95 hover:shadow-sm"
-                  [class.!bg-black/10]="isPast()"
-                  [class.!text-text-secondary]="isPast()"
-                  [class.!shadow-none]="isPast()"
-                  [routerLink]="['/e', event().slug]"
-                >
-                  <span class="flex items-center justify-center gap-1.5 w-full h-full leading-none">
-                    <span>{{ isPast() ? 'Ver evento' : 'Registrarse' }}</span>
-                    <span class="material-symbols-rounded text-sm" aria-hidden="true"
-                      >arrow_forward</span
-                    >
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
+            }
+            @if (event().location_type !== 'PHYSICAL') {
+              <span
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/5 text-text-secondary"
+              >
+                <span class="material-symbols-rounded text-sm text-google-blue-dark" aria-hidden="true">{{
+                  locationIcon()
+                }}</span>
+                {{ locationText() }}
+              </span>
+            }
+            @if (showLocationName()) {
+              <span
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/5 text-text-secondary min-w-0"
+              >
+                <span class="material-symbols-rounded text-sm shrink-0" aria-hidden="true">location_on</span>
+                <span class="truncate max-w-[200px]">{{ event().location_name }}</span>
+              </span>
+            }
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/5 text-text-secondary">
+              <span class="material-symbols-rounded text-sm" aria-hidden="true">group</span>
+              {{ event().capacity }} cupos
+            </span>
+          }
         </div>
+
+        @if (!compact()) {
+          @if (event().description) {
+            <p class="m-0 text-sm text-text-secondary leading-relaxed line-clamp-2 max-w-prose">
+              {{ event().description }}
+            </p>
+          }
+          <div class="flex sm:justify-end">
+            <span
+              aria-hidden="true"
+              class="inline-flex items-center justify-center gap-1.5 h-10 w-full sm:w-auto px-5 rounded-full bg-google-blue-dark text-white text-sm font-bold"
+            >
+              Inscríbete
+              <span class="material-symbols-rounded text-base">arrow_forward</span>
+            </span>
+          </div>
+        }
       </div>
     </article>
   `,
 })
 export class EventCard {
   readonly event = input.required<Event>();
+  readonly compact = input(false);
 
-  readonly isPast = computed(() => {
-    const e = this.event();
-    if (!e) return false;
-    const now = new Date();
-    const endDate = e.date_end ?? e.date_start;
-    return now > endDate;
-  });
+  readonly DEFAULT_THUMB = DEFAULT_THUMB;
 
   readonly dateLabel = computed(() =>
-    new Intl.DateTimeFormat('es-BO', {
-      year: 'numeric',
-      month: 'long',
-      day: '2-digit',
-    }).format(this.event().date_start),
+    formatEventDate(this.event(), isPast(this.event()) ? 'past' : 'upcoming'),
+  );
+  readonly relative = computed(() => relativeLabel(this.event()));
+
+  readonly locationText = computed(() =>
+    this.event().location_type === 'VIRTUAL' ? 'Virtual' : 'Híbrido',
+  );
+  readonly locationIcon = computed(() =>
+    this.event().location_type === 'VIRTUAL' ? 'videocam' : 'devices',
   );
 
-  readonly locationText = computed(() => {
-    const type = this.event().location_type;
-    if (type === 'VIRTUAL') return 'Virtual';
-    if (type === 'HYBRID') return 'Híbrido';
-    return 'Presencial';
-  });
-
-  readonly locationIcon = computed(() => {
-    const type = this.event().location_type;
-    if (type === 'VIRTUAL') return 'videocam';
-    if (type === 'HYBRID') return 'devices';
-    return 'place';
-  });
-
-  readonly locationClassText = computed(() => {
-    const type = this.event().location_type;
-    if (type === 'VIRTUAL') return 'text-google-red';
-    if (type === 'HYBRID') return 'text-google-yellow';
-    return 'text-google-green';
+  // "Online" next to a Virtual chip is redundant.
+  readonly showLocationName = computed(() => {
+    const e = this.event();
+    return !!e.location_name && !(e.location_type === 'VIRTUAL' && /^(online|virtual)$/i.test(e.location_name.trim()));
   });
 }

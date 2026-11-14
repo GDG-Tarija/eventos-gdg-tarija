@@ -14,11 +14,7 @@ export interface MissingFieldsDialogData {
   template: `
     <h2 mat-dialog-title class="flex items-center gap-2 !text-base font-bold">
       <span class="material-symbols-rounded text-google-red" aria-hidden="true">error</span>
-      @if (data.messages.length === 1) {
-        Te falta completar 1 dato
-      } @else {
-        Te faltan completar {{ data.messages.length }} datos
-      }
+      Te falta completar {{ data.messages.length }} {{ data.messages.length === 1 ? 'dato' : 'datos' }}
     </h2>
     <mat-dialog-content>
       <ul class="m-0 space-y-1.5 pl-5 text-sm text-text-secondary">

@@ -78,13 +78,13 @@ describe('StepDatos.onContinuar', () => {
     );
   });
 
-  it('pide elegir un pase cuando hay más de uno y ninguno está elegido', () => {
+  it('pide elegir una entrada cuando hay más de uno y ninguno está elegido', () => {
     const { component, open } = setup([ticket, { ...ticket, id: 't2', name: 'VIP' }]);
 
     component.onContinuar();
 
     const messages: string[] = open.mock.calls[0][1].data.messages;
-    expect(messages).toContain('Elige un pase (entrada).');
+    expect(messages).toContain('Elige una entrada.');
   });
 
   it('marca como tocados los campos para mostrar su error en línea', () => {
@@ -96,7 +96,7 @@ describe('StepDatos.onContinuar', () => {
     expect(component.checkoutForm.responses['uni']().touched()).toBe(true);
   });
 
-  it('pide el comprobante cuando el pase es de pago', () => {
+  it('pide el comprobante cuando la entrada es de pago', () => {
     const { component, open } = setup();
     component.formData.set({
       firstName: 'Ana',

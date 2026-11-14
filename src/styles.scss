@@ -58,6 +58,17 @@
 }
 
 @tailwind base;
+
+@layer base {
+  /* Preflight is off; restore only its border reset so Tailwind `border*` utilities render. */
+  *,
+  ::before,
+  ::after {
+    border-width: 0;
+    border-style: solid;
+    border-color: theme('borderColor.DEFAULT', currentColor);
+  }
+}
 @tailwind components;
 @tailwind utilities;
 
@@ -71,19 +82,25 @@
 @layer components {
   /* Buttons (Google I/O style) */
   .gdg-btn {
-    @apply rounded-full font-semibold transition-all duration-300 ease-in-out;
+    @apply rounded-full font-semibold transition-[transform,background-color,color,box-shadow] duration-150 ease-out-strong motion-safe:active:scale-[0.97];
   }
 
   .gdg-btn-filled {
-    @apply gdg-btn bg-google-blue text-white shadow-sm px-8 py-3 hover:bg-blue-600 active:scale-95;
+    @apply gdg-btn bg-google-blue-dark text-white shadow-sm px-8 py-3 hover:brightness-95;
+    /* mat-flat-button paints Material's primary unless its tokens are set */
+    --mat-button-filled-container-color: theme('colors.google.blue-dark');
+    --mat-button-filled-label-text-color: #fff;
   }
 
   .gdg-btn-outlined {
-    @apply gdg-btn border-2 border-google-blue text-google-blue px-8 py-3 hover:bg-google-blue-light;
+    @apply gdg-btn border-2 border-google-blue-dark text-google-blue-dark px-8 py-3 hover:bg-google-blue-light;
+    --mat-button-outlined-label-text-color: theme('colors.google.blue-dark');
+    --mat-button-outlined-outline-color: theme('colors.google.blue-dark');
   }
 
   .gdg-btn-ghost {
-    @apply gdg-btn text-google-blue px-6 py-2 hover:bg-google-blue-light;
+    @apply gdg-btn text-google-blue-dark px-6 py-2 hover:bg-google-blue-light;
+    --mat-button-text-label-text-color: theme('colors.google.blue-dark');
   }
 
   /* Surfaces */
