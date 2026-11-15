@@ -4,7 +4,7 @@ import { Component, computed, effect, input, signal } from '@angular/core';
   selector: 'app-ticket-qr',
   standalone: true,
   template: `
-    <div class="mx-auto flex w-fit flex-col items-center gap-2 rounded-3xl border border-black/10 bg-white p-4 shadow-sm">
+    <div class="mx-auto flex w-fit max-w-full flex-col items-center gap-2 rounded-3xl border border-black/10 bg-white p-4 shadow-sm">
       @if (failed()) {
         <p class="m-0 text-xs text-[#5f6368]">Código de tu inscripción:</p>
         <p class="m-0 max-w-[200px] select-all break-all text-center font-mono text-xs text-[#202124]">
@@ -16,16 +16,26 @@ import { Component, computed, effect, input, signal } from '@angular/core';
             [src]="src"
             width="200"
             height="200"
-            class="size-[200px]"
+            class="qr-image"
             [alt]="'Código QR de tu entrada para ' + (eventTitle() ?? 'el evento')"
           />
         } @else {
-          <div class="size-[200px] rounded-lg bg-black/5" aria-hidden="true"></div>
+          <div class="qr-image rounded-lg bg-black/5" aria-hidden="true"></div>
         }
         <p class="m-0 text-xs text-[#5f6368]">Muestra este código en la entrada</p>
         <p class="m-0 font-mono text-sm font-bold tracking-wider text-[#202124]">{{ shortCode() }}</p>
       }
     </div>
+  `,
+  styles: `
+    :host { display: block; max-width: 100%; }
+    .qr-image {
+      display: block;
+      width: var(--ticket-qr-size, 200px);
+      max-width: 100%;
+      height: auto;
+      aspect-ratio: 1;
+    }
   `,
 })
 export class TicketQr {
@@ -51,12 +61,13 @@ export class TicketQr {
       const QRCode = (await import('qrcode')).default;
       const url = await QRCode.toDataURL(id, {
         errorCorrectionLevel: 'M',
-        margin: 2,
+        margin: 4,
         width: 512,
         color: { dark: '#202124', light: '#FFFFFF' },
       });
       if (id === this.registrationId()) this.dataUrl.set(url);
     } catch (e) {
+      if (id !== this.registrationId()) return;
       console.error('[TicketQr] Error generating QR:', e);
       this.failed.set(true);
     }

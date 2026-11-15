@@ -5,7 +5,7 @@ const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
 /** Fecha en UTC formato básico: YYYYMMDDTHHMMSSZ. */
 const utc = (d: Date) => d.toISOString().replace(/[-:]|\.\d{3}/g, '');
 
-export function googleCalendarUrl(e: Event): string {
+export function googleCalendarUrl(e: Pick<Event, 'title' | 'slug' | 'date_start' | 'date_end' | 'location_name'>): string {
   const end = e.date_end ?? new Date(e.date_start.getTime() + TWO_HOURS_MS);
   const params = new URLSearchParams({
     action: 'TEMPLATE',
