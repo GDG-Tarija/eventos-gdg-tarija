@@ -15,6 +15,12 @@ describe('friendlyError', () => {
     );
   });
 
+  it('traduce el choque de horario del trigger de sesiones', () => {
+    expect(
+      friendlyError(new Error('[sessions.updateSessionRegistrations.insert] Conflicto de horario: «Hack Racing» se cruza con otra sesión.')),
+    ).toBe('Dos de las sesiones que elegiste se cruzan en horario. Quédate con una e inténtalo de nuevo.');
+  });
+
   it('traduce errores de subida de comprobante', () => {
     expect(friendlyError(new Error('[storage.upload] 400 bad'))).toBe(
       'No pudimos subir tu comprobante. Usa una imagen JPG o PNG e inténtalo de nuevo.',
