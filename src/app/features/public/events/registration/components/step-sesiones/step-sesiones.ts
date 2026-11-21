@@ -1,6 +1,7 @@
 import { Component, computed, effect, input, model, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { SessionWithTrack } from '../../../../../../core/models/session.model';
+import { hhmm } from '../../data/session-schedule';
 import { SessionPicker } from '../session-picker/session-picker';
 
 @Component({
@@ -13,9 +14,9 @@ import { SessionPicker } from '../session-picker/session-picker';
       @if (sessions().length > 0 && !hideNavigation()) {
         <div class="rounded-2xl border border-google-blue/10 bg-google-blue/5 px-4 py-3 flex items-start gap-2.5">
           <span class="material-symbols-rounded text-base text-google-blue mt-0.5 shrink-0" aria-hidden="true">info</span>
-          <p class="text-xs text-google-blue font-medium leading-relaxed m-0">
-            Elige las sesiones a las que quieres asistir. Solo puedes seleccionar
-            <strong>una sesión por bloque horario</strong>.
+          <p class="text-xs text-google-blue-dark font-medium leading-relaxed m-0">
+            Elige las sesiones a las que quieres asistir. Si dos sesiones
+            <strong>se cruzan en horario</strong>, solo puedes quedarte con una.
           </p>
         </div>
       }
@@ -30,11 +31,12 @@ import { SessionPicker } from '../session-picker/session-picker';
       @if (selectedIds().length > 0 && totalSlots() > 1) {
         <div class="rounded-xl border border-black/5 bg-white px-4 py-3 space-y-1.5">
           <p class="text-xs font-bold text-text-secondary m-0">
-            Seleccionadas ({{ selectedIds().length }} de {{ totalSlots() }} bloques)
+            Tus sesiones ({{ selectedSessions().length }})
           </p>
           @for (s of selectedSessions(); track s.id) {
             <div class="flex items-center gap-2">
               <span class="material-symbols-rounded text-xs text-google-green" aria-hidden="true">check_circle</span>
+              <span class="text-xs text-text-secondary tabular-nums shrink-0">{{ when(s) }}</span>
               <span class="text-xs text-text-primary font-medium">{{ s.title }}</span>
             </div>
           }
@@ -97,6 +99,17 @@ export class StepSesiones {
   });
 
   readonly selectedSessions = computed(() =>
-    this.sessions().filter((s) => this.selectedIds().includes(s.id)),
+    this.sessions()
+      .filter((s) => this.selectedIds().includes(s.id))
+      .sort((a, b) => `${a.date ?? ''} ${a.start_time ?? ''}`.localeCompare(`${b.date ?? ''} ${b.start_time ?? ''}`)),
   );
+
+  /** "vie 09:00"; el día evita ambigüedad en eventos de varios días. */
+  when(s: SessionWithTrack): string {
+    const time = hhmm(s.start_time) ?? '';
+    if (!s.date) return time;
+    const [y, m, d] = s.date.split('-').map(Number);
+    const day = new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', '');
+    return `${day} ${time}`.trim();
+  }
 }

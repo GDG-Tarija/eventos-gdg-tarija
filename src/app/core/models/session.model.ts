@@ -24,20 +24,3 @@ export interface SessionWithTrack extends Session {
   track_name: string | null;
   enrolled_count: number;
 }
-
-/** @deprecated use SessionDateGroup */
-export interface SessionSlotGroup {
-  slot: number;
-  sessions: SessionWithTrack[];
-}
-
-export interface SessionTimeGroup {
-  startTime: string | null;
-  endTime: string | null;
-  sessions: SessionWithTrack[];
-}
-
-export interface SessionDateGroup {
-  date: string | null;
-  timeGroups: SessionTimeGroup[];
-}

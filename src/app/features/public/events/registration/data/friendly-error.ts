@@ -5,6 +5,9 @@ export function friendlyError(e: unknown): string {
     return 'Sin conexión. Revisa tu internet e inténtalo de nuevo.';
   }
   if (message.includes('23505')) return 'Ya tienes una inscripción para este evento.';
+  if (message.includes('Conflicto de horario')) {
+    return 'Dos de las sesiones que elegiste se cruzan en horario. Quédate con una e inténtalo de nuevo.';
+  }
   if (message.startsWith('[storage.upload]')) {
     return 'No pudimos subir tu comprobante. Usa una imagen JPG o PNG e inténtalo de nuevo.';
   }
