@@ -49,6 +49,17 @@ export class RegistrationsService {
     return (data as unknown as RegistrationRow) ?? null;
   }
 
+  /** Link del grupo de WhatsApp del evento. RLS solo lo devuelve a inscritos no anulados. */
+  async getWhatsappGroupUrl(eventId: string): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from('event_whatsapp_groups')
+      .select('url')
+      .eq('event_id', eventId)
+      .maybeSingle();
+    if (error) throw new Error(`[registrations.getWhatsappGroupUrl] ${error.code ?? ''} ${error.message}`.trim());
+    return (data as { url: string } | null)?.url ?? null;
+  }
+
   async createRegistration(
     registration: RegistrationInsert,
   ): Promise<{ id: string; status: RegistrationStatus }> {

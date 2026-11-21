@@ -155,7 +155,26 @@ import { TicketQr } from './ticket-qr/ticket-qr';
             <p class="text-xs text-text-secondary leading-relaxed m-0">
               {{ reg.body }}
             </p>
+            <a
+              routerLink="/mis-tickets"
+              class="group inline-flex min-h-11 items-center gap-2 rounded text-sm font-semibold text-google-blue-dark no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              <span class="material-symbols-rounded text-lg" aria-hidden="true">confirmation_number</span>
+              <span class="underline-offset-4 group-hover:underline group-focus-visible:underline">Ver mis tickets</span>
+            </a>
           </div>
+
+          @if (reg.status !== 'CANCELLED' && whatsappUrl(); as url) {
+            <a
+              [href]="url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gdg-btn-outlined inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold no-underline"
+            >
+              <span class="material-symbols-rounded text-lg" aria-hidden="true">groups</span>
+              Unirme al grupo de WhatsApp
+            </a>
+          }
 
           @if (!isPast()) {
             @if (reg.status === 'CONFIRMED' && existingRegistrationId(); as regId) {
@@ -171,10 +190,6 @@ import { TicketQr } from './ticket-qr/ticket-qr';
                 Agregar a Google Calendar
               </a>
               </div>
-            } @else if (reg.status === 'PENDING') {
-              <p class="text-xs text-text-secondary leading-relaxed m-0">
-                Cuando confirmemos tu pago verás aquí tu código QR de acceso.
-              </p>
             }
           }
 
@@ -294,6 +309,7 @@ import { TicketQr } from './ticket-qr/ticket-qr';
               [submitting]="submitting()"
               [status]="createdStatus()"
               [registrationId]="createdId()"
+              [whatsappUrl]="whatsappUrl()"
               [event]="event()"
               (confirm)="submit()"
               (back)="onStep3Back()"
@@ -329,6 +345,7 @@ export class EventRegistrationCheckout implements OnInit {
   readonly submitting = signal(false);
   readonly createdStatus = signal<RegistrationStatus | null>(null);
   readonly createdId = signal<string | null>(null);
+  readonly whatsappUrl = signal<string | null>(null);
   readonly success = computed(() => this.createdStatus() !== null);
   readonly initFailed = signal(false);
   readonly registeredStatus = signal<RegistrationStatus>('CONFIRMED');
@@ -345,7 +362,9 @@ export class EventRegistrationCheckout implements OnInit {
           status,
           icon: 'hourglass_top',
           title: 'Inscripción en revisión',
-          body: 'Tu inscripción está registrada y tu pago está en revisión. Te avisaremos cuando lo validemos.',
+          body: this.isPast()
+            ? 'Estamos verificando tu pago.'
+            : 'Estamos verificando tu pago. Tu QR estará disponible cuando se confirme.',
           box: 'border-google-yellow/30 bg-google-yellow/5',
           text: 'text-text-primary',
         };
@@ -426,8 +445,18 @@ export class EventRegistrationCheckout implements OnInit {
     if (!existing) return false;
     this.existingRegistrationId.set(existing.id);
     this.registeredStatus.set(existing.status);
+    if (existing.status !== 'CANCELLED') void this.loadWhatsappGroup();
     this.selectedSessionIds.set(await this.sbSessions.getRegistrationsByRegistrationId(existing.id));
     return true;
+  }
+
+  /** El grupo es un extra: si la consulta falla, el registro sigue igual. */
+  private async loadWhatsappGroup(): Promise<void> {
+    try {
+      this.whatsappUrl.set(await this.registrations.getWhatsappGroupUrl(this.event().id));
+    } catch (e) {
+      console.error('[Checkout] Error loading WhatsApp group:', e);
+    }
   }
 
   onStep1Complete(data: StepDatosOutput): void {
@@ -503,6 +532,7 @@ export class EventRegistrationCheckout implements OnInit {
 
       this.createdId.set(created.id);
       this.createdStatus.set(created.status);
+      void this.loadWhatsappGroup();
     } catch (e) {
       if (e instanceof TicketSoldOutError) {
         await this.handleSoldOut(d.ticket);

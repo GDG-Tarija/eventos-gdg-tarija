@@ -1,5 +1,4 @@
 import { googleCalendarUrl } from './calendar-link';
-import type { Event } from './event.model';
 
 const base = {
   title: 'Café & Código 🚀',
@@ -7,7 +6,7 @@ const base = {
   date_start: new Date('2026-03-07T14:00:00Z'),
   date_end: new Date('2026-03-07T18:30:00Z'),
   location_name: 'Auditorio UAJMS',
-} as Event;
+};
 
 describe('googleCalendarUrl', () => {
   it('usa fechas UTC en formato básico', () => {

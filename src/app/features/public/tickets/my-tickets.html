@@ -1,0 +1,181 @@
+<section class="gdg-page pb-12" aria-labelledby="tickets-title">
+  <div class="gdg-container max-w-4xl space-y-8">
+    <h1 id="tickets-title" class="m-0 text-4xl sm:text-5xl font-bold tracking-tight">
+      Mis tickets
+    </h1>
+
+    @if (auth.loading() || tickets.isLoading()) {
+      <div class="flex justify-center py-12" role="status">
+        <mat-progress-spinner mode="indeterminate" diameter="32" aria-label="Cargando tus tickets" />
+      </div>
+    } @else if (!auth.user()) {
+      <a mat-flat-button routerLink="/auth/login" [queryParams]="{ returnUrl: '/mis-tickets' }">
+        Iniciar sesión para ver mis tickets
+      </a>
+    } @else if (tickets.error()) {
+      <div class="gdg-card p-6 space-y-3" role="alert">
+        <h2 class="text-xl font-bold m-0">No pudimos cargar tus tickets</h2>
+        <p class="muted m-0">Revisa tu conexión e inténtalo de nuevo.</p>
+        <button mat-stroked-button type="button" (click)="tickets.reload()">Reintentar</button>
+      </div>
+    } @else if (tickets.value(); as data) {
+      @if (!data.upcoming.length && !data.past.length && !data.unavailable.length) {
+        <div class="gdg-card p-8 sm:p-12 text-center space-y-4">
+          <h2 class="text-xl font-bold m-0">Todavía no tienes entradas</h2>
+          <a mat-flat-button routerLink="/">Explorar eventos</a>
+        </div>
+      } @else {
+        @if (data.attendedCount > 0) {
+          <p class="muted m-0 text-sm">
+            Has asistido a {{ data.attendedCount }} {{ data.attendedCount === 1 ? 'evento' : 'eventos' }} con GDG Tarija.
+          </p>
+        }
+        @if (data.upcoming.length || data.past.length) {
+          @for (section of sections; track section.key) {
+            <section [attr.aria-labelledby]="'tickets-' + section.key" class="space-y-3">
+              <h2 [id]="'tickets-' + section.key" class="m-0 text-xl sm:text-2xl font-bold">
+                {{ section.title }}
+              </h2>
+              @for (ticket of data[section.key]; track ticket.id) {
+                @let upcoming = section.key === 'upcoming';
+                @let canShowQr = upcoming && ticket.status === 'CONFIRMED';
+                @let qrVisible = canShowQr && !hiddenQrIds().has(ticket.id);
+                <article class="ticket gdg-card" [attr.aria-labelledby]="'event-' + ticket.id">
+                  <div class="min-w-0 px-5 pt-5 sm:px-6 sm:pt-6">
+                    <div class="flex items-start justify-between flex-wrap gap-2">
+                      <h3 [id]="'event-' + ticket.id" class="m-0 text-xl sm:text-2xl font-bold leading-tight">
+                        <a class="event-title" [routerLink]="['/e', ticket.event.slug]">{{ ticket.event.title }}</a>
+                      </h3>
+                      <span class="ticket-status" [attr.data-status]="ticket.status">
+                        <mat-icon aria-hidden="true">{{ statuses[ticket.status].icon }}</mat-icon>
+                        {{ statuses[ticket.status].label }}
+                      </span>
+                    </div>
+                    <dl class="ticket-details">
+                      <dt>
+                        <mat-icon class="text-google-blue" aria-hidden="true">calendar_month</mat-icon>
+                        <span class="sr-only">Fecha</span>
+                      </dt>
+                      <dd>{{ formatDate(ticket.event, section.key) }}</dd>
+                      <dt>
+                        <mat-icon class="text-google-red" aria-hidden="true">location_on</mat-icon>
+                        <span class="sr-only">Lugar</span>
+                      </dt>
+                      <dd>{{ ticket.event.location_name || 'Por confirmar' }}</dd>
+                      <dt>
+                        <mat-icon class="text-google-yellow" aria-hidden="true">confirmation_number</mat-icon>
+                        <span class="sr-only">Tipo de entrada</span>
+                      </dt>
+                      <dd>{{ ticket.ticketName }}</dd>
+                      @if (!upcoming) {
+                        <dt>
+                          <mat-icon [class.text-google-green]="ticket.attended" aria-hidden="true">
+                            {{ ticket.attended ? 'check_circle' : 'event_busy' }}
+                          </mat-icon>
+                          <span class="sr-only">Asistencia</span>
+                        </dt>
+                        <dd>{{ ticket.attended ? 'Asististe' : 'Sin asistencia registrada' }}</dd>
+                      }
+                    </dl>
+                    @if (ticket.sessions.length) {
+                      <h4 class="mt-4 mb-1 text-sm font-bold">Tus sesiones</h4>
+                      <ul class="muted m-0 p-0 list-none space-y-1 text-sm">
+                        @for (session of ticket.sessions; track session.id) {
+                          <li>{{ session.dateLabel }} · {{ session.time }} · {{ session.title }}</li>
+                        }
+                      </ul>
+                    }
+                    @if (upcoming && ticket.status === 'PENDING') {
+                      <p class="muted mt-4 mb-0 text-sm">
+                        Estamos verificando tu pago. Tu QR aparecerá aquí cuando se confirme.
+                      </p>
+                    }
+                    @if (canShowQr) {
+                      <button
+                        mat-button
+                        type="button"
+                        class="qr-toggle mt-3"
+                        [attr.aria-expanded]="qrVisible"
+                        [attr.aria-controls]="'qr-' + ticket.id"
+                        (click)="toggleQr(ticket.id)"
+                      >
+                        <mat-icon aria-hidden="true">qr_code_2</mat-icon>
+                        {{ qrVisible ? 'Ocultar QR' : 'Mostrar mi QR' }}
+                      </button>
+                    }
+                  </div>
+                  @if (canShowQr) {
+                    <div class="ticket-stub" [id]="'qr-' + ticket.id" [hidden]="!qrVisible">
+                      @if (qrVisible) {
+                        <app-ticket-qr [registrationId]="ticket.id" [eventTitle]="ticket.event.title" />
+                      }
+                    </div>
+                  }
+                  <div class="ticket-actions px-5 pb-5 sm:px-6 sm:pb-6">
+                    @if (canShowQr) {
+                      <a
+                        mat-stroked-button
+                        class="calendar-link"
+                        [href]="calendarUrl(ticket.event)"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        <mat-icon aria-hidden="true">event</mat-icon>
+                        Agregar a Google Calendar
+                      </a>
+                    }
+                    @if (ticket.status === 'CANCELLED') {
+                      <a mat-stroked-button [href]="supportUrl(ticket.event.title)" target="_blank" rel="noopener">
+                        <mat-icon aria-hidden="true">support_agent</mat-icon>
+                        Contactar con soporte
+                      </a>
+                    }
+                    @if (ticket.attended) {
+                      <a mat-stroked-button [routerLink]="['/certificados', ticket.id]">
+                        <mat-icon aria-hidden="true">workspace_premium</mat-icon>
+                        Ver certificado
+                      </a>
+                    }
+                    <a mat-button [routerLink]="['/e', ticket.event.slug]">Ver evento</a>
+                  </div>
+                </article>
+              } @empty {
+                <p class="muted m-0 text-sm">{{ section.empty }}</p>
+              }
+              @if (section.key === 'past' && data.past.length) {
+                <a mat-button routerLink="/certificados">Ver todos mis certificados</a>
+              }
+            </section>
+          }
+        }
+        @if (data.unavailable.length) {
+          <section aria-labelledby="tickets-unavailable" class="space-y-3">
+            <h2 id="tickets-unavailable" class="m-0 text-xl sm:text-2xl font-bold">Eventos sin información pública</h2>
+            <p class="muted m-0 text-sm">Estas inscripciones se conservan aunque la página del evento no esté disponible.</p>
+            @for (ticket of data.unavailable; track ticket.id) {
+              <article class="gdg-card p-5 space-y-3" [attr.aria-labelledby]="'receipt-' + ticket.id">
+                <h3 [id]="'receipt-' + ticket.id" class="m-0 text-lg font-bold">
+                  {{ ticket.ticketName }} · <span class="font-mono">{{ ticket.id.slice(0, 8) }}</span>
+                </h3>
+                <span class="ticket-status" [attr.data-status]="ticket.status">
+                  <mat-icon aria-hidden="true">{{ statuses[ticket.status].icon }}</mat-icon>
+                  {{ statuses[ticket.status].label }}
+                </span>
+                @if (ticket.status === 'PENDING') {
+                  <p class="muted m-0 text-sm">Estamos verificando tu pago.</p>
+                }
+                @if (ticket.attended) {
+                  <p class="muted m-0 text-sm">Asistencia registrada</p>
+                  <a mat-stroked-button [routerLink]="['/certificados', ticket.id]">
+                    <mat-icon aria-hidden="true">workspace_premium</mat-icon>
+                    Ver certificado
+                  </a>
+                }
+              </article>
+            }
+          </section>
+        }
+      }
+    }
+  </div>
+</section>

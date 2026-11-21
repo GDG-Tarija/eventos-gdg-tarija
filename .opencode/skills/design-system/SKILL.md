@@ -128,6 +128,7 @@ Definidos en `tailwind.config.js`:
 - `google-red` `#EA4335`
 - `google-yellow` `#FBBC05`
 - `google-green` `#34A853`
+- `google-red-dark` `#C5221F`, `google-yellow-dark` `#9A5700`, `google-green-dark` `#137333`: texto de color (estados, niveles, cupos). Las bases rojo/amarillo/verde no llegan a 4.5:1 como texto; estos sí, también sobre su tinte `/10` y sobre `google-blue/5`.
 - `google-*-light`: `blue-light`, `red-light`, `yellow-light`, `green-light`
 - `surface-main` `#F8F9FA`
 - `surface-paper` `#FFFFFF`
