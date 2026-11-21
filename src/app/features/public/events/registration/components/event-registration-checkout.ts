@@ -155,6 +155,13 @@ import { TicketQr } from './ticket-qr/ticket-qr';
             <p class="text-xs text-text-secondary leading-relaxed m-0">
               {{ reg.body }}
             </p>
+            <a
+              routerLink="/mis-tickets"
+              class="group inline-flex min-h-11 items-center gap-2 rounded text-sm font-semibold text-google-blue-dark no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              <span class="material-symbols-rounded text-lg" aria-hidden="true">confirmation_number</span>
+              <span class="underline-offset-4 group-hover:underline group-focus-visible:underline">Ver mis tickets</span>
+            </a>
           </div>
 
           @if (reg.status !== 'CANCELLED' && whatsappUrl(); as url) {
@@ -183,10 +190,6 @@ import { TicketQr } from './ticket-qr/ticket-qr';
                 Agregar a Google Calendar
               </a>
               </div>
-            } @else if (reg.status === 'PENDING') {
-              <p class="text-xs text-text-secondary leading-relaxed m-0">
-                Cuando confirmemos tu pago verás aquí tu código QR de acceso.
-              </p>
             }
           }
 
@@ -359,7 +362,9 @@ export class EventRegistrationCheckout implements OnInit {
           status,
           icon: 'hourglass_top',
           title: 'Inscripción en revisión',
-          body: 'Tu inscripción está registrada y tu pago está en revisión. Te avisaremos cuando lo validemos.',
+          body: this.isPast()
+            ? 'Estamos verificando tu pago.'
+            : 'Estamos verificando tu pago. Tu QR estará disponible cuando se confirme.',
           box: 'border-google-yellow/30 bg-google-yellow/5',
           text: 'text-text-primary',
         };

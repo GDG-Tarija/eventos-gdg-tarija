@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { RouterLink } from '@angular/router';
 import { googleCalendarUrl } from '../../../data/calendar-link';
 import type { Event as EventModel } from '../../../data/event.model';
 import { TicketQr } from '../ticket-qr/ticket-qr';
@@ -10,7 +11,7 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
 @Component({
   selector: 'app-step-confirmar',
   standalone: true,
-  imports: [MatButtonModule, TicketQr],
+  imports: [MatButtonModule, RouterLink, TicketQr],
   template: `
     <div class="space-y-5 pt-2">
       <!-- Resumen -->
@@ -85,10 +86,17 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
           <p class="text-xs text-text-secondary leading-relaxed">
             {{
               status() === 'PENDING'
-                ? 'Tu pago está en revisión; te avisaremos cuando lo validemos.'
+                ? 'Estamos verificando tu pago. Tu QR estará disponible cuando se confirme.'
                 : 'Te esperamos el día del evento.'
             }}
           </p>
+          <a
+            routerLink="/mis-tickets"
+            class="group inline-flex min-h-11 items-center gap-2 rounded text-sm font-semibold text-google-blue-dark no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            <span class="material-symbols-rounded text-lg" aria-hidden="true">confirmation_number</span>
+            <span class="underline-offset-4 group-hover:underline group-focus-visible:underline">Ver mis tickets</span>
+          </a>
           @if (status() === 'CONFIRMED' && registrationId(); as regId) {
             <div class="flex flex-col items-start gap-1 pt-2">
               <app-ticket-qr [registrationId]="regId" [eventTitle]="event().title" />
@@ -102,10 +110,6 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
                   Agregar a Google Calendar
                 </a>
             </div>
-          } @else if (status() === 'PENDING') {
-            <p class="text-xs text-text-secondary leading-relaxed m-0">
-              Cuando confirmemos tu pago verás aquí tu código QR de acceso.
-            </p>
           }
           @if (whatsappUrl(); as url) {
             <div class="pt-2">
