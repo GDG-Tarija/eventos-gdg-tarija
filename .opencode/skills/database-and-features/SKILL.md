@@ -58,6 +58,11 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | events                 | address_link      | text                     | YES           |
 | public  | events                 | category          | character varying        | YES           |
 | public  | events                 | extra_info        | jsonb                    | YES           |
+| public  | event_whatsapp_groups  | id                | uuid                     | NO            |
+| public  | event_whatsapp_groups  | event_id          | uuid                     | NO            |
+| public  | event_whatsapp_groups  | url               | text                     | NO            |
+| public  | event_whatsapp_groups  | created_at        | timestamp with time zone | NO            |
+| public  | event_whatsapp_groups  | updated_at        | timestamp with time zone | NO            |
 | public  | inscripciones_sessions | id                | uuid                     | NO            |
 | public  | inscripciones_sessions | usuario_id        | uuid                     | NO            |
 | public  | inscripciones_sessions | session_id        | uuid                     | NO            |
@@ -158,6 +163,7 @@ Todas las tablas de `public` tienen RLS habilitado (migración `017_security_har
 - `registrations`: cada usuario ve/crea la suya (`auth.uid() = user_id`); staff ve/actualiza todas.
 - `users`: cada usuario ve/edita su propia fila; staff tiene acceso total.
 - `staff_whitelist`: sin policies — solo accesible por `service_role`/Studio directo. No exponer a `anon`/`authenticated` bajo ninguna circunstancia (define quién es admin).
+- `event_whatsapp_groups` (link del grupo de WhatsApp, uno por evento): lo leen solo inscritos no anulados del evento, SUPERADMIN y staff con `has_event_access`; lo escribe SUPERADMIN. Va aparte de `events` porque `events` es de lectura pública.
 - `sponsors`, `event_coupons`: lectura pública controlada; escritura restringida a staff (`event_coupons` solo lectura para `authenticated`, no `anon`, para no exponer códigos de invitación).
 
 **Funciones `SECURITY DEFINER`**: cualquier función nueva con `SECURITY DEFINER` que reciba un id de usuario/registro como parámetro DEBE validar `auth.uid()` internamente (no confiar en el parámetro) — así se corrigió el IDOR en `upsert_user_profile` y se eliminó la variante insegura de `update_user_profile(user_id uuid, ...)`.

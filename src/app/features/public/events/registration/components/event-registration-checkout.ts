@@ -157,6 +157,18 @@ import { TicketQr } from './ticket-qr/ticket-qr';
             </p>
           </div>
 
+          @if (reg.status !== 'CANCELLED' && whatsappUrl(); as url) {
+            <a
+              [href]="url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gdg-btn-outlined inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold no-underline"
+            >
+              <span class="material-symbols-rounded text-lg" aria-hidden="true">groups</span>
+              Unirme al grupo de WhatsApp
+            </a>
+          }
+
           @if (!isPast()) {
             @if (reg.status === 'CONFIRMED' && existingRegistrationId(); as regId) {
               <div class="flex flex-col items-start gap-1">
@@ -294,6 +306,7 @@ import { TicketQr } from './ticket-qr/ticket-qr';
               [submitting]="submitting()"
               [status]="createdStatus()"
               [registrationId]="createdId()"
+              [whatsappUrl]="whatsappUrl()"
               [event]="event()"
               (confirm)="submit()"
               (back)="onStep3Back()"
@@ -329,6 +342,7 @@ export class EventRegistrationCheckout implements OnInit {
   readonly submitting = signal(false);
   readonly createdStatus = signal<RegistrationStatus | null>(null);
   readonly createdId = signal<string | null>(null);
+  readonly whatsappUrl = signal<string | null>(null);
   readonly success = computed(() => this.createdStatus() !== null);
   readonly initFailed = signal(false);
   readonly registeredStatus = signal<RegistrationStatus>('CONFIRMED');
@@ -426,8 +440,18 @@ export class EventRegistrationCheckout implements OnInit {
     if (!existing) return false;
     this.existingRegistrationId.set(existing.id);
     this.registeredStatus.set(existing.status);
+    if (existing.status !== 'CANCELLED') void this.loadWhatsappGroup();
     this.selectedSessionIds.set(await this.sbSessions.getRegistrationsByRegistrationId(existing.id));
     return true;
+  }
+
+  /** El grupo es un extra: si la consulta falla, el registro sigue igual. */
+  private async loadWhatsappGroup(): Promise<void> {
+    try {
+      this.whatsappUrl.set(await this.registrations.getWhatsappGroupUrl(this.event().id));
+    } catch (e) {
+      console.error('[Checkout] Error loading WhatsApp group:', e);
+    }
   }
 
   onStep1Complete(data: StepDatosOutput): void {
@@ -503,6 +527,7 @@ export class EventRegistrationCheckout implements OnInit {
 
       this.createdId.set(created.id);
       this.createdStatus.set(created.status);
+      void this.loadWhatsappGroup();
     } catch (e) {
       if (e instanceof TicketSoldOutError) {
         await this.handleSoldOut(d.ticket);
