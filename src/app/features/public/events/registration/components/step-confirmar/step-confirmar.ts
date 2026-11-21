@@ -107,6 +107,19 @@ import type { StepDatosOutput } from '../step-datos/step-datos';
               Cuando confirmemos tu pago verás aquí tu código QR de acceso.
             </p>
           }
+          @if (whatsappUrl(); as url) {
+            <div class="pt-2">
+              <a
+                [href]="url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="gdg-btn-outlined inline-flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold no-underline"
+              >
+                <span class="material-symbols-rounded text-lg" aria-hidden="true">groups</span>
+                Unirme al grupo de WhatsApp
+              </a>
+            </div>
+          }
         </div>
       }
 
@@ -152,6 +165,7 @@ export class StepConfirmar {
   readonly submitting = input<boolean>(false);
   /** Estado de la inscripción recién creada; null mientras no se ha enviado. */
   readonly status = input<RegistrationStatus | null>(null);
+  readonly whatsappUrl = input<string | null>(null);
   readonly registrationId = input<string | null>(null);
   readonly event = input.required<EventModel>();
   readonly calendarUrl = computed(() => googleCalendarUrl(this.event()));
