@@ -20,6 +20,8 @@ interface TicketReceipt {
 
 export interface EventTicket extends TicketReceipt {
   event: Pick<Event, 'id' | 'title' | 'slug' | 'location_name' | 'date_start' | 'date_end'>;
+  /** El evento tiene sorteo por tickets (hay actividades cargadas). */
+  hasRaffle: boolean;
   sessions: TicketSession[];
 }
 
@@ -45,7 +47,11 @@ function compareScheduledValue(a: string | null, b: string | null): number {
 export interface TicketRegistrationRow {
   id: string;
   status: string;
-  events: Pick<Tables['events']['Row'], 'id' | 'title' | 'slug' | 'location_name' | 'date_start' | 'date_end'> | null;
+  events:
+    | (Pick<Tables['events']['Row'], 'id' | 'title' | 'slug' | 'location_name' | 'date_start' | 'date_end'> & {
+        point_activities?: { count: number }[];
+      })
+    | null;
   ticket_types: { name: string } | null;
   scan_logs: { id: string }[] | null;
   session_registrations: { sessions: SessionSchedule | null }[] | null;
@@ -85,6 +91,7 @@ export function buildMyTickets(rows: TicketRegistrationRow[], now = new Date()):
         date_start: new Date(r.events.date_start),
         date_end: r.events.date_end ? new Date(r.events.date_end) : undefined,
       },
+      hasRaffle: (r.events.point_activities?.[0]?.count ?? 0) > 0,
       sessions: (r.session_registrations ?? [])
         .map((s) => s.sessions)
         .filter((s): s is NonNullable<typeof s> => !!s)
@@ -115,7 +122,7 @@ export class MyTicketsService {
       .from('registrations')
       .select(
         `id, status,
-         events (id, title, slug, location_name, date_start, date_end),
+         events (id, title, slug, location_name, date_start, date_end, point_activities (count)),
          ticket_types (name),
          scan_logs (id),
          session_registrations (sessions (id, title, date, start_time, end_time))`,
