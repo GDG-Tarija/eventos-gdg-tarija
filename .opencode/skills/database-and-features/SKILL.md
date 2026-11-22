@@ -16,6 +16,7 @@ La arquitectura de vistas y menús del sistema está distribuida en los siguient
 ```
 ├── Public/                               # Módulos Públicos / Asistentes
 │   ├── Eventos/                        # Listado y detalle de eventos (/e/:slug)
+│   ├── Sorteo/ (features/public/raffle) # Tickets del sorteo + escáner (/e/:slug/tickets), sorteo para SUPERADMIN (/e/:slug/sorteo). No confundir con /mis-tickets (entradas)
 │   └── Certificados/                   # Listado (/certificados) y vista de certificado (/certificados/:id)
 │
 ├── Dashboard/                          # Dashboard principal y widget cards
@@ -94,6 +95,18 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | scan_logs              | scanned_at        | timestamp with time zone | YES           |
 | public  | scan_logs              | created_at        | timestamp with time zone | YES           |
 | public  | scan_logs              | updated_at        | timestamp with time zone | YES           |
+| public  | point_activities       | id                | uuid                     | NO            |
+| public  | point_activities       | event_id          | uuid                     | NO            |
+| public  | point_activities       | name              | text                     | NO            |
+| public  | point_activities       | created_at        | timestamp with time zone | NO            |
+| public  | point_activities       | updated_at        | timestamp with time zone | NO            |
+| public  | raffle_winners         | id                | uuid                     | NO            |
+| public  | raffle_winners         | event_id          | uuid                     | NO            |
+| public  | raffle_winners         | registration_id   | uuid                     | NO            |
+| public  | raffle_winners         | prize             | text                     | NO            |
+| public  | raffle_winners         | tickets           | integer                  | NO            |
+| public  | raffle_winners         | created_at        | timestamp with time zone | NO            |
+| public  | raffle_winners         | updated_at        | timestamp with time zone | NO            |
 | public  | session_registrations  | registration_id   | uuid                     | NO            |
 | public  | session_registrations  | session_id        | uuid                     | NO            |
 | public  | session_registrations  | registered_at     | timestamp with time zone | YES           |
@@ -140,6 +153,8 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | users                  | is_staff          | boolean                  | YES           |
 | public  | users                  | created_at        | timestamp with time zone | YES           |
 | public  | users                  | updated_at        | timestamp with time zone | YES           |
+
+**Sorteo por tickets** (migración `20261121143147_sorteo_tickets` en back-office): los tickets son filas de `scan_logs` (`checkin`, `pts:<point_activities.id>`, `net:<registrations.id>`). La app no escribe `scan_logs` ni lee nombres ajenos directamente: usa las RPCs `scan_ticket(p_event_id, p_registration_id, p_activity_id?)`, `my_tickets(p_event_id)` y `draw_raffle(p_event_id, p_prize)` (solo SUPERADMIN), vía `features/public/raffle/data/raffle.service.ts`.
 
 ---
 

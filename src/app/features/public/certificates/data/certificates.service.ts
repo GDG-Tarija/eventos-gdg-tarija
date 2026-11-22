@@ -84,9 +84,11 @@ export class CertificatesService {
       // Solo consideramos que tiene certificado si asistió (al menos 1 escaneo registrado)
       if (logs.length === 0) continue;
 
+      // La fecha es la del check-in; los tickets del sorteo (pts:/net:) también viven en scan_logs.
+      const checkIn = logs.find((l) => l.scan_type === 'checkin') ?? logs[0];
       let checkInDate = new Date();
-      if (logs[0]?.scanned_at) {
-        checkInDate = new Date(logs[0].scanned_at);
+      if (checkIn?.scanned_at) {
+        checkInDate = new Date(checkIn.scanned_at);
       } else if (reg.created_at) {
         checkInDate = new Date(reg.created_at);
       }
