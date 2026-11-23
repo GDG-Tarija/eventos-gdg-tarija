@@ -1,4 +1,4 @@
-import { ScanResult, extractRegistrationId, scanMessage } from './raffle.service';
+import { PoolRow, ScanResult, buildPool, extractRegistrationId, scanMessage } from './raffle.service';
 
 const ID = '5a770000-0000-4000-8000-0000000001b1';
 
@@ -64,5 +64,48 @@ describe('scanMessage', () => {
       '+1 ticket para esta persona',
     );
     expect(scanMessage({ status: 'nuevo' } as unknown as ScanResult, true).tone).toBe('error');
+  });
+});
+
+describe('buildPool', () => {
+  const row = (id: string, scans: string[], over: Partial<PoolRow> = {}): PoolRow => ({
+    id,
+    status: 'CONFIRMED',
+    event_role: 'ATTENDEE',
+    user_id: `u-${id}`,
+    users: { first_name: id, last_name: '' },
+    scan_logs: scans.map((scan_type) => ({ scan_type })),
+    ...over,
+  });
+
+  it('cuenta check-in, actividades existentes y networking del evento', () => {
+    const pool = buildPool(
+      [
+        row('ana', ['checkin', 'pts:a1', 'pts:borrada', 'net:beto', 'net:otro-evento', 'refrigerio']),
+        row('beto', ['checkin', 'net:ana']),
+      ],
+      ['a1'],
+      [],
+    );
+    expect(pool).toEqual([
+      { registrationId: 'ana', name: 'ana', tickets: 3 },
+      { registrationId: 'beto', name: 'beto', tickets: 2 },
+    ]);
+  });
+
+  it('deja fuera a quien no cumple las reglas del sorteo', () => {
+    const pool = buildPool(
+      [
+        row('sin-checkin', ['pts:a1']),
+        row('sponsor', ['checkin'], { event_role: 'SPONSOR' }),
+        row('pendiente', ['checkin'], { status: 'PENDING' }),
+        row('sin-cuenta', ['checkin'], { user_id: null }),
+        row('ya-gano', ['checkin']),
+        row('ok', ['checkin']),
+      ],
+      ['a1'],
+      ['ya-gano'],
+    );
+    expect(pool.map((p) => p.registrationId)).toEqual(['ok']);
   });
 });
