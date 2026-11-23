@@ -1,5 +1,5 @@
 <section class="gdg-page min-h-[calc(100vh-64px)] pb-16">
-  <div class="gdg-container max-w-5xl space-y-6 pt-6">
+  <div class="gdg-container space-y-6 pt-6">
     <div>
       <h1
         class="text-3xl sm:text-4xl font-extrabold text-text-primary tracking-tight font-google m-0"
@@ -65,145 +65,110 @@
       <!-- Escenario: lo que se proyecta. Pantalla completa = solo este bloque. -->
       <section
         #stage
-        class="raffle-stage gdg-card relative overflow-hidden border border-black/5"
+        class="stage"
         [class.is-fullscreen]="fullscreen()"
+        [class.is-spinning]="spinning()"
+        [class.is-win]="phase() === 'revealed'"
         aria-labelledby="raffle-stage-title"
       >
-        <div class="flex h-2" aria-hidden="true">
-          <span class="flex-1 bg-google-blue"></span>
-          <span class="flex-1 bg-google-red"></span>
-          <span class="flex-1 bg-google-yellow"></span>
-          <span class="flex-1 bg-google-green"></span>
+        <div class="scene">
+          <div class="wall">
+            <div class="spot spot-left" aria-hidden="true"></div>
+            <div class="spot spot-right" aria-hidden="true"></div>
+
+            <p class="sign">
+              <span class="sr-only">GDG Tarija</span>
+              @for (letter of sign; track $index) {
+                <span aria-hidden="true" [class]="'sign-' + ($index % 4)" [style.--i]="$index">{{
+                  letter
+                }}</span>
+              }
+            </p>
+            <p class="event-name">{{ event()?.title }}</p>
+
+            <!-- Lo que se anuncia al lector de pantalla: solo el resultado, no la ruleta. -->
+            <p class="sr-only" aria-live="assertive">
+              @if (phase() === 'revealed' && result(); as r) {
+                Ganó {{ r.name }}, con {{ r.tickets }} tickets.
+              } @else if (phase() === 'empty') {
+                Ya no quedan participantes sin premio.
+              }
+            </p>
+
+            <div class="board">
+              <app-raffle-screen
+                [prize]="lastPrize() || prizeData().prize"
+                [phase]="phase()"
+                [reel]="reel()"
+                [winnerName]="result()?.name || 'Sin nombre'"
+                [tickets]="result()?.tickets ?? 0"
+                [chance]="percent(winnerChance())"
+              />
+
+              <!-- Cada número se vuelve a crear cuando cambia: así salta. -->
+              <dl class="score">
+                <div class="score-box score-blue">
+                  <dt>Participantes</dt>
+                  @for (n of [pool().length]; track n) {
+                    <dd>{{ n }}</dd>
+                  }
+                </div>
+                <div class="score-box score-yellow">
+                  <dt>Tickets en juego</dt>
+                  @for (n of [totalTickets()]; track n) {
+                    <dd>{{ n }}</dd>
+                  }
+                </div>
+                <div class="score-box score-green">
+                  <dt>Premios entregados</dt>
+                  @for (n of [delivered()]; track n) {
+                    <dd>{{ n }}</dd>
+                  }
+                </div>
+              </dl>
+            </div>
+          </div>
+          <div class="curtain curtain-left" aria-hidden="true"></div>
+          <div class="curtain curtain-right" aria-hidden="true"></div>
+
+          <!-- El mundo: una personita por participante, con su nombre y sus tickets. -->
+          <app-raffle-world
+            class="world"
+            [people]="pool()"
+            [mode]="worldMode()"
+            [winner]="winnerEntry()"
+          />
         </div>
 
-        <div class="stage-body flex flex-col gap-6 p-5 sm:p-8">
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <p class="m-0 text-xs font-bold uppercase tracking-widest text-text-muted">
-                {{ event()?.title }}
-              </p>
-              <h2
-                id="raffle-stage-title"
-                class="stage-prize m-0 font-google font-bold text-text-primary break-words"
-              >
-                {{ lastPrize() || prizeData().prize || '¿Qué sorteamos?' }}
-              </h2>
-            </div>
-            <button
-              type="button"
-              class="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white text-text-primary"
-              [attr.aria-label]="fullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa'"
-              (click)="toggleFullscreen()"
-            >
-              <span class="material-symbols-rounded" aria-hidden="true">{{
-                fullscreen() ? 'fullscreen_exit' : 'fullscreen'
-              }}</span>
-            </button>
-          </div>
-
-          <!-- Nombre: rueda mientras se sortea y se queda en el ganador. -->
-          <div class="stage-name-box flex flex-col items-center justify-center text-center">
-            @switch (phase()) {
-              @case ('spinning') {
-                <p
-                  class="stage-name m-0 font-google font-extrabold text-text-muted break-words"
-                  aria-hidden="true"
-                >
-                  {{ rollingName() }}
-                </p>
-                <p
-                  class="m-0 mt-3 text-sm font-semibold uppercase tracking-widest text-text-secondary"
-                >
-                  Sorteando…
-                </p>
-              }
-              @case ('revealed') {
-                @if (result(); as r) {
-                  <p class="m-0 text-sm font-bold uppercase tracking-widest text-google-green">
-                    ¡Felicidades!
-                  </p>
-                  <p
-                    class="stage-name stage-winner m-0 font-google font-extrabold text-google-blue-dark break-words"
-                  >
-                    {{ r.name || 'Sin nombre' }}
-                  </p>
-                  <p class="m-0 mt-3 text-base sm:text-lg text-text-secondary">
-                    {{ r.tickets }} {{ r.tickets === 1 ? 'ticket' : 'tickets' }} · tenía
-                    {{ percent(winnerChance()) }} de chance
-                  </p>
-                }
-              }
-              @case ('empty') {
-                <p class="m-0 text-2xl font-google font-bold text-text-primary">
-                  Ya no quedan participantes sin premio.
-                </p>
-              }
-              @default {
-                <span
-                  class="material-symbols-rounded stage-idle-icon text-google-yellow"
-                  aria-hidden="true"
-                  >redeem</span
-                >
-                <p class="m-0 mt-2 text-xl sm:text-2xl font-google font-bold text-text-primary">
-                  ¿Quién se lo lleva?
-                </p>
-              }
+        <form class="console" (submit)="$event.preventDefault(); draw()">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="console-prize">
+            <mat-label>Premio</mat-label>
+            <input matInput [formField]="prizeForm.prize" autocomplete="off" />
+            @if (prizeForm.prize().invalid() && prizeForm.prize().touched()) {
+              <mat-error class="text-xs">{{ prizeForm.prize().errors()[0]?.message }}</mat-error>
             }
-          </div>
-
-          <!-- Lo que se anuncia al lector de pantalla: solo el resultado, no la rueda. -->
-          <p class="sr-only" aria-live="assertive">
-            @if (phase() === 'revealed' && result(); as r) {
-              Ganó {{ r.name }}, con {{ r.tickets }} tickets.
-            } @else if (phase() === 'empty') {
-              Ya no quedan participantes sin premio.
-            }
-          </p>
-
-          <dl class="grid grid-cols-3 gap-3 m-0 text-center">
-            <div class="rounded-2xl bg-google-blue-light/50 p-3">
-              <dt class="text-xs font-semibold text-text-secondary">Participantes</dt>
-              <dd class="m-0 text-2xl sm:text-3xl font-extrabold font-google text-text-primary">
-                {{ pool().length }}
-              </dd>
-            </div>
-            <div class="rounded-2xl bg-google-yellow-light/50 p-3">
-              <dt class="text-xs font-semibold text-text-secondary">Tickets en juego</dt>
-              <dd class="m-0 text-2xl sm:text-3xl font-extrabold font-google text-text-primary">
-                {{ totalTickets() }}
-              </dd>
-            </div>
-            <div class="rounded-2xl bg-google-green-light/50 p-3">
-              <dt class="text-xs font-semibold text-text-secondary">Premios entregados</dt>
-              <dd class="m-0 text-2xl sm:text-3xl font-extrabold font-google text-text-primary">
-                {{ winners().length }}
-              </dd>
-            </div>
-          </dl>
-
-          <form
-            class="flex flex-col gap-3 sm:flex-row sm:items-start"
-            (submit)="$event.preventDefault(); draw()"
+          </mat-form-field>
+          <button
+            type="submit"
+            class="arcade-btn arcade-btn-go"
+            [disabled]="spinning() || pool().length === 0"
           >
-            <mat-form-field appearance="outline" class="w-full sm:flex-1">
-              <mat-label>Premio</mat-label>
-              <input matInput [formField]="prizeForm.prize" autocomplete="off" />
-              @if (prizeForm.prize().invalid() && prizeForm.prize().touched()) {
-                <mat-error class="text-xs">{{ prizeForm.prize().errors()[0]?.message }}</mat-error>
-              }
-            </mat-form-field>
-            <button
-              type="submit"
-              class="gdg-btn-filled min-h-14 px-10 text-lg sm:mt-1"
-              [disabled]="spinning() || pool().length === 0"
-            >
-              {{ spinning() ? 'Sorteando…' : 'Sortear' }}
-            </button>
-          </form>
+            {{ spinning() ? 'Sorteando…' : 'Sortear' }}
+          </button>
+          <button
+            type="button"
+            class="arcade-btn"
+            [attr.aria-label]="fullscreen() ? 'Salir de pantalla completa' : 'Pantalla completa'"
+            (click)="toggleFullscreen()"
+          >
+            <span class="material-symbols-rounded" aria-hidden="true">{{
+              fullscreen() ? 'fullscreen_exit' : 'fullscreen'
+            }}</span>
+          </button>
           @if (drawError()) {
-            <p class="m-0 text-sm text-red-700" role="alert">{{ drawError() }}</p>
+            <p class="console-error" role="alert">{{ drawError() }}</p>
           }
-        </div>
+        </form>
 
         @if (confetti().length) {
           <div class="confetti" aria-hidden="true">
@@ -214,7 +179,6 @@
                 [style.background]="c.color"
                 [style.animation-delay.s]="c.delay"
                 [style.animation-duration.s]="c.duration"
-                [style.--spin]="c.rotate + 'deg'"
               ></span>
             }
           </div>
@@ -272,19 +236,70 @@
           } @else {
             <ul class="m-0 p-0 list-none space-y-2">
               @for (w of winners(); track w.id) {
-                <li
-                  class="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-black/[0.03] p-3"
-                >
-                  <span class="font-semibold text-text-primary">{{ w.name }}</span>
-                  <span class="text-sm text-text-secondary"
-                    >{{ w.prize }} · {{ w.tickets }}
-                    {{ w.tickets === 1 ? 'ticket' : 'tickets' }}</span
-                  >
+                <li class="space-y-1 rounded-2xl bg-black/[0.03] p-3">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span
+                      class="font-semibold"
+                      [class]="w.voided ? 'text-text-muted line-through' : 'text-text-primary'"
+                      >{{ w.name }}</span
+                    >
+                    <span class="text-sm text-text-secondary"
+                      >{{ w.voided ? 'Tachado · ' : '' }}{{ w.prize }} · {{ w.tickets }}
+                      {{ w.tickets === 1 ? 'ticket' : 'tickets' }}</span
+                    >
+                  </div>
+                  @if (confirmDeleteId() === w.id) {
+                    <div class="flex flex-wrap items-center gap-x-1">
+                      <span class="basis-full text-sm text-text-primary"
+                        >¿Eliminar a {{ w.name }}? Vuelve a participar del sorteo.</span
+                      >
+                      <button
+                        type="button"
+                        class="winner-action text-google-red-dark"
+                        [disabled]="!!busyWinnerId()"
+                        (click)="deleteWinner(w)"
+                      >
+                        Sí, eliminar
+                      </button>
+                      <button
+                        type="button"
+                        class="winner-action text-text-secondary"
+                        (click)="confirmDeleteId.set(null)"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  } @else {
+                    <div class="flex flex-wrap gap-x-1">
+                      <button
+                        type="button"
+                        class="winner-action text-google-blue-dark"
+                        [disabled]="!!busyWinnerId() || spinning()"
+                        [attr.aria-label]="(w.voided ? 'Restaurar a ' : 'Tachar a ') + w.name"
+                        (click)="toggleVoided(w)"
+                      >
+                        {{ w.voided ? 'Restaurar' : 'Tachar' }}
+                      </button>
+                      <button
+                        type="button"
+                        class="winner-action text-google-red-dark"
+                        [disabled]="!!busyWinnerId() || spinning()"
+                        [attr.aria-label]="'Eliminar a ' + w.name"
+                        (click)="confirmDeleteId.set(w.id)"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  }
                 </li>
               }
             </ul>
+            @if (winnerError()) {
+              <p class="m-0 text-sm text-red-700" role="alert">{{ winnerError() }}</p>
+            }
             <p class="m-0 text-xs text-text-muted">
-              Si alguien no está presente, vuelve a sortear el mismo premio.
+              <strong>Tachar:</strong> no estaba presente. No vuelve a entrar y su premio se sortea
+              de nuevo. <strong>Eliminar:</strong> era de prueba. Se borra y vuelve a participar.
             </p>
           }
         </section>

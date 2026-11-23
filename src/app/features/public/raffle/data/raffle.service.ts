@@ -54,6 +54,7 @@ export interface PointActivity {
 
 export interface DrawResult {
   status: 'ok' | 'empty';
+  registration_id?: string;
   name?: string | null;
   tickets?: number;
   participants?: number;
@@ -64,6 +65,8 @@ export interface RaffleWinner {
   prize: string;
   tickets: number;
   name: string;
+  /** Tachado: no estaba o se anuló. Sigue fuera del sorteo y su premio se sortea de nuevo. */
+  voided: boolean;
 }
 
 /** Quien entra al próximo sorteo, con sus tickets (lo que ve el proyector). */
@@ -71,6 +74,8 @@ export interface PoolEntry {
   registrationId: string;
   name: string;
   tickets: number;
+  /** Foto de la cuenta de Google, si tiene. */
+  avatarUrl: string | null;
 }
 
 export interface PoolRow {
@@ -78,7 +83,7 @@ export interface PoolRow {
   status: string;
   event_role: string;
   user_id: string | null;
-  users: { first_name: string; last_name: string } | null;
+  users: { first_name: string; last_name: string; avatar_url?: string | null } | null;
   scan_logs: { scan_type: string }[] | null;
 }
 
@@ -101,7 +106,7 @@ export function buildPool(rows: PoolRow[], activityIds: string[], winnerIds: str
       types.filter((t) => t.startsWith('pts:') && activities.has(t.slice(4))).length +
       types.filter((t) => t.startsWith('net:') && eventRegistrations.has(t.slice(4))).length;
     const name = `${r.users?.first_name ?? ''} ${r.users?.last_name ?? ''}`.trim() || 'Sin nombre';
-    pool.push({ registrationId: r.id, name, tickets });
+    pool.push({ registrationId: r.id, name, tickets, avatarUrl: r.users?.avatar_url ?? null });
   }
   return pool.sort((a, b) => b.tickets - a.tickets || a.name.localeCompare(b.name));
 }
@@ -110,6 +115,7 @@ interface RawWinner {
   id: string;
   prize: string;
   tickets: number;
+  voided_at: string | null;
   registrations: { users: { first_name: string; last_name: string } | null } | null;
 }
 
@@ -242,7 +248,9 @@ export class RaffleService {
     const [regs, acts, wins] = await Promise.all([
       this.supabase
         .from('registrations')
-        .select('id, status, event_role, user_id, users (first_name, last_name), scan_logs (scan_type)')
+        .select(
+          'id, status, event_role, user_id, users (first_name, last_name, avatar_url), scan_logs (scan_type)',
+        )
         .eq('event_id', eventId),
       this.supabase.from('point_activities').select('id').eq('event_id', eventId),
       this.supabase.from('raffle_winners').select('registration_id').eq('event_id', eventId),
@@ -259,7 +267,7 @@ export class RaffleService {
   async winners(eventId: string): Promise<RaffleWinner[]> {
     const { data, error } = await this.supabase
       .from('raffle_winners')
-      .select('id, prize, tickets, registrations (users (first_name, last_name))')
+      .select('id, prize, tickets, voided_at, registrations (users (first_name, last_name))')
       .eq('event_id', eventId)
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -267,9 +275,33 @@ export class RaffleService {
       id: w.id,
       prize: w.prize,
       tickets: w.tickets,
+      voided: !!w.voided_at,
       name:
         `${w.registrations?.users?.first_name ?? ''} ${w.registrations?.users?.last_name ?? ''}`.trim() ||
         'Sin nombre',
     }));
+  }
+
+  /** Tachar (o restaurar) a un ganador: sigue en la lista y no vuelve a entrar al sorteo. */
+  async setWinnerVoided(id: string, voided: boolean): Promise<void> {
+    const { data, error } = await this.supabase
+      .from('raffle_winners')
+      .update({ voided_at: voided ? new Date().toISOString() : null })
+      .eq('id', id)
+      .select('id');
+    if (error) throw error;
+    // RLS no da error cuando no deja: devuelve cero filas.
+    if (!data?.length) throw new Error('raffle winner not updated');
+  }
+
+  /** Eliminar a un ganador (de prueba): como si no hubiera salido, vuelve a participar. */
+  async deleteWinner(id: string): Promise<void> {
+    const { data, error } = await this.supabase
+      .from('raffle_winners')
+      .delete()
+      .eq('id', id)
+      .select('id');
+    if (error) throw error;
+    if (!data?.length) throw new Error('raffle winner not deleted');
   }
 }

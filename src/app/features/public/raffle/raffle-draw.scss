@@ -1,53 +1,336 @@
-// Escenario del sorteo: legible en un proyector. En pantalla completa ocupa todo y agranda la tipografía.
+@use 'sass:list';
 
-.stage-prize {
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
-  line-height: 1.15;
+// Escenario del sorteo en pixel art, hecho para proyectar: la pared del auditorio con el letrero,
+// la pantalla y el marcador; abajo el piso con la gente y la consola de quien sortea.
+
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/assets/fonts/pixel/PressStart2P-latin.woff2') format('woff2');
+  font-display: swap;
 }
 
-.stage-name-box {
-  min-height: 12rem;
+@font-face {
+  font-family: 'Pixelify Sans';
+  src: url('/assets/fonts/pixel/PixelifySans-latin.woff2') format('woff2');
+  font-weight: 400 700;
+  font-display: swap;
 }
 
-.stage-name {
-  font-size: clamp(2.5rem, 7vw, 5.5rem);
-  line-height: 1.05;
+$ink: #14182b;
+// Colores de Google: la cara de cada letra y su costado en sombra.
+$google: (#4285f4 #1a4fb0, #ea4335 #9c1c12, #fbbc05 #a87400, #34a853 #166b30);
+
+// Volumen del letrero: la misma letra apilada en diagonal.
+@function extrude($color) {
+  $layers: ();
+  @for $i from 1 through 6 {
+    $layers: list.append($layers, #{$i * 0.03}em #{$i * 0.03}em 0 $color, comma);
+  }
+  @return $layers;
 }
 
-.stage-winner {
-  animation: winner-in 600ms cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.stage-idle-icon {
-  font-size: 4.5rem;
-}
-
-.raffle-stage.is-fullscreen {
+.stage {
+  position: relative;
   display: flex;
   flex-direction: column;
-  width: 100vw;
-  height: 100vh;
-  border-radius: 0;
-  background: var(--mat-sys-surface, #fff);
+  overflow: hidden;
+  border: 4px solid $ink;
+  border-radius: 1.5rem;
+  background: #0b1026;
+  font-family: 'Pixelify Sans', system-ui, sans-serif;
+  // Todo adentro se mide contra el ancho del escenario (cqi): igual en la página que proyectado.
+  container-type: inline-size;
+  --world-h: clamp(11rem, 32vh, 22rem);
 
-  .stage-body {
-    flex: 1;
-    justify-content: center;
-    max-width: 80rem;
-    width: 100%;
-    margin: 0 auto;
+  &.is-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    border: 0;
+    border-radius: 0;
+    --world-h: 30vh;
+
+    // Proyectado, todo se mide contra el alto: entra completo también en un proyector de 720p.
+    .wall {
+      gap: 1.2vh;
+      padding-block: 2vh 0;
+    }
+  }
+}
+
+// La pared y el piso; el telón cuelga por delante de la pared hasta donde empieza el piso.
+.scene {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wall {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 1.6cqi, 1.25rem);
+  padding: clamp(1rem, 3cqi, 2rem) clamp(1.75rem, 10cqi, 9rem) 0;
+  overflow: hidden;
+  // Lucecitas en la pared.
+  background: radial-gradient(rgb(255 255 255 / 10%) 1px, transparent 1.5px) 0 0 / 1.5rem 1.5rem;
+}
+
+.is-win .wall {
+  animation: shake 400ms steps(4);
+}
+
+.curtain {
+  position: absolute;
+  // El piso arranca al 34% del alto del mundo (FLOOR_TOP).
+  inset-block: 0 calc(var(--world-h) * 0.66);
+  width: clamp(1rem, 7cqi, 6.5rem);
+  background: repeating-linear-gradient(
+    90deg,
+    #c5221f 0 0.6rem,
+    #a50e0e 0.6rem 1.2rem,
+    #7f0a0a 1.2rem 1.5rem
+  );
+  box-shadow: inset 0 -0.6rem 0 #5c0606;
+}
+
+.curtain-left {
+  left: 0;
+}
+
+.curtain-right {
+  right: 0;
+}
+
+// Reflectores que barren el escenario; se aceleran mientras gira la ruleta.
+.spot {
+  position: absolute;
+  top: -5%;
+  width: 30cqi;
+  height: 130%;
+  background: linear-gradient(rgb(255 255 255 / 20%), transparent 80%);
+  clip-path: polygon(45% 0, 55% 0, 100% 100%, 0 100%);
+  transform: rotate(var(--from));
+  transform-origin: 50% 0;
+  animation: sway 5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.spot-left {
+  left: 0;
+  --from: -6deg;
+  --to: -26deg;
+}
+
+.spot-right {
+  right: 0;
+  --from: 6deg;
+  --to: 26deg;
+  animation-delay: -2.5s;
+}
+
+.is-spinning .spot {
+  animation-duration: 0.8s;
+}
+
+.sign,
+.event-name,
+.score {
+  position: relative;
+  margin: 0;
+}
+
+.sign {
+  display: flex;
+  gap: 0.08em;
+  font:
+    clamp(1.25rem, min(6.6cqi, 7vh), 5.5rem) / 1.25 'Press Start 2P',
+    monospace;
+
+  span[aria-hidden] {
+    white-space: pre;
+    animation: bob 2s steps(2) infinite;
+    animation-delay: calc(var(--i) * -0.2s);
+  }
+}
+
+@for $i from 1 through 4 {
+  $pair: list.nth($google, $i);
+
+  .sign-#{$i - 1} {
+    color: list.nth($pair, 1);
+    text-shadow: extrude(list.nth($pair, 2));
+  }
+}
+
+.event-name {
+  font-size: clamp(0.875rem, 2cqi, 1.5rem);
+  letter-spacing: 0.2em;
+  text-align: center;
+  text-transform: uppercase;
+  color: #8ab4f8;
+}
+
+// Pantalla y marcador: uno debajo del otro, o lado a lado cuando el escenario es ancho.
+.board {
+  position: relative;
+  display: grid;
+  gap: clamp(0.5rem, 1.5cqi, 1.25rem);
+  width: 100%;
+  max-width: 62rem;
+}
+
+.score {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  // El vh evita que, al lado de la pantalla, el marcador sea más alto que ella en un proyector bajo.
+  gap: clamp(0.5rem, min(1.5cqi, 1.5vh), 1.25rem);
+  text-align: center;
+
+  dt {
+    font-size: clamp(0.75rem, min(1.5cqi, 1.8vh), 1.125rem);
+    text-transform: uppercase;
+    color: #c6d2ff;
   }
 
-  .stage-name-box {
-    min-height: 40vh;
+  dd {
+    margin: 0.25rem 0 0;
+    font:
+      clamp(1rem, min(3.2cqi, 3.6vh), 2.25rem) / 1.2 'Press Start 2P',
+      monospace;
+    color: var(--c);
+    animation: bump 450ms steps(4);
+  }
+}
+
+.score-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.5rem 0.25rem;
+  border: 3px solid var(--c);
+  background: #070b1c;
+  box-shadow: 0.25rem 0.25rem 0 rgb(0 0 0 / 50%);
+}
+
+.score-blue {
+  --c: #8ab4f8;
+}
+
+.score-yellow {
+  --c: #fbbc05;
+}
+
+.score-green {
+  --c: #34a853;
+}
+
+@container (min-width: 60rem) {
+  .board {
+    grid-template-columns: 1fr minmax(11rem, 15cqi);
+    max-width: 84rem;
   }
 
-  .stage-name {
-    font-size: clamp(3.5rem, 9vw, 9rem);
+  .score {
+    grid-template-columns: 1fr;
+  }
+}
+
+.world {
+  flex: none;
+  height: var(--world-h);
+}
+
+.console {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-top: 4px solid $ink;
+  background: #f1ede2;
+}
+
+.console-prize {
+  flex: 1 1 14rem;
+}
+
+.console-error {
+  flex-basis: 100%;
+  margin: 0;
+  font:
+    0.875rem system-ui,
+    sans-serif;
+  color: #b3261e;
+}
+
+// Botón de máquina de arcade: se hunde al apretarlo.
+.arcade-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.5rem;
+  min-height: 3.5rem;
+  margin-bottom: 0.375rem;
+  padding: 0 0.75rem;
+  border: 4px solid $ink;
+  background: #fff;
+  box-shadow: 0 0.375rem 0 $ink;
+  color: $ink;
+  font:
+    1rem / 1 'Press Start 2P',
+    monospace;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 80ms,
+    box-shadow 80ms;
+
+  &:active:not(:disabled) {
+    transform: translateY(0.375rem);
+    box-shadow: none;
   }
 
-  .stage-prize {
-    font-size: clamp(2rem, 4vw, 3.5rem);
+  &:focus-visible {
+    outline: 3px solid #1967d2;
+    outline-offset: 3px;
+  }
+
+  &:disabled {
+    background: #c8c8c8;
+    color: #5f6368;
+    cursor: not-allowed;
+  }
+}
+
+.arcade-btn-go {
+  flex: 1 1 10rem;
+  padding-inline: 1.5rem;
+  background: #fbbc05;
+}
+
+.winner-action {
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: rgb(0 0 0 / 6%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -61,39 +344,58 @@
 .confetti-piece {
   position: absolute;
   top: -1rem;
-  width: 0.6rem;
-  height: 1rem;
-  border-radius: 2px;
+  width: 0.75rem;
+  height: 0.75rem;
   opacity: 0;
-  animation-name: confetti-fall;
-  animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  animation-fill-mode: forwards;
+  animation: confetti-fall steps(28) forwards;
 }
 
 @keyframes confetti-fall {
-  0% {
+  0%,
+  80% {
     opacity: 1;
-    transform: translateY(0) rotate(0deg);
   }
   100% {
     opacity: 0;
-    transform: translateY(110vh) rotate(calc(var(--spin, 360deg) + 540deg));
+    transform: translateY(110vh);
   }
 }
 
-@keyframes winner-in {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
+@keyframes sway {
   to {
-    opacity: 1;
-    transform: scale(1);
+    transform: rotate(var(--to));
+  }
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-0.08em);
+  }
+}
+
+@keyframes bump {
+  from {
+    transform: scale(1.6);
+  }
+}
+
+@keyframes shake {
+  25% {
+    transform: translate(-6px, 3px);
+  }
+  50% {
+    transform: translate(5px, -4px);
+  }
+  75% {
+    transform: translate(-3px, 2px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage-winner,
+  .spot,
+  .sign span,
+  .score dd,
+  .is-win .wall,
   .confetti-piece {
     animation: none;
   }

@@ -73,7 +73,7 @@ describe('buildPool', () => {
     status: 'CONFIRMED',
     event_role: 'ATTENDEE',
     user_id: `u-${id}`,
-    users: { first_name: id, last_name: '' },
+    users: { first_name: id, last_name: '', avatar_url: id === 'ana' ? 'https://foto/ana' : null },
     scan_logs: scans.map((scan_type) => ({ scan_type })),
     ...over,
   });
@@ -88,8 +88,8 @@ describe('buildPool', () => {
       [],
     );
     expect(pool).toEqual([
-      { registrationId: 'ana', name: 'ana', tickets: 3 },
-      { registrationId: 'beto', name: 'beto', tickets: 2 },
+      { registrationId: 'ana', name: 'ana', tickets: 3, avatarUrl: 'https://foto/ana' },
+      { registrationId: 'beto', name: 'beto', tickets: 2, avatarUrl: null },
     ]);
   });
 
