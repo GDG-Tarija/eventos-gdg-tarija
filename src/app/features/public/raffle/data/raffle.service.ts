@@ -66,6 +66,46 @@ export interface RaffleWinner {
   name: string;
 }
 
+/** Quien entra al próximo sorteo, con sus tickets (lo que ve el proyector). */
+export interface PoolEntry {
+  registrationId: string;
+  name: string;
+  tickets: number;
+}
+
+export interface PoolRow {
+  id: string;
+  status: string;
+  event_role: string;
+  user_id: string | null;
+  users: { first_name: string; last_name: string } | null;
+  scan_logs: { scan_type: string }[] | null;
+}
+
+/**
+ * Espejo de raffle_tickets/draw_raffle solo para mostrar el grupo y las chances en pantalla: el ganador
+ * lo elige siempre el servidor. Entra quien está CONFIRMED, ATTENDEE, con cuenta, check-in y sin premio;
+ * cuentan las actividades que existen y el networking con inscripciones de este evento.
+ */
+export function buildPool(rows: PoolRow[], activityIds: string[], winnerIds: string[]): PoolEntry[] {
+  const activities = new Set(activityIds);
+  const winners = new Set(winnerIds);
+  const eventRegistrations = new Set(rows.map((r) => r.id));
+  const pool: PoolEntry[] = [];
+  for (const r of rows) {
+    if (r.status !== 'CONFIRMED' || r.event_role !== 'ATTENDEE' || !r.user_id || winners.has(r.id)) continue;
+    const types = (r.scan_logs ?? []).map((l) => l.scan_type);
+    if (!types.includes('checkin')) continue;
+    const tickets =
+      1 +
+      types.filter((t) => t.startsWith('pts:') && activities.has(t.slice(4))).length +
+      types.filter((t) => t.startsWith('net:') && eventRegistrations.has(t.slice(4))).length;
+    const name = `${r.users?.first_name ?? ''} ${r.users?.last_name ?? ''}`.trim() || 'Sin nombre';
+    pool.push({ registrationId: r.id, name, tickets });
+  }
+  return pool.sort((a, b) => b.tickets - a.tickets || a.name.localeCompare(b.name));
+}
+
 interface RawWinner {
   id: string;
   prize: string;
@@ -195,6 +235,25 @@ export class RaffleService {
     });
     if (error) throw error;
     return data as DrawResult;
+  }
+
+  /** Solo para SUPERADMIN (RLS): todas las inscripciones del evento con sus escaneos. */
+  async pool(eventId: string): Promise<PoolEntry[]> {
+    const [regs, acts, wins] = await Promise.all([
+      this.supabase
+        .from('registrations')
+        .select('id, status, event_role, user_id, users (first_name, last_name), scan_logs (scan_type)')
+        .eq('event_id', eventId),
+      this.supabase.from('point_activities').select('id').eq('event_id', eventId),
+      this.supabase.from('raffle_winners').select('registration_id').eq('event_id', eventId),
+    ]);
+    const error = regs.error ?? acts.error ?? wins.error;
+    if (error) throw error;
+    return buildPool(
+      (regs.data ?? []) as unknown as PoolRow[],
+      (acts.data ?? []).map((a: { id: string }) => a.id),
+      (wins.data ?? []).map((w: { registration_id: string }) => w.registration_id),
+    );
   }
 
   async winners(eventId: string): Promise<RaffleWinner[]> {
