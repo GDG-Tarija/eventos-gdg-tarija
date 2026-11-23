@@ -130,6 +130,12 @@
                         Contactar con soporte
                       </a>
                     }
+                    @if (canShowQr && ticket.hasRaffle) {
+                      <a mat-stroked-button [routerLink]="['/e', ticket.event.slug, 'tickets']">
+                        <mat-icon aria-hidden="true">stars</mat-icon>
+                        Mis tickets del sorteo
+                      </a>
+                    }
                     @if (ticket.attended) {
                       <a mat-stroked-button [routerLink]="['/certificados', ticket.id]">
                         <mat-icon aria-hidden="true">workspace_premium</mat-icon>

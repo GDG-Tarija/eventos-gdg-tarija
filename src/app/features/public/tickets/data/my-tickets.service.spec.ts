@@ -26,6 +26,16 @@ describe('buildMyTickets', () => {
     now,
   );
 
+  it('marca el sorteo solo si el evento tiene actividades', () => {
+    const base = row('r', '2026-08-01T14:00:00Z').events!;
+    const [withRaffle] = buildMyTickets(
+      [row('r', '2026-08-01T14:00:00Z', { events: { ...base, point_activities: [{ count: 3 }] } })],
+      now,
+    ).upcoming;
+    expect(withRaffle.hasRaffle).toBe(true);
+    expect(data.upcoming[0].hasRaffle).toBe(false);
+  });
+
   it('separa próximos y pasados con el orden pedido', () => {
     expect(data.upcoming.map((i) => i.id)).toEqual(['near', 'far']);
     expect(data.past.map((i) => i.id)).toEqual(['recent', 'old']);

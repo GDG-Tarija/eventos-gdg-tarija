@@ -14,6 +14,7 @@ import { SbSessions } from '../../../../../core/services/supabase/sb-sessions';
 import { RegistrationStatus } from '../../../../../models/registration.model';
 import { TicketType } from '../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../data/event.model';
+import { RaffleService } from '../../../raffle/data/raffle.service';
 import { googleCalendarUrl } from '../../data/calendar-link';
 import { isPast as isEventPast } from '../../data/event-timing';
 import { compressImage } from '../data/compress-image';
@@ -189,6 +190,15 @@ import { TicketQr } from './ticket-qr/ticket-qr';
                 <span class="material-symbols-rounded text-lg" aria-hidden="true">event</span>
                 Agregar a Google Calendar
               </a>
+                @if (hasRaffle()) {
+                  <a
+                    [routerLink]="['/e', event().slug, 'tickets']"
+                    class="inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-google-blue-dark no-underline hover:underline"
+                  >
+                    <span class="material-symbols-rounded text-lg" aria-hidden="true">stars</span>
+                    Mis tickets del sorteo
+                  </a>
+                }
               </div>
             }
           }
@@ -326,6 +336,7 @@ export class EventRegistrationCheckout implements OnInit {
   readonly auth = inject(AuthService);
   private readonly ticketTypes = inject(TicketTypesService);
   private readonly registrations = inject(RegistrationsService);
+  private readonly raffle = inject(RaffleService);
   private readonly profiles = inject(UserProfileService);
   private readonly sbSessions = inject(SbSessions);
   private readonly snackBar = inject(MatSnackBar);
@@ -352,6 +363,8 @@ export class EventRegistrationCheckout implements OnInit {
   readonly error = signal<string | null>(null);
   readonly alreadyRegistered = signal(false);
   readonly existingRegistrationId = signal<string | null>(null);
+  /** El evento tiene sorteo por tickets: se muestra el link a "Mis tickets". */
+  readonly hasRaffle = signal(false);
 
   readonly registeredCopy = computed(() => {
     const status = this.registeredStatus();
@@ -446,8 +459,18 @@ export class EventRegistrationCheckout implements OnInit {
     this.existingRegistrationId.set(existing.id);
     this.registeredStatus.set(existing.status);
     if (existing.status !== 'CANCELLED') void this.loadWhatsappGroup();
+    if (existing.status === 'CONFIRMED') void this.loadHasRaffle();
     this.selectedSessionIds.set(await this.sbSessions.getRegistrationsByRegistrationId(existing.id));
     return true;
+  }
+
+  /** El link a "Mis tickets del sorteo" es un extra: si la consulta falla, solo no se muestra. */
+  private async loadHasRaffle(): Promise<void> {
+    try {
+      this.hasRaffle.set(await this.raffle.hasRaffle(this.event().id));
+    } catch (e) {
+      console.error('[Checkout] Error checking raffle:', e);
+    }
   }
 
   /** El grupo es un extra: si la consulta falla, el registro sigue igual. */

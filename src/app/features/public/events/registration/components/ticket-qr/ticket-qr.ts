@@ -22,7 +22,7 @@ import { Component, computed, effect, input, signal } from '@angular/core';
         } @else {
           <div class="qr-image rounded-lg bg-black/5" aria-hidden="true"></div>
         }
-        <p class="m-0 text-xs text-[#5f6368]">Muestra este código en la entrada</p>
+        <p class="m-0 text-xs text-[#5f6368]">{{ caption() }}</p>
         <p class="m-0 font-mono text-sm font-bold tracking-wider text-[#202124]">{{ shortCode() }}</p>
       }
     </div>
@@ -41,6 +41,7 @@ import { Component, computed, effect, input, signal } from '@angular/core';
 export class TicketQr {
   readonly registrationId = input.required<string>();
   readonly eventTitle = input<string>();
+  readonly caption = input('Muestra este código en la entrada');
 
   readonly dataUrl = signal<string | null>(null);
   readonly failed = signal(false);
