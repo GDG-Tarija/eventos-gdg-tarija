@@ -1,17 +1,45 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { FormField as SignalFormField, form, validate } from '@angular/forms/signals';
+import { FormField as SignalFormField, form, maxLength, validate } from '@angular/forms/signals';
 import { filter, firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/services/auth.service';
 import { Event } from '../events/data/event.model';
 import { PublicEventsService } from '../events/data/public-events.service';
-import { DrawResult, RaffleWinner, RaffleService } from './data/raffle.service';
+import { DrawResult, PoolEntry, RaffleService, RaffleWinner } from './data/raffle.service';
+
+/** El suspenso dura al menos esto, aunque el servidor responda antes. */
+const SPIN_MS = 2600;
+/** Frenada final: cada nombre se queda más tiempo hasta caer en el ganador. */
+const BRAKE_MS = [110, 160, 230, 320, 450, 620];
+const CONFETTI_COLORS = ['#4285F4', '#EA4335', '#FBBC05', '#34A853'];
+
+type Phase = 'idle' | 'spinning' | 'revealed' | 'empty';
+
+interface ConfettiPiece {
+  left: number;
+  delay: number;
+  duration: number;
+  color: string;
+  rotate: number;
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 @Component({
   selector: 'app-raffle-draw',
@@ -23,159 +51,20 @@ import { DrawResult, RaffleWinner, RaffleService } from './data/raffle.service';
     MatProgressSpinnerModule,
     SignalFormField,
   ],
-  template: `
-    <section class="gdg-page min-h-[calc(100vh-64px)] pb-16">
-      <div class="gdg-container max-w-3xl space-y-6 pt-6">
-        <div class="space-y-1">
-          <h1
-            class="text-3xl sm:text-4xl font-extrabold text-text-primary tracking-tight font-google m-0"
-          >
-            Sorteo
-          </h1>
-          @if (event(); as e) {
-            <a
-              [routerLink]="['/e', e.slug]"
-              class="inline-flex items-center min-h-11 text-sm font-semibold text-google-blue-dark no-underline hover:underline"
-            >
-              {{ e.title }}
-            </a>
-          }
-        </div>
-
-        <!-- Al volver a la pestaña la sesión se recarga: con el evento ya cargado no se tapa el sorteo. -->
-        @if ((auth.loading() || loading()) && !event()) {
-          <div class="flex justify-center py-16">
-            <mat-progress-spinner
-              mode="indeterminate"
-              diameter="32"
-              aria-label="Cargando el sorteo"
-            />
-          </div>
-        } @else if (!auth.user()) {
-          <div class="gdg-card p-8 text-center space-y-4">
-            <h2 class="text-xl font-bold text-text-primary font-google m-0">
-              Inicia sesión para sortear
-            </h2>
-            <button
-              type="button"
-              class="gdg-btn-filled min-h-11 text-sm"
-              (click)="auth.signInWithGoogle()"
-            >
-              Continuar con Google
-            </button>
-          </div>
-        } @else if (loadError()) {
-          <div class="gdg-card p-8 text-center space-y-4" role="alert">
-            <h2 class="text-xl font-bold text-text-primary font-google m-0">{{ loadError() }}</h2>
-            @if (notFound()) {
-              <a routerLink="/" class="gdg-btn-filled inline-flex items-center min-h-11 text-sm no-underline">
-                Ver eventos
-              </a>
-            } @else {
-              <button type="button" class="gdg-btn-filled min-h-11 text-sm" (click)="load()">
-                Reintentar
-              </button>
-            }
-          </div>
-        } @else if (!isSuperadmin()) {
-          <div class="gdg-card p-8 text-center space-y-2">
-            <h2 class="text-xl font-bold text-text-primary font-google m-0">
-              Solo para organizadores
-            </h2>
-            @if (event(); as e) {
-              <a
-                [routerLink]="['/e', e.slug, 'tickets']"
-                class="inline-flex items-center min-h-11 text-sm font-semibold text-google-blue-dark no-underline hover:underline"
-              >
-                Ver mis tickets del sorteo
-              </a>
-            }
-          </div>
-        } @else {
-          <form
-            class="gdg-card border border-black/5 p-5 sm:p-6 space-y-3"
-            (submit)="$event.preventDefault(); draw()"
-          >
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Premio</mat-label>
-              <input matInput [formField]="prizeForm.prize" autocomplete="off" />
-              @if (prizeForm.prize().invalid() && prizeForm.prize().touched()) {
-                <mat-error class="text-xs">{{ prizeForm.prize().errors()[0]?.message }}</mat-error>
-              }
-            </mat-form-field>
-            <button
-              type="submit"
-              class="gdg-btn-filled min-h-12 w-full text-base"
-              [disabled]="drawing()"
-            >
-              {{ drawing() ? 'Sorteando…' : 'Sortear' }}
-            </button>
-            @if (drawError()) {
-              <p class="m-0 text-sm text-red-700" role="alert">{{ drawError() }}</p>
-            }
-          </form>
-
-          <div aria-live="polite">
-            @if (result(); as r) {
-              @if (r.status === 'ok') {
-                <div class="gdg-card border border-black/5 p-8 text-center space-y-2">
-                  <p class="m-0 text-sm font-bold uppercase tracking-wide text-text-muted">
-                    {{ lastPrize() }}
-                  </p>
-                  <p
-                    class="m-0 text-4xl sm:text-6xl font-extrabold text-google-blue-dark font-google break-words"
-                  >
-                    {{ r.name || 'Sin nombre' }}
-                  </p>
-                  <p class="m-0 text-sm text-text-secondary">
-                    con {{ r.tickets }} {{ r.tickets === 1 ? 'ticket' : 'tickets' }}, entre
-                    {{ r.participants }} {{ r.participants === 1 ? 'participante' : 'participantes' }}
-                  </p>
-                </div>
-              } @else {
-                <p class="gdg-card m-0 p-6 text-center text-text-secondary">
-                  Ya no quedan participantes sin premio.
-                </p>
-              }
-            }
-          </div>
-
-          @if (winners().length) {
-            <section class="space-y-3" aria-labelledby="ganadores">
-              <h2 id="ganadores" class="text-xl font-bold text-text-primary font-google m-0">
-                Ganadores
-              </h2>
-              <ul class="m-0 p-0 list-none space-y-2">
-                @for (w of winners(); track w.id) {
-                  <li
-                    class="gdg-card border border-black/5 p-4 flex flex-wrap items-center justify-between gap-2"
-                  >
-                    <span class="font-semibold text-text-primary">{{ w.name }}</span>
-                    <span class="text-sm text-text-secondary"
-                      >{{ w.prize }} · {{ w.tickets }} {{ w.tickets === 1 ? 'ticket' : 'tickets' }}</span
-                    >
-                  </li>
-                }
-              </ul>
-              <p class="m-0 text-xs text-text-muted">
-                Si alguien no está presente, vuelve a sortear el mismo premio.
-              </p>
-            </section>
-          }
-        }
-      </div>
-    </section>
-  `,
+  templateUrl: './raffle-draw.html',
+  styleUrl: './raffle-draw.scss',
 })
-export class RaffleDraw implements OnInit {
+export class RaffleDraw implements OnInit, OnDestroy {
   readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly events = inject(PublicEventsService);
-  private readonly tickets = inject(RaffleService);
+  private readonly raffle = inject(RaffleService);
   private readonly title = inject(Title);
 
   // toObservable necesita contexto de inyección: va como campo.
   private readonly authLoading$ = toObservable(this.auth.loading);
+  private readonly stage = viewChild<ElementRef<HTMLElement>>('stage');
+  private destroyed = false;
 
   readonly loading = signal(true);
   readonly loadError = signal<string | null>(null);
@@ -183,16 +72,35 @@ export class RaffleDraw implements OnInit {
   readonly event = signal<Event | null>(null);
   readonly isSuperadmin = signal(false);
   readonly winners = signal<RaffleWinner[]>([]);
-  readonly drawing = signal(false);
-  readonly drawError = signal<string | null>(null);
+  readonly pool = signal<PoolEntry[]>([]);
+
+  readonly phase = signal<Phase>('idle');
+  readonly rollingName = signal('');
   readonly result = signal<DrawResult | null>(null);
   readonly lastPrize = signal('');
+  /** Chance que tenía el ganador al momento del sorteo (0–1). */
+  readonly winnerChance = signal(0);
+  readonly drawError = signal<string | null>(null);
+  readonly confetti = signal<ConfettiPiece[]>([]);
+  readonly fullscreen = signal(false);
+
+  readonly totalTickets = computed(() => this.pool().reduce((sum, p) => sum + p.tickets, 0));
+  readonly topChances = computed(() => {
+    const total = this.totalTickets();
+    const max = this.pool()[0]?.tickets ?? 1;
+    return this.pool()
+      .slice(0, 10)
+      .map((p) => ({ ...p, chance: total ? p.tickets / total : 0, bar: (p.tickets / max) * 100 }));
+  });
+  readonly spinning = computed(() => this.phase() === 'spinning');
 
   readonly prizeData = signal({ prize: '' });
   readonly prizeForm = form(this.prizeData, (path) => {
     validate(path.prize, (ctx) =>
       ctx.value().trim() ? undefined : { kind: 'required', message: 'Escribe el premio' },
     );
+    // El servidor rechaza premios de más de 200 caracteres.
+    maxLength(path.prize, 200, { message: 'Máximo 200 caracteres' });
   });
 
   constructor() {
@@ -202,6 +110,15 @@ export class RaffleDraw implements OnInit {
   async ngOnInit(): Promise<void> {
     await firstValueFrom(this.authLoading$.pipe(filter((l) => !l)));
     await this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.destroyed = true;
+  }
+
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange(): void {
+    this.fullscreen.set(!!document.fullscreenElement);
   }
 
   async load(): Promise<void> {
@@ -214,7 +131,7 @@ export class RaffleDraw implements OnInit {
     try {
       const [event, role] = await Promise.all([
         this.events.getBySlug(this.route.snapshot.paramMap.get('slug') ?? ''),
-        this.tickets.myRole(),
+        this.raffle.myRole(),
       ]);
       if (!event) {
         this.notFound.set(true);
@@ -222,8 +139,9 @@ export class RaffleDraw implements OnInit {
         return;
       }
       this.event.set(event);
+      this.title.setTitle(`Sorteo · ${event.title} | GDG Tarija`);
       this.isSuperadmin.set(role === 'SUPERADMIN');
-      if (role === 'SUPERADMIN') this.winners.set(await this.tickets.winners(event.id));
+      if (role === 'SUPERADMIN') await this.refresh();
     } catch (e) {
       console.error('[Raffle] load failed:', e);
       this.loadError.set('No pudimos cargar el sorteo');
@@ -232,32 +150,108 @@ export class RaffleDraw implements OnInit {
     }
   }
 
+  async toggleFullscreen(): Promise<void> {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await this.stage()?.nativeElement.requestFullscreen();
+    } catch (e) {
+      console.error('[Raffle] fullscreen failed:', e);
+    }
+  }
+
   async draw(): Promise<void> {
     const event = this.event();
-    if (!event || this.drawing()) return;
+    if (!event || this.spinning()) return;
     // markAsTouched() sobre la raíz no alcanza al campo: sin esto no se ve "Escribe el premio".
     this.prizeForm.prize().markAsTouched();
     if (this.prizeForm().invalid()) return;
+
     const prize = this.prizeData().prize.trim();
-    this.drawing.set(true);
+    const names = this.pool().map((p) => p.name);
+    const totalBefore = this.totalTickets();
     this.drawError.set(null);
     this.result.set(null);
-    try {
-      const result = await this.tickets.draw(event.id, prize);
-      this.lastPrize.set(prize);
-      this.result.set(result);
-    } catch (e) {
-      console.error('[Raffle] draw failed:', e);
-      this.drawError.set('No se pudo sortear. Revisa la lista de ganadores antes de volver a intentarlo.');
-    } finally {
-      this.drawing.set(false);
+    this.confetti.set([]);
+    this.lastPrize.set(prize);
+
+    // El servidor elige al ganador; la animación solo lo revela.
+    const outcome: { result?: DrawResult; error?: unknown; done: boolean } = { done: false };
+    const request = this.raffle.draw(event.id, prize).then(
+      (result) => Object.assign(outcome, { result, done: true }),
+      (error) => Object.assign(outcome, { error, done: true }),
+    );
+
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    if (reduceMotion || names.length < 2) {
+      await request;
+    } else {
+      this.phase.set('spinning');
+      const started = Date.now();
+      while (!outcome.done || Date.now() - started < SPIN_MS) {
+        this.rollingName.set(names[Math.floor(Math.random() * names.length)]);
+        await sleep(70);
+        if (this.destroyed) return;
+      }
+      if (outcome.result?.status === 'ok') {
+        for (const ms of BRAKE_MS) {
+          this.rollingName.set(names[Math.floor(Math.random() * names.length)]);
+          await sleep(ms);
+          if (this.destroyed) return;
+        }
+      }
     }
-    // Aparte del sorteo: si solo falla la lista, no parece que el sorteo falló (y nadie sortea dos veces).
+
+    if (outcome.error || !outcome.result) {
+      console.error('[Raffle] draw failed:', outcome.error);
+      this.phase.set('idle');
+      this.drawError.set(
+        'No se pudo sortear. Revisa la lista de ganadores antes de volver a intentarlo.',
+      );
+    } else if (outcome.result.status === 'empty') {
+      this.phase.set('empty');
+    } else {
+      this.result.set(outcome.result);
+      this.winnerChance.set(totalBefore ? (outcome.result.tickets ?? 0) / totalBefore : 0);
+      this.phase.set('revealed');
+      if (!reduceMotion) this.burstConfetti();
+    }
+
+    // Aparte del sorteo: si solo falla la recarga, no parece que el sorteo falló (y nadie sortea dos veces).
     // También se recarga tras un error, por si el sorteo sí se guardó y se perdió la respuesta.
+    await this.refresh();
+  }
+
+  private async refresh(): Promise<void> {
+    const event = this.event();
+    if (!event) return;
     try {
-      this.winners.set(await this.tickets.winners(event.id));
+      const [winners, pool] = await Promise.all([
+        this.raffle.winners(event.id),
+        this.raffle.pool(event.id),
+      ]);
+      this.winners.set(winners);
+      this.pool.set(pool);
     } catch (e) {
-      console.error('[Raffle] winners reload failed:', e);
+      console.error('[Raffle] refresh failed:', e);
     }
+  }
+
+  private burstConfetti(): void {
+    this.confetti.set(
+      Array.from({ length: 90 }, (_, i) => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 0.6,
+        duration: 2.4 + Math.random() * 1.8,
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        rotate: Math.random() * 360,
+      })),
+    );
+    setTimeout(() => {
+      if (!this.destroyed) this.confetti.set([]);
+    }, 5000);
+  }
+
+  percent(chance: number): string {
+    return `${(chance * 100).toLocaleString('es-BO', { maximumFractionDigits: 1 })}%`;
   }
 }
