@@ -1,0 +1,5 @@
+Fuentes pixel de la pantalla del sorteo (subconjunto latin, de Google Fonts).
+Ambas bajo SIL Open Font License 1.1: https://openfontlicense.org
+
+Press Start 2P — Copyright 2012 The Press Start 2P Project Authors (cody@zone38.net), with Reserved Font Name "Press Start 2P".
+Pixelify Sans — Copyright 2021 The Pixelify Sans Project Authors (https://github.com/eifetx/Pixelify-Sans).

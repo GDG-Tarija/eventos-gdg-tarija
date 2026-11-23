@@ -107,6 +107,7 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | raffle_winners         | tickets           | integer                  | NO            |
 | public  | raffle_winners         | created_at        | timestamp with time zone | NO            |
 | public  | raffle_winners         | updated_at        | timestamp with time zone | NO            |
+| public  | raffle_winners         | voided_at         | timestamp with time zone | YES           |
 | public  | session_registrations  | registration_id   | uuid                     | NO            |
 | public  | session_registrations  | session_id        | uuid                     | NO            |
 | public  | session_registrations  | registered_at     | timestamp with time zone | YES           |

@@ -248,6 +248,7 @@ export interface Database {
           registration_id: string;
           tickets: number;
           updated_at: string;
+          voided_at: string | null;
         };
         Insert: {
           created_at?: string;
@@ -257,6 +258,7 @@ export interface Database {
           registration_id: string;
           tickets: number;
           updated_at?: string;
+          voided_at?: string | null;
         };
         Update: {
           created_at?: string;
@@ -266,6 +268,7 @@ export interface Database {
           registration_id?: string;
           tickets?: number;
           updated_at?: string;
+          voided_at?: string | null;
         };
         Relationships: [
           {
