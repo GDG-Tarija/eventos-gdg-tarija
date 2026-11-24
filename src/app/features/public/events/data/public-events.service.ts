@@ -86,6 +86,7 @@ export class PublicEventsService {
           'address_link',
           'category',
           'extra_info',
+          'store_payment_qr_url',
         ].join(','),
       )
       .eq('slug', slug)

@@ -1,0 +1,219 @@
+<div class="store-dialog">
+  <header class="dialog-header">
+    <h2 mat-dialog-title class="m-0 min-w-0 truncate text-lg font-bold">
+      @switch (step()) {
+        @case ('cart') {
+          Tu carrito
+        }
+        @case ('pay') {
+          Pagar con QR
+        }
+        @default {
+          Compra registrada
+        }
+      }
+    </h2>
+    <button
+      type="button"
+      class="icon-btn"
+      aria-label="Cerrar"
+      [disabled]="submitting()"
+      (click)="close()"
+    >
+      <span class="material-symbols-rounded" aria-hidden="true">close</span>
+    </button>
+  </header>
+
+  @if (step() !== 'done') {
+    <ol class="steps" aria-label="Pasos de la compra">
+      <li
+        [attr.aria-current]="step() === 'cart' ? 'step' : null"
+        [class.active]="step() === 'cart'"
+      >
+        <span class="step-dot" aria-hidden="true">1</span> Carrito
+      </li>
+      <li [attr.aria-current]="step() === 'pay' ? 'step' : null" [class.active]="step() === 'pay'">
+        <span class="step-dot" aria-hidden="true">2</span> Pago
+      </li>
+    </ol>
+  }
+
+  <div class="dialog-body">
+    @if (error(); as message) {
+      <p class="alert mb-4" role="alert">
+        <span class="material-symbols-rounded" aria-hidden="true">error</span>
+        <span>{{ message }}</span>
+      </p>
+    }
+
+    @switch (step()) {
+      @case ('cart') {
+        <app-store-cart (checkout)="goToPay()" />
+      }
+
+      @case ('pay') {
+        <section aria-labelledby="pay-summary" class="space-y-3">
+          <h3 id="pay-summary" class="section-title">Resumen</h3>
+          <ul class="summary">
+            @for (line of session.lines(); track line.product.id) {
+              <li>
+                <span class="min-w-0">
+                  <span class="qty">{{ line.quantity }} ×</span> {{ line.product.name }}
+                </span>
+                <span class="tabular-nums">{{ bs(line.subtotalCents) }}</span>
+              </li>
+            }
+          </ul>
+          <p class="summary-total">
+            <span>Total a pagar</span>
+            <span class="tabular-nums">{{ total() }}</span>
+          </p>
+          <button type="button" class="text-btn" [disabled]="submitting()" (click)="backToCart()">
+            <span class="material-symbols-rounded text-base" aria-hidden="true">edit</span>
+            Modificar carrito
+          </button>
+        </section>
+
+        <section aria-labelledby="pay-qr" class="pay-block">
+          <h3 id="pay-qr" class="section-title">
+            <span class="step-dot" aria-hidden="true">1</span> Paga con el QR del evento
+          </h3>
+          <p class="muted m-0 text-sm">
+            Escanéalo o descárgalo y paga
+            <strong class="text-on-surface">{{ total() }}</strong> desde tu app bancaria. El QR es
+            de monto libre: ingresa el total exacto.
+          </p>
+          @if (qrUrl(); as qr) {
+            <div class="qr-box">
+              <img [src]="qr" alt="QR de pago de la Tienda del evento" class="qr-img" />
+              <a
+                mat-stroked-button
+                class="qr-download"
+                [href]="qr"
+                download="qr-tienda.png"
+                target="_blank"
+                rel="noopener"
+              >
+                <span class="material-symbols-rounded text-lg" aria-hidden="true">download</span>
+                Descargar QR
+              </a>
+            </div>
+          }
+        </section>
+
+        <section aria-labelledby="pay-proof" class="pay-block">
+          <h3 id="pay-proof" class="section-title">
+            <span class="step-dot" aria-hidden="true">2</span> Sube tu comprobante
+          </h3>
+          <p class="muted m-0 text-sm" id="proof-help">
+            Captura o foto del pago en JPG, PNG o WebP (hasta 5 MB). Solo lo verá el equipo de GDG
+            Tarija.
+          </p>
+
+          @if (proofLimitReached()) {
+            <p class="alert" role="alert">
+              <span class="material-symbols-rounded" aria-hidden="true">block</span>
+              <span>
+                Ya subiste {{ maxProofs }} comprobantes en este evento, que es el máximo. Escríbenos
+                para ayudarte con tu compra.
+              </span>
+            </p>
+          } @else {
+            <label class="file-picker" [class.has-file]="!!file()" [class.disabled]="submitting()">
+              <input
+                type="file"
+                class="sr-only"
+                [accept]="accept"
+                [disabled]="submitting()"
+                aria-describedby="proof-help"
+                (change)="onFileChange($event)"
+              />
+              @if (file(); as f) {
+                @if (previewUrl(); as url) {
+                  <img [src]="url" alt="" class="file-thumb" />
+                }
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate font-semibold">{{ f.name }}</span>
+                  <span class="muted text-xs">Toca para cambiar la imagen</span>
+                </span>
+                <span class="material-symbols-rounded file-ok" aria-hidden="true"
+                  >check_circle</span
+                >
+              } @else {
+                <span class="material-symbols-rounded file-icon" aria-hidden="true"
+                  >upload_file</span
+                >
+                <span class="flex-1 font-semibold">Elegir comprobante</span>
+              }
+            </label>
+          }
+          @if (proofError(); as message) {
+            <p class="field-error m-0" role="alert">{{ message }}</p>
+          }
+        </section>
+
+        <p class="muted mt-4 mb-0 text-xs">
+          Al confirmar, tu compra queda en verificación hasta que el equipo revise el pago. Los
+          precios y el total los confirma el sistema al registrar la compra.
+        </p>
+      }
+
+      @default {
+        <div class="done" role="status">
+          <span class="done-icon material-symbols-rounded" aria-hidden="true">hourglass_top</span>
+          <h3 class="m-0 text-2xl font-bold">Estamos verificando tu pago</h3>
+          <p class="muted m-0">
+            Registramos tu compra por
+            <strong class="text-on-surface">{{ bs(createdTotal()) }}</strong
+            >. Cuando confirmemos el pago verás su estado como <strong>Pagada</strong> en la Tienda
+            y en Mis tickets.
+          </p>
+          @if (createdOrderId(); as id) {
+            <p class="order-code m-0">
+              Código de compra <span>#{{ id.slice(0, 8) }}</span>
+            </p>
+          }
+        </div>
+      }
+    }
+  </div>
+
+  @if (step() === 'pay') {
+    <footer class="dialog-footer">
+      <button
+        mat-flat-button
+        type="button"
+        class="gdg-btn-filled footer-btn w-full sm:w-auto"
+        [disabled]="!canConfirm()"
+        (click)="confirm()"
+      >
+        @if (submitting()) {
+          <mat-progress-spinner
+            mode="indeterminate"
+            diameter="18"
+            class="btn-spinner"
+            aria-hidden="true"
+          />
+        }
+        {{ phaseLabel() }}
+      </button>
+      @if (submitting()) {
+        <p class="sr-only" role="status">{{ phaseLabel() }}</p>
+      }
+    </footer>
+  } @else if (step() === 'done') {
+    <footer class="dialog-footer">
+      <a mat-stroked-button class="footer-btn w-full sm:w-auto" routerLink="/mis-tickets"
+        >Ir a Mis tickets</a
+      >
+      <button
+        mat-flat-button
+        type="button"
+        class="gdg-btn-filled footer-btn w-full sm:w-auto"
+        (click)="close()"
+      >
+        Ver mis compras
+      </button>
+    </footer>
+  }
+</div>

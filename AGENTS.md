@@ -133,7 +133,7 @@ Un PR = un hito o sub-tarea pequeña. No mezclar feat con refactor masivo.
 │   │   │   ├── auth/        # login, callback, register
 │   │   │   ├── admin/       # sponsor (CRUD de referencia), users
 │   │   │   ├── dashboard/
-│   │   │   └── public/      # home, events (detail, registration), certificates
+│   │   │   └── public/      # home, events (detail, registration), store (Tienda), tickets, raffle, certificates
 │   │   ├── layouts/        # Layouts containers (lazy loaded)
 │   │   │   ├── admin-layout/
 │   │   │   ├── auth-layout/

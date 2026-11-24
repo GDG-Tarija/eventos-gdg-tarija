@@ -19,6 +19,12 @@
         <button mat-stroked-button type="button" (click)="tickets.reload()">Reintentar</button>
       </div>
     } @else if (tickets.value(); as data) {
+      @if (orders.error()) {
+        <div class="gdg-card p-4 flex flex-wrap items-center justify-between gap-3" role="alert">
+          <p class="muted m-0 text-sm">No pudimos cargar tus compras de la Tienda.</p>
+          <button mat-stroked-button type="button" class="min-h-11" (click)="orders.reload()">Reintentar</button>
+        </div>
+      }
       @if (!data.upcoming.length && !data.past.length && !data.unavailable.length) {
         <div class="gdg-card p-8 sm:p-12 text-center space-y-4">
           <h2 class="text-xl font-bold m-0">Todavía no tienes entradas</h2>
@@ -90,6 +96,19 @@
                         Estamos verificando tu pago. Tu QR aparecerá aquí cuando se confirme.
                       </p>
                     }
+                    @if (ordersByRegistration().get(ticket.id); as ticketOrders) {
+                      <section class="store-orders" [attr.aria-labelledby]="'store-orders-' + ticket.id">
+                        <h4 [id]="'store-orders-' + ticket.id" class="mt-4 mb-2 text-sm font-bold">
+                          Tus compras en la Tienda
+                        </h4>
+                        <app-store-order-list
+                          [orders]="ticketOrders"
+                          [eventTitle]="ticket.event.title"
+                          [compact]="true"
+                          [label]="'Compras en la Tienda de ' + ticket.event.title"
+                        />
+                      </section>
+                    }
                     @if (canShowQr) {
                       <button
                         mat-button
@@ -128,6 +147,12 @@
                       <a mat-stroked-button [href]="supportUrl(ticket.event.title)" target="_blank" rel="noopener">
                         <mat-icon aria-hidden="true">support_agent</mat-icon>
                         Contactar con soporte
+                      </a>
+                    }
+                    @if (ticket.hasStore && ticket.status !== 'CANCELLED') {
+                      <a mat-stroked-button [routerLink]="['/e', ticket.event.slug, 'tienda']">
+                        <mat-icon aria-hidden="true">storefront</mat-icon>
+                        Tienda del evento
                       </a>
                     }
                     @if (canShowQr && ticket.hasRaffle) {
@@ -169,6 +194,13 @@
                 </span>
                 @if (ticket.status === 'PENDING') {
                   <p class="muted m-0 text-sm">Estamos verificando tu pago.</p>
+                }
+                @if (ordersByRegistration().get(ticket.id); as ticketOrders) {
+                  <app-store-order-list
+                    [orders]="ticketOrders"
+                    [eventTitle]="ticket.ticketName"
+                    [compact]="true"
+                  />
                 }
                 @if (ticket.attended) {
                   <p class="muted m-0 text-sm">Asistencia registrada</p>

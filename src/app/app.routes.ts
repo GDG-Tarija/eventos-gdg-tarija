@@ -9,6 +9,11 @@ export const routes: Routes = [
       { path: '', loadComponent: () => import('./features/public/home/home').then(m => m.Home) },
       { path: 'auth/login', loadComponent: () => import('./features/auth/login/login').then(m => m.Login) },
       { path: 'e/:slug', loadComponent: () => import('./features/public/events/detail/event-detail').then(m => m.EventDetail) },
+      {
+        path: 'e/:slug/tienda',
+        title: 'Tienda | GDG Tarija',
+        loadComponent: () => import('./features/public/store/store-page').then(m => m.StorePage),
+      },
       { path: 'e/:slug/tickets', loadComponent: () => import('./features/public/raffle/raffle-tickets').then(m => m.RaffleTickets) },
       { path: 'e/:slug/sorteo', loadComponent: () => import('./features/public/raffle/raffle-draw').then(m => m.RaffleDraw) },
       { path: 'perfil', title: 'Mi perfil | GDG Tarija', loadComponent: () => import('./features/public/profile/profile').then(m => m.Profile) },
