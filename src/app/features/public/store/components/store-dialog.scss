@@ -1,0 +1,101 @@
+// Estructura común de los diálogos de la Tienda: cabecera, cuerpo con scroll y pie fijo.
+// En móvil el panel ocupa toda la pantalla (ver .store-dialog-panel en styles.scss).
+:host {
+  display: block;
+  height: 100%;
+}
+
+.store-dialog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: min(90dvh, 52rem);
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface-container-lowest);
+  overflow-wrap: anywhere;
+
+  @media (max-width: 39.99rem) {
+    max-height: 100dvh;
+  }
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 1.25rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  // mat-dialog-title trae márgenes y padding propios del diálogo de Material.
+  h2,
+  h2.mat-mdc-dialog-title {
+    padding: 0;
+    color: var(--mat-sys-on-surface);
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: normal;
+
+    &::before {
+      display: none;
+    }
+  }
+}
+
+.dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+.dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem max(0.75rem, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.icon-btn {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  border-radius: 100vmax;
+  background: transparent;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--mat-sys-surface-container-high);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+.footer-btn {
+  min-height: 2.75rem;
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.price {
+  color: var(--mat-sys-primary);
+  font-variant-numeric: tabular-nums;
+}

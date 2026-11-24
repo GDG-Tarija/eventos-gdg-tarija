@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/services/auth.service';
 import { SUPABASE } from '../../../core/supabase/supabase.client';
+import { queryStub } from '../store/testing/supabase-query-stub';
 import type { TicketRegistrationRow } from './data/my-tickets.service';
 import { MyTickets } from './my-tickets';
 
@@ -27,7 +28,7 @@ function registration(id: string, status: string, past = false, attended = false
   };
 }
 
-function setup(rows: TicketRegistrationRow[]) {
+function setup(rows: TicketRegistrationRow[], orders: unknown = { data: [], error: null }) {
   const eq = vi.fn().mockResolvedValue({ data: rows, error: null });
   TestBed.configureTestingModule({
     providers: [
@@ -36,7 +37,8 @@ function setup(rows: TicketRegistrationRow[]) {
         provide: SUPABASE,
         useValue: {
           auth: { onAuthStateChange: vi.fn() },
-          from: () => ({ select: () => ({ eq }) }),
+          from: (table: string) =>
+            table === 'store_orders' ? queryStub(orders).builder : { select: () => ({ eq }) },
         },
       },
     ],
@@ -161,5 +163,51 @@ describe('Mis tickets', () => {
     await fixture.whenStable();
     expect(eq).toHaveBeenLastCalledWith('user_id', 'otra-cuenta');
     expect(page.textContent).toContain('Todavía no tienes entradas');
+  });
+
+  it('muestra las compras de la Tienda dentro de su entrada y el acceso a la Tienda', async () => {
+    const withStore = {
+      ...registration('devfest', 'CONFIRMED'),
+      events: {
+        ...registration('devfest', 'CONFIRMED').events,
+        store_payment_qr_url: 'https://img.test/qr.png',
+        store_products: [{ count: 2 }],
+      },
+    };
+    const { fixture, page } = setup([withStore, registration('otro', 'CONFIRMED')], {
+      data: [
+        {
+          id: 'aaaaaaaa-0000-4000-8000-000000000001',
+          event_id: 'event-devfest',
+          registration_id: 'devfest',
+          status: 'PENDING',
+          total: '240.00',
+          created_at: '2026-11-20T15:30:00Z',
+          store_order_items: [
+            { id: 'i1', product_name: 'Polera GDG', unit_price: '120.00', quantity: 2, subtotal: '240.00' },
+          ],
+        },
+      ],
+      error: null,
+    });
+    await fixture.whenStable();
+    const [devfest, otro] = page.querySelectorAll('article');
+    expect(devfest.textContent).toContain('Tus compras en la Tienda');
+    expect(devfest.textContent).toContain('2 × Polera GDG');
+    expect(devfest.textContent).toContain('En verificación');
+    expect(devfest.textContent).toContain('Bs 240');
+    expect(devfest.querySelector('a[href="/e/devfest/tienda"]')).toBeTruthy();
+    expect(otro.textContent).not.toContain('Tus compras en la Tienda');
+    expect(otro.querySelector('a[href$="/tienda"]')).toBeNull();
+  });
+
+  it('si fallan las compras, las entradas se siguen viendo y se puede reintentar', async () => {
+    const { fixture, page } = setup([registration('devfest', 'CONFIRMED')], {
+      data: null,
+      error: { message: 'boom', code: 'XX000' },
+    });
+    await fixture.whenStable();
+    expect(page.querySelector('article')).toBeTruthy();
+    expect(page.textContent).toContain('No pudimos cargar tus compras de la Tienda');
   });
 });

@@ -1,4 +1,5 @@
 import { Component, ElementRef, Injector, afterNextRender, OnInit, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl, Title, Meta } from '@angular/platform-browser';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -6,12 +7,13 @@ import { PublicEventsService } from '../data/public-events.service';
 import { Event } from '../data/event.model';
 import { formatEventDate, isPast as isEventPast } from '../data/event-timing';
 import { EventRegistrationCheckout } from '../registration/components/event-registration-checkout';
+import { StoreService } from '../../store/data/store.service';
 import { LOGOS } from '../../../../core/config/logos';
 
 @Component({
   selector: 'app-event-detail',
   standalone: true,
-  imports: [RouterLink, MatProgressSpinnerModule, EventRegistrationCheckout],
+  imports: [NgTemplateOutlet, RouterLink, MatProgressSpinnerModule, EventRegistrationCheckout],
   styles: [`
     .cta-bar {
       transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -269,6 +271,10 @@ import { LOGOS } from '../../../../core/config/logos';
 
                 <!-- Columna Lateral Sticky: Registro e Información de Cupos (Rediseñada y más compacta) -->
                 <div class="md:col-span-2 space-y-4 md:sticky md:top-24">
+                  <!-- Tienda del evento (QR de tienda + productos activos): arriba para inscritos -->
+                  @if (storeProducts() > 0 && summary()?.registered) {
+                    <ng-container [ngTemplateOutlet]="storeTeaser" />
+                  }
                   <div
                     #panel
                     id="registro"
@@ -301,6 +307,33 @@ import { LOGOS } from '../../../../core/config/logos';
                       <app-event-registration-checkout [event]="event()!" />
                     </div>
                   </div>
+
+                  <!-- Tienda: debajo del registro para quien aún no se inscribe -->
+                  @if (storeProducts() > 0 && !summary()?.registered) {
+                    <ng-container [ngTemplateOutlet]="storeTeaser" />
+                  }
+                  <ng-template #storeTeaser>
+                    <a
+                      [routerLink]="['/e', event()!.slug, 'tienda']"
+                      class="gdg-card flex items-center gap-4 p-4 sm:p-5 no-underline text-text-primary hover:shadow-google-card transition-shadow duration-150 ease-out-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-google-blue-dark"
+                    >
+                      <span
+                        class="material-symbols-rounded shrink-0 grid place-items-center size-12 rounded-2xl bg-google-yellow/15 text-google-yellow-dark text-2xl"
+                        aria-hidden="true"
+                        >storefront</span
+                      >
+                      <span class="min-w-0 flex-1">
+                        <span class="block text-base font-bold leading-tight">Tienda del evento</span>
+                        <span class="block text-sm text-text-secondary">
+                          {{ storeProducts() }} {{ storeProducts() === 1 ? 'producto' : 'productos' }}
+                          · kits, merch y combos
+                        </span>
+                      </span>
+                      <span class="material-symbols-rounded text-google-blue-dark" aria-hidden="true"
+                        >arrow_forward</span
+                      >
+                    </a>
+                  </ng-template>
                 </div>
               </div>
             </div>
@@ -339,10 +372,13 @@ export class EventDetail implements OnInit {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly titleService = inject(Title);
   private readonly metaService = inject(Meta);
+  private readonly store = inject(StoreService);
 
   readonly loading = signal(true);
   readonly loadError = signal(false);
   readonly event = signal<Event | null>(null);
+  /** Productos activos de la Tienda; 0 si el evento no tiene Tienda habilitada (sin QR). */
+  readonly storeProducts = signal(0);
 
   readonly logoIcon = LOGOS.icon;
 
@@ -539,11 +575,24 @@ export class EventDetail implements OnInit {
     try {
       const eventData = await this.events.getBySlug(this.slug);
       this.event.set(eventData);
-      if (eventData) this.updateSeoTags(eventData);
+      if (eventData) {
+        this.updateSeoTags(eventData);
+        void this.loadStore(eventData);
+      }
     } catch {
       this.loadError.set(true);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadStore(event: Event): Promise<void> {
+    if (!event.store_payment_qr_url) return;
+    try {
+      this.storeProducts.set(await this.store.countProducts(event.id));
+    } catch {
+      // Sin el conteo el evento se ve igual; solo no se muestra el acceso a la Tienda.
+      this.storeProducts.set(0);
     }
   }
 

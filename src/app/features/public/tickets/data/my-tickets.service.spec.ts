@@ -104,6 +104,31 @@ describe('buildMyTickets', () => {
   });
 });
 
+describe('buildMyTickets: Tienda', () => {
+  it('marca la Tienda solo con QR de tienda y productos visibles', () => {
+    const base = row('t', '2026-08-01T14:00:00Z').events!;
+    const tickets = buildMyTickets(
+      [
+        row('con', '2026-08-01T14:00:00Z', {
+          events: { ...base, id: 'e-con', store_payment_qr_url: 'https://qr', store_products: [{ count: 1 }] },
+        }),
+        row('sin-qr', '2026-08-02T14:00:00Z', {
+          events: { ...base, id: 'e-sin-qr', store_payment_qr_url: null, store_products: [{ count: 3 }] },
+        }),
+        row('sin-productos', '2026-08-03T14:00:00Z', {
+          events: { ...base, id: 'e-vacia', store_payment_qr_url: 'https://qr', store_products: [{ count: 0 }] },
+        }),
+      ],
+      now,
+    ).upcoming;
+    expect(tickets.map((t) => [t.id, t.hasStore])).toEqual([
+      ['con', true],
+      ['sin-qr', false],
+      ['sin-productos', false],
+    ]);
+  });
+});
+
 describe('MyTicketsService.loadMine', () => {
   it('consulta las inscripciones del usuario y las relaciones de su ticket y certificado', async () => {
     const eq = vi.fn().mockResolvedValue({
@@ -121,6 +146,7 @@ describe('MyTicketsService.loadMine', () => {
     expect(select).toHaveBeenCalledWith(expect.stringContaining('scan_logs'));
     expect(select).toHaveBeenCalledWith(expect.stringContaining('session_registrations'));
     expect(select).toHaveBeenCalledWith(expect.stringContaining('events ('));
+    expect(select).toHaveBeenCalledWith(expect.stringContaining('store_products (count)'));
     expect(data.past[0]).toMatchObject({ id: 'my-registration', attended: true, status: 'CONFIRMED' });
   });
 });

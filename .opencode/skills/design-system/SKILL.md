@@ -44,6 +44,15 @@ La home pública reemplazó el hero anterior y ahora es una **landing de próxim
 - `/e/:slug` — componente placeholder por ahora.
 - Se completa cuando se integre el backend.
 
+### 1.7. Tienda del evento (`/e/:slug/tienda`)
+- Terminología: **Tienda** (sección), **Productos** (artículos), **Compras** (lo que hizo la persona). "Paquetes" sigue siendo de entradas.
+- Acceso desde `/e/:slug` con una tarjeta "Tienda del evento" (solo si hay QR de tienda y productos activos): arriba del panel de registro para inscritos, debajo para el resto.
+- Colores con tokens `--mat-sys-*` (superficies, texto, primario) para que funcione con `data-theme="dark"`; precios en `--mat-sys-primary` con `tabular-nums`. El QR de pago siempre sobre fondo blanco (se escanea también en oscuro).
+- Catálogo: 1 columna en móvil (imagen 4:3), 2 columnas desde 40rem (cuadrada) y carrito en columna lateral `sticky` desde 64rem. Galería con scroll-snap, flechas de 44px, puntos y contador; teclado con flechas/Home/End.
+- Carrito: selector −/+ de 44px (en 1, restar quita), máximo 5 por producto; barra inferior fija en móvil/tablet (safe-area) con total y "Ver carrito".
+- Diálogos con `panelClass: 'store-dialog-panel'` (global en `styles.scss`): pantalla completa en móvil, tarjeta `rounded-3xl` desde 40rem; cabecera con cerrar, cuerpo con scroll y pie fijo. Pago en dos pasos (Carrito → Pago) y confirmación "Estamos verificando tu pago".
+- Estado de compra con icono + texto + color (nunca solo color): En verificación (`schedule`), Pagada (`check_circle`), Anulada (`cancel`, con enlace a soporte).
+
 ---
 
 ## 2. Stack UI

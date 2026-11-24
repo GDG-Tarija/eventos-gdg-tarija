@@ -87,6 +87,8 @@ src/app/
     ├── public/events/detail/        ← /e/:slug
     ├── public/events/registration/  ← checkout + ticket flow
     ├── public/certificates/         ← certificate list/detail + PDF export
+    ├── public/store/                ← Tienda del evento (/e/:slug/tienda): productos, carrito, pago con QR, compras
+    ├── public/tickets/              ← /mis-tickets (entradas + compras de la Tienda)
     ├── dashboard/                   ← /dashboard home
     ├── admin/sponsor/               ← canonical CRUD example
     └── admin/users/

@@ -16,6 +16,8 @@ export interface Event {
   location_name?: string;
   address_link?: string;
   category?: string;
+  /** QR de pago de la Tienda del evento; sin QR la Tienda no está habilitada. */
+  store_payment_qr_url?: string | null;
 
   // JSONB from Supabase. We only care about extra_info.form_fields for now.
   extra_info?: {

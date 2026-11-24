@@ -22,6 +22,8 @@ export interface EventTicket extends TicketReceipt {
   event: Pick<Event, 'id' | 'title' | 'slug' | 'location_name' | 'date_start' | 'date_end'>;
   /** El evento tiene sorteo por tickets (hay actividades cargadas). */
   hasRaffle: boolean;
+  /** El evento tiene Tienda habilitada (QR de tienda y productos visibles). */
+  hasStore: boolean;
   sessions: TicketSession[];
 }
 
@@ -50,6 +52,8 @@ export interface TicketRegistrationRow {
   events:
     | (Pick<Tables['events']['Row'], 'id' | 'title' | 'slug' | 'location_name' | 'date_start' | 'date_end'> & {
         point_activities?: { count: number }[];
+        store_payment_qr_url?: string | null;
+        store_products?: { count: number }[];
       })
     | null;
   ticket_types: { name: string } | null;
@@ -92,6 +96,8 @@ export function buildMyTickets(rows: TicketRegistrationRow[], now = new Date()):
         date_end: r.events.date_end ? new Date(r.events.date_end) : undefined,
       },
       hasRaffle: (r.events.point_activities?.[0]?.count ?? 0) > 0,
+      hasStore:
+        !!r.events.store_payment_qr_url && (r.events.store_products?.[0]?.count ?? 0) > 0,
       sessions: (r.session_registrations ?? [])
         .map((s) => s.sessions)
         .filter((s): s is NonNullable<typeof s> => !!s)
@@ -122,7 +128,8 @@ export class MyTicketsService {
       .from('registrations')
       .select(
         `id, status,
-         events (id, title, slug, location_name, date_start, date_end, point_activities (count)),
+         events (id, title, slug, location_name, date_start, date_end, point_activities (count),
+           store_payment_qr_url, store_products (count)),
          ticket_types (name),
          scan_logs (id),
          session_registrations (sessions (id, title, date, start_time, end_time))`,

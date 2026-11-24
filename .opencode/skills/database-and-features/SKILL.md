@@ -16,6 +16,7 @@ La arquitectura de vistas y menús del sistema está distribuida en los siguient
 ```
 ├── Public/                               # Módulos Públicos / Asistentes
 │   ├── Eventos/                        # Listado y detalle de eventos (/e/:slug)
+│   ├── Tienda/ (features/public/store)  # Productos y Compras del evento (/e/:slug/tienda). No confundir con los paquetes de entrada (ticket_types)
 │   ├── Sorteo/ (features/public/raffle) # Tickets del sorteo + escáner (/e/:slug/tickets), sorteo para SUPERADMIN (/e/:slug/sorteo). No confundir con /mis-tickets (entradas)
 │   └── Certificados/                   # Listado (/certificados) y vista de certificado (/certificados/:id)
 │
@@ -59,6 +60,7 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | events                 | address_link      | text                     | YES           |
 | public  | events                 | category          | character varying        | YES           |
 | public  | events                 | extra_info        | jsonb                    | YES           |
+| public  | events                 | store_payment_qr_url | text                  | YES           |
 | public  | event_whatsapp_groups  | id                | uuid                     | NO            |
 | public  | event_whatsapp_groups  | event_id          | uuid                     | NO            |
 | public  | event_whatsapp_groups  | url               | text                     | NO            |
@@ -144,6 +146,45 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | tracks                 | nombre            | text                     | NO            |
 | public  | tracks                 | descripcion       | text                     | YES           |
 | public  | tracks                 | created_at        | timestamp with time zone | NO            |
+| public  | store_products         | id                | uuid                     | NO            |
+| public  | store_products         | event_id          | uuid                     | NO            |
+| public  | store_products         | name              | character varying(100)   | NO            |
+| public  | store_products         | description       | text                     | YES           |
+| public  | store_products         | price             | numeric(10,2)            | NO            |
+| public  | store_products         | is_active         | boolean                  | NO            |
+| public  | store_products         | position          | integer                  | NO            |
+| public  | store_products         | created_at        | timestamp with time zone | NO            |
+| public  | store_products         | updated_at        | timestamp with time zone | NO            |
+| public  | store_product_images   | id                | uuid                     | NO            |
+| public  | store_product_images   | product_id        | uuid                     | NO            |
+| public  | store_product_images   | url               | text                     | NO            |
+| public  | store_product_images   | position          | integer                  | NO            |
+| public  | store_product_images   | alt_text          | character varying(200)   | YES           |
+| public  | store_product_images   | created_at        | timestamp with time zone | NO            |
+| public  | store_product_images   | updated_at        | timestamp with time zone | NO            |
+| public  | store_orders           | id                | uuid                     | NO            |
+| public  | store_orders           | event_id          | uuid                     | NO            |
+| public  | store_orders           | registration_id   | uuid                     | NO            |
+| public  | store_orders           | user_id           | uuid                     | YES           |
+| public  | store_orders           | status            | character varying(20)    | NO            |
+| public  | store_orders           | total             | numeric(10,2)            | NO            |
+| public  | store_orders           | payment_proof_path | text                    | NO            |
+| public  | store_orders           | reviewed_by       | uuid                     | YES           |
+| public  | store_orders           | reviewed_at       | timestamp with time zone | YES           |
+| public  | store_orders           | created_at        | timestamp with time zone | NO            |
+| public  | store_orders           | updated_at        | timestamp with time zone | NO            |
+| public  | store_order_items      | id                | uuid                     | NO            |
+| public  | store_order_items      | order_id          | uuid                     | NO            |
+| public  | store_order_items      | product_id        | uuid                     | NO            |
+| public  | store_order_items      | product_name      | character varying(100)   | NO            |
+| public  | store_order_items      | unit_price        | numeric(10,2)            | NO            |
+| public  | store_order_items      | quantity          | integer                  | NO            |
+| public  | store_order_items      | subtotal          | numeric(10,2) (generada) | YES           |
+| public  | store_order_items      | delivered_quantity | integer                 | NO            |
+| public  | store_order_items      | delivered_at      | timestamp with time zone | YES           |
+| public  | store_order_items      | delivered_by      | uuid                     | YES           |
+| public  | store_order_items      | created_at        | timestamp with time zone | NO            |
+| public  | store_order_items      | updated_at        | timestamp with time zone | NO            |
 | public  | users                  | id                | uuid                     | NO            |
 | public  | users                  | email             | character varying        | NO            |
 | public  | users                  | first_name        | character varying        | NO            |
@@ -155,7 +196,16 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | users                  | created_at        | timestamp with time zone | YES           |
 | public  | users                  | updated_at        | timestamp with time zone | YES           |
 
-**Sorteo por tickets** (migración `20261121143147_sorteo_tickets` en back-office): los tickets son filas de `scan_logs` (`checkin`, `pts:<point_activities.id>`, `net:<registrations.id>`). La app no escribe `scan_logs` ni lee nombres ajenos directamente: usa las RPCs `scan_ticket(p_event_id, p_registration_id, p_activity_id?)`, `my_tickets(p_event_id)` y `draw_raffle(p_event_id, p_prize)` (solo SUPERADMIN), vía `features/public/raffle/data/raffle.service.ts`.
+**Sorteo por tickets** (migración `20261122092228_sorteo_tickets` en back-office): los tickets son filas de `scan_logs` (`checkin`, `pts:<point_activities.id>`, `net:<registrations.id>`). La app no escribe `scan_logs` ni lee nombres ajenos directamente: usa las RPCs `scan_ticket(p_event_id, p_registration_id, p_activity_id?)`, `my_tickets(p_event_id)` y `draw_raffle(p_event_id, p_prize)` (solo SUPERADMIN), vía `features/public/raffle/data/raffle.service.ts`.
+
+
+**Tienda del evento** (migración `store_products_orders` de back-office, PR #42; en local hoy `20261121180000`, puede cambiar de nombre al fusionarse): productos (kits, merch, combos) y compras de personas inscritas, aparte de los paquetes de entrada (`ticket_types`). En la UI: **Tienda**, **Productos**, **Compras**. La app (`features/public/store/`) sigue estas reglas:
+- Lee `store_products` + `store_product_images` (RLS: solo activos de eventos publicados; filtra además `is_active` porque SUPERADMIN ve todos) y `events.store_payment_qr_url` (sin QR la Tienda no está habilitada).
+- **Nunca escribe compras directo.** Crea la compra solo con `create_store_order(p_event_id, p_items jsonb [{product_id, quantity 1..5}], p_payment_proof_path)`: el servidor fija precio, total y estado (`PENDING`), exige inscripción `CONFIRMED`/`PENDING`, evento publicado con QR y como máximo **3 compras PENDING por inscripción** (`P0057`).
+- Comprobantes en el bucket **privado** `store-payment-proofs`, ruta `<uid>/<event_id>/<uuid>.<ext>` (sin upsert). La política admite solo inscritos activos de eventos publicados con QR y **hasta 10 archivos por persona y evento**; el comprador no puede borrarlos (SUPERADMIN borra los que ninguna compra usa). Nunca usar `payment-proofs` (público, de inscripciones).
+- El comprador lee solo lo suyo: `store_orders` y `store_order_items` (precio y nombre registrados en la compra). `store_order_status_history` (motivos de anulación) es solo de SUPERADMIN: no mostrar motivos que la API no da.
+- Errores propios P0040–P0057 (mapeados en `store/data/store-errors.ts`); PostgREST los devuelve con HTTP 500, así que manda el código, no el estado HTTP.
+- Estados: `PENDING` → "En verificación", `PAID` → "Pagada", `CANCELLED` → "Anulada". `delivered_*` es de la issue #9 (entrega en check-in).
 
 ---
 
@@ -179,6 +229,7 @@ Todas las tablas de `public` tienen RLS habilitado (migración `017_security_har
 - `registrations`: cada usuario ve/crea la suya (`auth.uid() = user_id`); staff ve/actualiza todas.
 - `users`: cada usuario ve/edita su propia fila; staff tiene acceso total.
 - `staff_whitelist`: sin policies — solo accesible por `service_role`/Studio directo. No exponer a `anon`/`authenticated` bajo ninguna circunstancia (define quién es admin).
+- `store_*` (Tienda): ver "Tienda del evento" arriba. Productos e imágenes de lectura pública (activos de eventos publicados), escritura SUPERADMIN; compras e ítems solo del comprador (`user_id = auth.uid()`) o SUPERADMIN, sin escritura de clientes; historial solo SUPERADMIN.
 - `event_whatsapp_groups` (link del grupo de WhatsApp, uno por evento): lo leen solo inscritos no anulados del evento, SUPERADMIN y staff con `has_event_access`; lo escribe SUPERADMIN. Va aparte de `events` porque `events` es de lectura pública.
 - `sponsors`, `event_coupons`: lectura pública controlada; escritura restringida a staff (`event_coupons` solo lectura para `authenticated`, no `anon`, para no exponer códigos de invitación).
 
