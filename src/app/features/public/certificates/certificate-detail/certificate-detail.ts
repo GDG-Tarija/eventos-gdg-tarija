@@ -322,6 +322,10 @@ export class CertificateDetail implements OnInit {
         return 'Certificado de Staff';
       case 'SPONSOR':
         return 'Certificado de Patrocinador';
+      case 'MENTOR':
+        return 'Certificado de Mentor';
+      case 'PARTNER':
+        return 'Certificado de Comunidad Aliada';
       default:
         return 'Certificado de Participación';
     }

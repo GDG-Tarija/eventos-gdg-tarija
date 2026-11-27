@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE } from '../../../../core/supabase/supabase.client';
+import { isRaffleRole } from '../../../../models/registration.model';
 
 export type TicketKind = 'checkin' | 'activity' | 'networking';
 
@@ -89,7 +90,8 @@ export interface PoolRow {
 
 /**
  * Espejo de raffle_tickets/draw_raffle solo para mostrar el grupo y las chances en pantalla: el ganador
- * lo elige siempre el servidor. Entra quien está CONFIRMED, ATTENDEE, con cuenta, check-in y sin premio;
+ * lo elige siempre el servidor. Entra quien está CONFIRMED, como Asistente o Comunidad aliada, con cuenta,
+ * check-in y sin premio;
  * cuentan las actividades que existen y el networking con inscripciones de este evento.
  */
 export function buildPool(rows: PoolRow[], activityIds: string[], winnerIds: string[]): PoolEntry[] {
@@ -98,7 +100,7 @@ export function buildPool(rows: PoolRow[], activityIds: string[], winnerIds: str
   const eventRegistrations = new Set(rows.map((r) => r.id));
   const pool: PoolEntry[] = [];
   for (const r of rows) {
-    if (r.status !== 'CONFIRMED' || r.event_role !== 'ATTENDEE' || !r.user_id || winners.has(r.id)) continue;
+    if (r.status !== 'CONFIRMED' || !isRaffleRole(r.event_role) || !r.user_id || winners.has(r.id)) continue;
     const types = (r.scan_logs ?? []).map((l) => l.scan_type);
     if (!types.includes('checkin')) continue;
     const tickets =
