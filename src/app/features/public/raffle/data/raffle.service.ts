@@ -48,6 +48,14 @@ export interface ScanResult {
   net_cap?: number;
 }
 
+/** Respuesta de la RPC claim_qr_ticket. */
+export interface ClaimResult {
+  /** `invalid`: el código no existe, está apagado o es de otro evento. */
+  status: 'ok' | 'already' | 'invalid' | 'not_registered' | 'not_checked_in';
+  /** Nombre que le pusieron al QR; no viene si es `invalid`. */
+  name?: string;
+}
+
 export interface PointActivity {
   id: string;
   name: string;
@@ -133,6 +141,37 @@ export function extractRegistrationId(text: string): string | null {
   return text.match(UUID)?.[0].toLowerCase() ?? null;
 }
 
+const QR_LINK = new RegExp(`/qr/(${UUID.source})`, 'i');
+
+/** Los QR del sorteo (mesas de la feria, charlas) llevan el link `/e/<slug>/qr/<código>`. */
+export function extractQrCode(text: string): string | null {
+  return text.match(QR_LINK)?.[1].toLowerCase() ?? null;
+}
+
+/** Lo que ve quien escaneó un QR del sorteo. `inRaffle`: si su rol participa del sorteo. */
+export function claimMessage(r: ClaimResult, inRaffle = true): ScanMessage {
+  switch (r.status) {
+    case 'ok':
+      return inRaffle
+        ? { tone: 'ok', text: `¡+1 ticket! ${r.name}` }
+        : { tone: 'warn', text: `Registramos ${r.name}, pero con tu rol no participas del sorteo.` };
+    case 'already':
+      return { tone: 'warn', text: `Ya sumaste el ticket de ${r.name}.` };
+    case 'not_checked_in':
+      return {
+        tone: 'warn',
+        text: 'Primero haz check-in en la entrada y después vuelve a escanear este QR.',
+      };
+    case 'not_registered':
+      return {
+        tone: 'error',
+        text: 'Necesitas una inscripción confirmada en este evento para sumar tickets.',
+      };
+    default:
+      return { tone: 'error', text: 'Este QR ya no está activo o no es de este evento.' };
+  }
+}
+
 /**
  * Lo que ve quien escanea después de cada lectura. `activity`: en qué modo escaneó;
  * `inRaffle`: si quien escanea participa del sorteo (a un sponsor no se le habla de "tus" tickets).
@@ -208,6 +247,18 @@ export class RaffleService {
     });
     if (error) throw error;
     return data as ScanResult;
+  }
+
+  /** Suma el ticket de un QR del sorteo a quien lo escaneó. */
+  async claim(eventId: string, code: string): Promise<ClaimResult> {
+    const { data, error } = await this.supabase.rpc('claim_qr_ticket', {
+      p_event_id: eventId,
+      p_code: code,
+    });
+    // 22P02: el código del link no es un uuid (link cortado o mal copiado).
+    if (error?.code === '22P02') return { status: 'invalid' };
+    if (error) throw error;
+    return data as ClaimResult;
   }
 
   async activities(eventId: string): Promise<PointActivity[]> {

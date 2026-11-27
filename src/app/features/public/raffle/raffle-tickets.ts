@@ -11,12 +11,25 @@ import { Event } from '../events/data/event.model';
 import { PublicEventsService } from '../events/data/public-events.service';
 import { TicketQr } from '../events/registration/components/ticket-qr/ticket-qr';
 import { TicketScanner } from './components/ticket-scanner/ticket-scanner';
-import { MyTickets, Ticket, RaffleService } from './data/raffle.service';
+import {
+  ClaimResult,
+  MyTickets,
+  ScanMessage,
+  Ticket,
+  RaffleService,
+  claimMessage,
+} from './data/raffle.service';
 
 const KIND: Record<Ticket['kind'], { icon: string; color: string; title: string }> = {
   checkin: { icon: 'how_to_reg', color: 'text-google-green', title: 'Asistencia' },
   activity: { icon: 'stars', color: 'text-google-yellow', title: 'Actividad' },
   networking: { icon: 'handshake', color: 'text-google-blue', title: 'Networking' },
+};
+
+const NOTE: Record<ScanMessage['tone'], string> = {
+  ok: 'border-google-green/30 bg-google-green-light/50',
+  warn: 'border-google-yellow/40 bg-google-yellow-light/40',
+  error: 'border-google-red/30 bg-google-red-light/40',
 };
 
 /** Roles que no entran al sorteo (los que sí, como Comunidad aliada, ven sus tickets). */
@@ -74,7 +87,9 @@ const ROLE: Record<string, string> = {
         } @else if (!auth.user()) {
           <div class="gdg-card p-8 sm:p-12 text-center space-y-4">
             <h2 class="text-xl font-bold text-text-primary font-google m-0">
-              Inicia sesión para ver tus tickets
+              {{
+                qrCode ? 'Inicia sesión para sumar tu ticket' : 'Inicia sesión para ver tus tickets'
+              }}
             </h2>
             <p class="text-text-secondary text-sm m-0">
               Con la misma cuenta con la que te inscribiste.
@@ -97,6 +112,15 @@ const ROLE: Record<string, string> = {
             </button>
           </div>
         } @else if (data(); as d) {
+          @if (claimNote(); as n) {
+            <p
+              class="m-0 rounded-2xl border p-4 text-base font-bold text-text-primary"
+              [class]="note[n.tone]"
+              role="status"
+            >
+              {{ n.text }}
+            </p>
+          }
           @if (!d.registration_id && !d.can_award) {
             <div class="gdg-card p-8 text-center space-y-4">
               <h2 class="text-xl font-bold text-text-primary font-google m-0">
@@ -164,6 +188,9 @@ const ROLE: Record<string, string> = {
                   } @else {
                     Escanea el QR de otra persona del evento: los dos suman 1 ticket (hasta
                     {{ d.net_cap }} por persona).
+                  }
+                  @if (d.registration_id) {
+                    Aquí también se escanean los QR de las mesas de la feria.
                   }
                 </p>
               </div>
@@ -258,7 +285,11 @@ const ROLE: Record<string, string> = {
                 </h2>
                 <ul class="m-0 pl-5 space-y-1 text-sm text-text-secondary">
                   <li>Check-in en la entrada: 1 ticket (y es lo que te hace entrar al sorteo).</li>
-                  <li>Cada stand de sponsors y comunidades: 1 ticket.</li>
+                  <li>
+                    Cada stand de sponsors y cada mesa de la feria de comunidades: 1 ticket. En las
+                    mesas escaneas tú su QR.
+                  </li>
+                  <li>QRs que mostremos durante el evento: 1 ticket cada uno.</li>
                   <li>Cada pregunta en una charla o taller: 1 ticket por sesión.</li>
                   <li>Zona Zen y hackathon: 1 ticket por actividad.</li>
                   <li>
@@ -286,6 +317,12 @@ export class RaffleTickets implements OnInit {
   private refreshSeq = 0;
 
   readonly slug = this.route.snapshot.paramMap.get('slug') ?? '';
+  /** Código del QR del sorteo, si se llegó por su link (`/e/:slug/qr/:code`). */
+  readonly qrCode = this.route.snapshot.paramMap.get('code');
+  readonly claimNote = signal<ScanMessage | null>(null);
+  /** Se guarda: si después falla la carga, "Reintentar" no lo manda otra vez (diría "ya sumaste"). */
+  private claim: ClaimResult | null = null;
+  readonly note = NOTE;
   readonly kind = KIND;
   readonly loading = signal(true);
   readonly error = signal(false);
@@ -321,7 +358,12 @@ export class RaffleTickets implements OnInit {
       }
       this.event.set(event);
       this.title.setTitle(`Mis tickets · ${event.title} | GDG Tarija`);
-      if (this.auth.user()) this.data.set(await this.ticketsService.myTickets(event.id));
+      if (!this.auth.user()) return;
+      // El link no se limpia de la barra: si faltaba el check-in, basta recargar después de hacerlo.
+      if (this.qrCode) this.claim ??= await this.ticketsService.claim(event.id, this.qrCode);
+      const data = await this.ticketsService.myTickets(event.id);
+      this.data.set(data);
+      if (this.claim) this.claimNote.set(claimMessage(this.claim, isRaffleRole(data.event_role)));
     } catch (e) {
       console.error('[Tickets] load failed:', e);
       this.error.set(true);

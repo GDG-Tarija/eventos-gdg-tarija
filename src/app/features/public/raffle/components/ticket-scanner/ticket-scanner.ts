@@ -16,6 +16,8 @@ import {
   PointActivity,
   ScanMessage,
   RaffleService,
+  claimMessage,
+  extractQrCode,
   extractRegistrationId,
   scanMessage,
 } from '../../data/raffle.service';
@@ -303,6 +305,16 @@ export class TicketScanner implements OnInit, OnDestroy {
     this.lastCode = text;
     this.lastAt = now;
 
+    // Antes que la entrada: el link de un QR del sorteo también lleva un uuid.
+    const qrCode = extractQrCode(text);
+    if (qrCode) {
+      await this.send(async () => {
+        const result = await this.tickets.claim(this.eventId(), qrCode);
+        return { message: claimMessage(result, this.inRaffle()), added: result.status === 'ok' };
+      });
+      return;
+    }
+
     const registrationId = extractRegistrationId(text);
     if (!registrationId) {
       this.show({ tone: 'error', text: 'Este QR no es una entrada de GDG Tarija.' });
@@ -316,12 +328,23 @@ export class TicketScanner implements OnInit, OnDestroy {
       return;
     }
 
+    await this.send(async () => {
+      const result = await this.tickets.scan(this.eventId(), registrationId, activityId);
+      return {
+        message: scanMessage(result, activity, this.inRaffle()),
+        added: result.status === 'ok',
+      };
+    });
+  }
+
+  /** Manda la lectura al servidor y muestra el resultado. */
+  private async send(call: () => Promise<{ message: ScanMessage; added: boolean }>): Promise<void> {
     this.busy.set(true);
     try {
-      const result = await this.tickets.scan(this.eventId(), registrationId, activityId);
+      const { message, added } = await call();
       if (this.destroyed) return;
-      this.show(scanMessage(result, activity, this.inRaffle()));
-      if (result.status === 'ok') this.scanned.emit();
+      this.show(message);
+      if (added) this.scanned.emit();
     } catch (e) {
       console.error('[TicketScanner] scan failed:', e);
       // Se reintenta con el mismo QR sin sacarlo de la cámara, tras una pausa (sin red no se inunda la API).

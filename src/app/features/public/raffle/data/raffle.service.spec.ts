@@ -1,4 +1,12 @@
-import { PoolRow, ScanResult, buildPool, extractRegistrationId, scanMessage } from './raffle.service';
+import {
+  PoolRow,
+  ScanResult,
+  buildPool,
+  claimMessage,
+  extractQrCode,
+  extractRegistrationId,
+  scanMessage,
+} from './raffle.service';
 
 const ID = '5a770000-0000-4000-8000-0000000001b1';
 
@@ -10,6 +18,39 @@ describe('extractRegistrationId', () => {
 
   it('rechaza lo que no es una entrada', () => {
     expect(extractRegistrationId('https://gdg.community.dev')).toBeNull();
+  });
+});
+
+describe('extractQrCode', () => {
+  it('saca el código del link de un QR del sorteo', () => {
+    expect(extractQrCode(`https://eventos.gdgtarija.com/e/devfest/qr/${ID.toUpperCase()}`)).toBe(ID);
+  });
+
+  it('una entrada (uuid solo o en otro link) no es un QR del sorteo', () => {
+    expect(extractQrCode(ID)).toBeNull();
+    expect(extractQrCode(`https://eventos.gdgtarija.com/n/${ID}`)).toBeNull();
+  });
+});
+
+describe('claimMessage', () => {
+  it('suma con el nombre del QR', () => {
+    expect(claimMessage({ status: 'ok', name: 'Feria · Flutter' })).toEqual({
+      tone: 'ok',
+      text: '¡+1 ticket! Feria · Flutter',
+    });
+  });
+
+  it('a quien no participa del sorteo no le promete un ticket', () => {
+    const m = claimMessage({ status: 'ok', name: 'Feria · Flutter' }, false);
+    expect(m.tone).toBe('warn');
+    expect(m.text).not.toContain('+1');
+  });
+
+  it('repetidos, sin check-in y QR apagado no suenan a éxito', () => {
+    expect(claimMessage({ status: 'already', name: 'Feria' }).tone).toBe('warn');
+    expect(claimMessage({ status: 'not_checked_in', name: 'Feria' }).text).toContain('check-in');
+    expect(claimMessage({ status: 'not_registered', name: 'Feria' }).tone).toBe('error');
+    expect(claimMessage({ status: 'invalid' }).tone).toBe('error');
   });
 });
 
