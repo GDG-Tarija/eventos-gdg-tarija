@@ -16,7 +16,7 @@ La arquitectura de vistas y menús del sistema está distribuida en los siguient
 ```
 ├── Public/                               # Módulos Públicos / Asistentes
 │   ├── Eventos/                        # Listado y detalle de eventos (/e/:slug)
-│   ├── Sorteo/ (features/public/raffle) # Tickets del sorteo + escáner (/e/:slug/tickets), sorteo para SUPERADMIN (/e/:slug/sorteo). No confundir con /mis-tickets (entradas)
+│   ├── Sorteo/ (features/public/raffle) # Tickets del sorteo + escáner (/e/:slug/tickets), link de un QR del sorteo (/e/:slug/qr/:code), sorteo para SUPERADMIN (/e/:slug/sorteo). No confundir con /mis-tickets (entradas)
 │   └── Certificados/                   # Listado (/certificados) y vista de certificado (/certificados/:id)
 │
 ├── Dashboard/                          # Dashboard principal y widget cards
@@ -100,6 +100,11 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | point_activities       | name              | text                     | NO            |
 | public  | point_activities       | created_at        | timestamp with time zone | NO            |
 | public  | point_activities       | updated_at        | timestamp with time zone | NO            |
+| public  | point_activity_qrs     | id                | uuid                     | NO            |
+| public  | point_activity_qrs     | activity_id       | uuid                     | NO            |
+| public  | point_activity_qrs     | active            | boolean                  | NO            |
+| public  | point_activity_qrs     | created_at        | timestamp with time zone | NO            |
+| public  | point_activity_qrs     | updated_at        | timestamp with time zone | NO            |
 | public  | raffle_winners         | id                | uuid                     | NO            |
 | public  | raffle_winners         | event_id          | uuid                     | NO            |
 | public  | raffle_winners         | registration_id   | uuid                     | NO            |
@@ -156,6 +161,8 @@ Todas las columnas de las tablas de Supabase se generan de forma tipada. No modi
 | public  | users                  | updated_at        | timestamp with time zone | YES           |
 
 **Sorteo por tickets** (migración `20261121143147_sorteo_tickets` en back-office): los tickets son filas de `scan_logs` (`checkin`, `pts:<point_activities.id>`, `net:<registrations.id>`). La app no escribe `scan_logs` ni lee nombres ajenos directamente: usa las RPCs `scan_ticket(p_event_id, p_registration_id, p_activity_id?)`, `my_tickets(p_event_id)` y `draw_raffle(p_event_id, p_prize)` (solo SUPERADMIN), vía `features/public/raffle/data/raffle.service.ts`.
+
+**QRs del sorteo** (migración `20261127023724_sorteo_qrs` en back-office): un SUPERADMIN crea en el back-office QRs con nombre (mesa de una comunidad, un momento de una charla, un link al grupo) que los asistentes escanean para sumar el `pts:<actividad>` de siempre. El QR lleva el link `/e/:slug/qr/:code`, donde `code` es `point_activity_qrs.id`. Esta app nunca lee `point_activity_qrs` (solo SUPERADMIN por RLS): llama a la RPC `claim_qr_ticket(p_event_id, p_code)`, que devuelve `{status, name}` con `ok`, `already`, `not_registered`, `not_checked_in` o `invalid` (código inexistente, apagado o de otro evento). El escáner de `/e/:slug/tickets` reconoce esos links antes que una entrada.
 
 ---
 
