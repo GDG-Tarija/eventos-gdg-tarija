@@ -108,4 +108,16 @@ describe('buildPool', () => {
     );
     expect(pool.map((p) => p.registrationId)).toEqual(['ok']);
   });
+
+  it('Comunidad aliada participa del sorteo; Mentor no', () => {
+    const pool = buildPool(
+      [
+        row('aliada', ['checkin'], { event_role: 'PARTNER' }),
+        row('mentora', ['checkin'], { event_role: 'MENTOR' }),
+      ],
+      [],
+      [],
+    );
+    expect(pool.map((p) => p.registrationId)).toEqual(['aliada']);
+  });
 });

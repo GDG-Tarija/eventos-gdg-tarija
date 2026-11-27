@@ -29,7 +29,7 @@ import {
 
 import { AuthService } from '../../../../../../core/auth/services/auth.service';
 import { FormField } from '../../../../../../models/field.model';
-import { EventRole } from '../../../../../../models/registration.model';
+import { EventRole, eventRoleLabel } from '../../../../../../models/registration.model';
 import { TicketType } from '../../../../../../models/ticket.model';
 import type { Event as EventModel } from '../../../data/event.model';
 import { isValidPhone, normalizePhone } from '../../data/phone';
@@ -609,14 +609,7 @@ export class StepDatos implements OnInit {
       this.appliedRole.set(res.role ?? 'ATTENDEE');
       this.couponId.set(res.id ?? null);
 
-      const roleLabel =
-        res.role === 'SPEAKER'
-          ? 'Speaker'
-          : res.role === 'STAFF'
-            ? 'Staff'
-            : res.role === 'SPONSOR'
-              ? 'Sponsor'
-              : 'Asistente';
+      const roleLabel = eventRoleLabel(res.role);
       this.couponSuccessMessage.set(
         `Código de invitación de ${roleLabel} aplicado (100% de descuento).`,
       );

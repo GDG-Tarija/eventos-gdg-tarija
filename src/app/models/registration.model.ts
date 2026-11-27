@@ -1,4 +1,23 @@
-export type EventRole = 'ATTENDEE' | 'SPEAKER' | 'SPONSOR' | 'STAFF';
+export type EventRole = 'ATTENDEE' | 'SPEAKER' | 'SPONSOR' | 'STAFF' | 'MENTOR' | 'PARTNER';
+
+/** Nombre del rol de evento (lo da el cupón) para mostrar a la persona. */
+export const EVENT_ROLE_LABELS: Record<EventRole, string> = {
+  ATTENDEE: 'Asistente',
+  SPEAKER: 'Speaker',
+  SPONSOR: 'Sponsor',
+  STAFF: 'Staff',
+  MENTOR: 'Mentor',
+  PARTNER: 'Comunidad aliada',
+};
+
+export function eventRoleLabel(role: string | null | undefined): string {
+  return EVENT_ROLE_LABELS[(role ?? '') as EventRole] ?? 'Asistente';
+}
+
+/** Roles que entran al sorteo. Espejo de draw_raffle (back-office, migración 20261127015203). */
+export function isRaffleRole(role: string | null | undefined): boolean {
+  return role === 'ATTENDEE' || role === 'PARTNER';
+}
 export type RegistrationStatus = 'CONFIRMED' | 'PENDING' | 'CANCELLED';
 
 export interface UserUpdate {
