@@ -7,6 +7,7 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { filter, firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../../core/auth/services/auth.service';
+import { eventRoleLabel } from '../../../../models/registration.model';
 import { CertificatesService } from '../data/certificates.service';
 import { CertificateItem } from '../data/certificate.model';
 
@@ -196,15 +197,6 @@ export class CertificatesList implements OnInit {
   }
 
   getRoleLabel(role: string): string {
-    switch (role) {
-      case 'SPEAKER':
-        return 'Speaker';
-      case 'STAFF':
-        return 'Staff';
-      case 'SPONSOR':
-        return 'Sponsor';
-      default:
-        return 'Asistente';
-    }
+    return eventRoleLabel(role);
   }
 }

@@ -6,6 +6,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { filter, firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/services/auth.service';
+import { isRaffleRole } from '../../../models/registration.model';
 import { Event } from '../events/data/event.model';
 import { PublicEventsService } from '../events/data/public-events.service';
 import { TicketQr } from '../events/registration/components/ticket-qr/ticket-qr';
@@ -18,7 +19,13 @@ const KIND: Record<Ticket['kind'], { icon: string; color: string; title: string 
   networking: { icon: 'handshake', color: 'text-google-blue', title: 'Networking' },
 };
 
-const ROLE: Record<string, string> = { SPEAKER: 'speaker', SPONSOR: 'sponsor', STAFF: 'staff' };
+/** Roles que no entran al sorteo (los que sí, como Comunidad aliada, ven sus tickets). */
+const ROLE: Record<string, string> = {
+  SPEAKER: 'speaker',
+  SPONSOR: 'sponsor',
+  STAFF: 'staff',
+  MENTOR: 'mentor',
+};
 
 @Component({
   selector: 'app-raffle-tickets',
@@ -164,7 +171,7 @@ const ROLE: Record<string, string> = { SPEAKER: 'speaker', SPONSOR: 'sponsor', S
                 [eventId]="eventId()"
                 [canAward]="d.can_award"
                 [canNetwork]="!!d.registration_id"
-                [inRaffle]="d.event_role === 'ATTENDEE'"
+                [inRaffle]="isRaffleRole(d.event_role)"
                 (scanned)="refresh()"
               />
             </div>
@@ -184,7 +191,7 @@ const ROLE: Record<string, string> = { SPEAKER: 'speaker', SPONSOR: 'sponsor', S
               </div>
             }
 
-            @if (d.event_role === 'ATTENDEE') {
+            @if (isRaffleRole(d.event_role)) {
               <!-- Tickets -->
               <section class="space-y-3" aria-labelledby="mis-tickets">
                 <div class="flex items-center justify-between gap-3">
@@ -290,6 +297,7 @@ export class RaffleTickets implements OnInit {
 
   readonly eventId = computed(() => this.event()?.id ?? '');
   readonly roleLabel = computed(() => ROLE[this.data()?.event_role ?? ''] ?? null);
+  readonly isRaffleRole = isRaffleRole;
   readonly count = computed(() => this.data()?.tickets.length ?? 0);
 
   constructor() {
